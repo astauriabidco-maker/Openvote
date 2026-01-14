@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: openvote
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: openvote_db
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5495:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migration/001_init_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - openvote-network
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9095:9000"
+      - "9096:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - openvote-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5695:5672"
+      - "15695:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - openvote-network
+
+  backend:
+    build: ./backend
+    container_name: openvote_backend
+    restart: always
+    ports:
+      - "8095:8095"
+    environment:
+      - PORT=8095
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=openvote
+      - DB_PASSWORD=securepassword
+      - DB_NAME=openvote_db
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - db
+      - rabbitmq
+    networks:
+      - openvote-network
+
+volumes:
+  postgres_data:
+  minio_data:
+  rabbitmq_data:
+
+networks:
+  openvote-network:
+    driver: bridge

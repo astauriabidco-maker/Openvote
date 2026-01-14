@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL avec PostGIS
+  db:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: openvote_prod_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-openvote}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword}
+      POSTGRES_DB: ${DB_NAME:-openvote_db}
+    volumes:
+      - openvote_prod_db_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+    networks:
+      - openvote_prod_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-openvote}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (Golang)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: openvote_prod_backend
+    restart: always
+    environment:
+      - PORT=8080
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-openvote}
+      - DB_PASSWORD=${DB_PASSWORD:-securepassword}
+      - DB_NAME=${DB_NAME:-openvote_db}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${API_PORT:-8095}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - openvote_prod_network
+
+  # File Storage (MinIO)
+  minio:
+    image: minio/minio
+    container_name: openvote_prod_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - openvote_prod_minio_data:/data
+    networks:
+      - openvote_prod_network
+
+  # Queue (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: openvote_prod_rabbitmq
+    restart: always
+    # Ports management interface exposed only internally or via VPN in real prod
+    # Here mapped to avoid conflict
+    ports: 
+        - "127.0.0.1:15696:15672" 
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - openvote_prod_network
+
+  # Frontend Web (React - Nginx build)
+  # Assuming we have a Dockerfile for web in ./web
+  # For now, omitted or could be added if requested. 
+  # Usually web is served via Nginx which reverse proxies to backend.
+
+networks:
+  openvote_prod_network:
+    driver: bridge
+
+volumes:
+  openvote_prod_db_data:
+  openvote_prod_minio_data:
