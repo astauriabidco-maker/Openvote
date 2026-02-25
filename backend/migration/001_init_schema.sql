@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- Définition des ENUMs pour le typage fort au niveau DB
 DO $$ BEGIN
-    CREATE TYPE user_role AS ENUM ('super_admin', 'region_admin', 'local_coord', 'observer');
+    CREATE TYPE user_role AS ENUM ('super_admin', 'region_admin', 'local_coord', 'observer', 'verified_citizen', 'citizen');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -16,7 +16,6 @@ EXCEPTION
 END $$;
 
 -- Table Users
-DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(100) UNIQUE NOT NULL,

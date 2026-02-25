@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,7 +15,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecret = []byte("super-secret-key-change-in-prod")
+// jwtSecret est initialisé depuis la variable d'environnement JWT_SECRET
+var jwtSecret []byte
+
+func init() {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Println("WARNING: JWT_SECRET non défini. Utilisation d'une clé par défaut (DEV UNIQUEMENT).")
+		secret = "super-secret-key-change-in-prod"
+	}
+	jwtSecret = []byte(secret)
+}
 
 type AuthService interface {
 	Register(ctx context.Context, username, password string) (*entity.User, error)
@@ -75,6 +87,9 @@ func (s *authService) Login(ctx context.Context, username, password string) (str
 	if err != nil {
 		return "", err
 	}
+
+	// Track last login
+	_ = s.userRepo.UpdateLastLogin(ctx, user.ID)
 
 	return tokenString, nil
 }

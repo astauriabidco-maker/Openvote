@@ -5,10 +5,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/openvote/backend/internal/domain/repository"
 	"github.com/openvote/backend/internal/service"
 )
 
-func AuthMiddleware(authService service.AuthService) gin.HandlerFunc {
+func AuthMiddleware(authService service.AuthService, userRepo ...repository.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -32,9 +33,17 @@ func AuthMiddleware(authService service.AuthService) gin.HandlerFunc {
 			return
 		}
 
-		// Store user info in context
+		// Injection des infos utilisateur dans le contexte Gin
 		if sub, ok := (*claims)["sub"].(string); ok {
 			c.Set("userID", sub)
+
+			// Résolution du username si le repo est disponible
+			if len(userRepo) > 0 && userRepo[0] != nil {
+				user, err := userRepo[0].GetByID(c.Request.Context(), sub)
+				if err == nil && user != nil {
+					c.Set("username", user.Username)
+				}
+			}
 		}
 		if role, ok := (*claims)["role"].(string); ok {
 			c.Set("role", role)

@@ -29,9 +29,10 @@ type User struct {
 	Username     string    `json:"username" db:"username" gorm:"unique;not null"`
 	Role         UserRole  `json:"role" db:"role" gorm:"type:user_role;not null"`
 	PasswordHash string    `json:"-" db:"password_hash" gorm:"not null"` // Le hash ne doit jamais sortir en JSON
-	RegionID     string    `json:"region_id" db:"region_id"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	RegionID     string     `json:"region_id" db:"region_id"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+	LastLoginAt  *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
 }
 
 // Report représente un signalement d'incident sur le terrain
@@ -59,4 +60,120 @@ func (User) TableName() string {
 
 func (Report) TableName() string {
 	return "reports"
+}
+
+// Region représente une région administrative (ex: Centre, Littoral, etc.)
+type Region struct {
+	ID        string    `json:"id" db:"id"`
+	Name      string    `json:"name" db:"name"`
+	Code      string    `json:"code" db:"code"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}
+
+func (Region) TableName() string {
+	return "regions"
+}
+
+// Department représente un département au sein d'une région
+type Department struct {
+	ID               string    `json:"id" db:"id"`
+	Name             string    `json:"name" db:"name"`
+	Code             string    `json:"code" db:"code"`
+	RegionID         string    `json:"region_id" db:"region_id"`
+	Population       int       `json:"population" db:"population"`
+	RegisteredVoters int       `json:"registered_voters" db:"registered_voters"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+}
+
+func (Department) TableName() string {
+	return "departments"
+}
+
+// ElectionStatus définit l'état d'un scrutin
+type ElectionStatus string
+
+const (
+	ElectionPlanned  ElectionStatus = "planned"
+	ElectionActive   ElectionStatus = "active"
+	ElectionClosed   ElectionStatus = "closed"
+	ElectionArchived ElectionStatus = "archived"
+)
+
+// Election représente un scrutin/élection
+type Election struct {
+	ID          string         `json:"id" db:"id"`
+	Name        string         `json:"name" db:"name"`
+	Type        string         `json:"type" db:"type"`           // présidentielle, législative, municipale, référendum
+	Status      ElectionStatus `json:"status" db:"status"`
+	Date        time.Time      `json:"date" db:"date"`
+	Description string         `json:"description" db:"description"`
+	RegionIDs   string         `json:"region_ids" db:"region_ids"` // JSON array of region IDs (ou "all")
+	CreatedAt   time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at" db:"updated_at"`
+}
+
+func (Election) TableName() string {
+	return "elections"
+}
+
+// AuditLog représente une entrée dans le journal d'audit persistent
+type AuditLog struct {
+	ID        string    `json:"id" db:"id"`
+	AdminID   string    `json:"admin_id" db:"admin_id"`
+	AdminName string    `json:"admin_name" db:"admin_name"`
+	Action    string    `json:"action" db:"action"`
+	TargetID  string    `json:"target_id" db:"target_id"`
+	Details   string    `json:"details" db:"details"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}
+
+func (AuditLog) TableName() string {
+	return "audit_logs"
+}
+
+// IncidentType représente un type d'incident prédéfini
+type IncidentType struct {
+	ID          string    `json:"id" db:"id"`
+	Name        string    `json:"name" db:"name"`
+	Code        string    `json:"code" db:"code"`
+	Description string    `json:"description" db:"description"`
+	Severity    int       `json:"severity" db:"severity"` // 1-5
+	Color       string    `json:"color" db:"color"`       // Hex color pour le frontend
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+}
+
+func (IncidentType) TableName() string {
+	return "incident_types"
+}
+
+// LegalDocument représente un recueil de lois ou règles
+type LegalDocument struct {
+	ID            string    `json:"id" db:"id"`
+	Title         string    `json:"title" db:"title"`
+	Description   string    `json:"description" db:"description"`
+	Type          string    `json:"doc_type" db:"doc_type"`
+	Version       string    `json:"version" db:"version"`
+	FullText      string    `json:"full_text" db:"full_text"`
+	FilePath      string    `json:"file_path" db:"file_path"`
+	PublishedDate time.Time `json:"published_date" db:"published_date"`
+	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+}
+
+func (LegalDocument) TableName() string {
+	return "legal_documents"
+}
+
+// LegalArticle représente un article au sein d'un document
+type LegalArticle struct {
+	ID            string    `json:"id" db:"id"`
+	DocumentID    string    `json:"document_id" db:"document_id"`
+	ArticleNumber string    `json:"article_number" db:"article_number"`
+	Title         string    `json:"title" db:"title"`
+	Content       string    `json:"content" db:"content"`
+	Category      string    `json:"category" db:"category"`
+	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+}
+
+func (LegalArticle) TableName() string {
+	return "legal_framework"
 }

@@ -108,3 +108,42 @@ func (h *ReportHandler) GetDetails(c *gin.Context) {
 
 	c.JSON(http.StatusOK, report)
 }
+
+// UpdateStatusRequest DTO pour la mise à jour de statut par un admin
+type UpdateStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=verified rejected pending"`
+}
+
+func (h *ReportHandler) UpdateStatus(c *gin.Context) {
+	id := c.Param("id")
+
+	// Vérification du rôle (seuls les admins peuvent changer le statut)
+	role, exists := c.Get("role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "role not found in context"})
+		return
+	}
+
+	roleStr, ok := role.(string)
+	if !ok || (roleStr != string(entity.RoleSuperAdmin) && roleStr != string(entity.RoleRegionAdmin)) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions: only admins can update report status"})
+		return
+	}
+
+	var req UpdateStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.reportService.UpdateReportStatus(c.Request.Context(), id, entity.ReportStatus(req.Status)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update report: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Report status updated",
+		"id":      id,
+		"status":  req.Status,
+	})
+}

@@ -40,3 +40,51 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.
 	}
 	return user, err
 }
+
+func (r *userRepo) GetAll(ctx context.Context) ([]entity.User, error) {
+	query := `SELECT id, username, role, COALESCE(region_id, '') as region_id, created_at, updated_at, last_login_at FROM users ORDER BY created_at DESC`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []entity.User
+	for rows.Next() {
+		var user entity.User
+		var lastLogin sql.NullTime
+		err := rows.Scan(&user.ID, &user.Username, &user.Role, &user.RegionID, &user.CreatedAt, &user.UpdatedAt, &lastLogin)
+		if err != nil {
+			return nil, err
+		}
+		if lastLogin.Valid {
+			user.LastLoginAt = &lastLogin.Time
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+func (r *userRepo) UpdateRole(ctx context.Context, id string, role entity.UserRole, regionID string) error {
+	query := `UPDATE users SET role = $1, region_id = $2, updated_at = NOW() WHERE id = $3`
+	result, err := r.db.ExecContext(ctx, query, role, regionID, id)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (r *userRepo) UpdateLastLogin(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET last_login_at = NOW() WHERE id = $1`, id)
+	return err
+}
+
+func (r *userRepo) Delete(ctx context.Context, id string) error {
+	query := `DELETE FROM users WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
