@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../database/database_service.dart';
 import '../utils/sms_encoder.dart';
 import '../utils/steganography_service.dart';
+import '../utils/censorship_detector.dart';
 
 // Définition de la tâche pour Workmanager
 const String syncTaskName = "syncPendingReportsTask";
@@ -18,20 +19,6 @@ void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     if (task == syncTaskName) {
       print("Workmanager: Lancement de la synchronisation...");
-      // Note: Workmanager lance un isolate vierge. 
-      // Il faut s'assurer que DatabaseService peut s'ouvrir.
-      // PROBLÈME: SQLCipher a besoin du mot de passe en RAM.
-      // En arrière-plan complet (kill state), le mot de passe est PERDU (Security Feature).
-      // Donc la sync périodique ne peut fonctionner QUE si l'app est en mémoire ou si on a un mécanisme
-      // MAIS les règles disent : "Ne JAMAIS stocker le mot de passe ... sur le disque".
-      // CONSÉQUENCE : La sync background "pure" (app tuée) est impossible sans l'interaction user pour déverrouiller.
-      // COMPROMIS : Le Workmanager ne fonctionnera que si le mot de passe est encore en mémoire ou accessible (ex: foreground service).
-      // OU ALORS : On accepte que la sync ne se fasse qu'au lancement de l'app ou en background immédiat.
-      
-      // Cependant, pour respecter la demande "Worker ... périodiquement", je code la structure.
-      // Si l'app est kill, DatabaseService().database throwera une exception "mot de passe requis".
-      // C'est le comportement "Secure & Offline-First" attendu.
-      
       try {
         final syncService = SyncService();
         await syncService.syncPendingReports();
@@ -51,15 +38,29 @@ class SyncService {
   SyncService._internal();
 
   StreamSubscription<ConnectivityResult>? _subscription;
+  StreamSubscription<bool>? _censorshipSubscription;
   bool _isSyncing = false;
   int _failureCount = 0;
   
   // URL de l'API (À configurer via .env en prod)
-  // Pour émulateur Android utilise 10.0.2.2, pour iOS localhost
   final String apiUrl = 'http://10.0.2.2:8095/api/v1/reports'; 
 
-  /// Initialise le service et workmanager
+  /// Initialise le service, workmanager et le détecteur de censure
   Future<void> init() async {
+    // Démarrer le détecteur de censure
+    CensorshipDetector().startMonitoring();
+
+    // Écouter les changements de censure
+    _censorshipSubscription = CensorshipDetector().onCensorshipChange.listen((isCensored) {
+      if (isCensored) {
+        print("SyncService: Censure détectée ! Bascule automatique vers SMS.");
+        _forceSmsMode();
+      } else {
+        print("SyncService: Réseau normal rétabli. Reprise de la sync API.");
+        syncPendingReports();
+      }
+    });
+
     // Écouteur connectivité
     _subscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
       if (result != ConnectivityResult.none) {
@@ -70,12 +71,12 @@ class SyncService {
     // Initialisation Workmanager
     await Workmanager().initialize(
       callbackDispatcher,
-      isInDebugMode: true, // Pour voir les logs en dev
+      isInDebugMode: true,
     );
 
     // Enregistrement de la tâche périodique (15 min)
     await Workmanager().registerPeriodicTask(
-      "1", // Unique Name
+      "1",
       syncTaskName,
       frequency: const Duration(minutes: 15),
       constraints: Constraints(
@@ -86,6 +87,25 @@ class SyncService {
 
   void stop() {
     _subscription?.cancel();
+    _censorshipSubscription?.cancel();
+    CensorshipDetector().stopMonitoring();
+  }
+
+  /// En mode censure : envoie tous les rapports en attente via SMS
+  Future<void> _forceSmsMode() async {
+    try {
+      final db = await DatabaseService().database;
+      final List<Map<String, dynamic>> pending = await db.query(
+        'local_reports',
+        where: 'synced_at IS NULL',
+      );
+
+      for (var reportData in pending) {
+        await sendViaSmsFallBack(reportData);
+      }
+    } catch (e) {
+      print("SyncService: Erreur mode censure : $e");
+    }
   }
 
   /// Synchronise les rapports en attente (synced_at IS NULL)
@@ -94,9 +114,15 @@ class SyncService {
     _isSyncing = true;
 
     try {
+      // Vérifier d'abord si la censure est active
+      if (CensorshipDetector().isCensored) {
+        print("SyncService: Censure active, bascule vers SMS...");
+        await _forceSmsMode();
+        return;
+      }
+
       final db = await DatabaseService().database;
       
-      // Sélectionner les rapports non synchronisés
       final List<Map<String, dynamic>> pending = await db.query(
         'local_reports',
         where: 'synced_at IS NULL',
@@ -112,8 +138,7 @@ class SyncService {
       for (var reportData in pending) {
         final success = await _sendToApi(reportData);
         if (success) {
-          _failureCount = 0; // Reset on success
-          // Mise à jour du timestamp synced_at
+          _failureCount = 0;
           await db.update(
             'local_reports',
             {'synced_at': DateTime.now().toIso8601String(), 'status': 'verified'},
@@ -124,10 +149,19 @@ class SyncService {
         } else {
           _failureCount++;
           if (_failureCount >= 3) {
-            print("SyncService: 3 échecs consécutifs. Bascule SMS...");
+            print("SyncService: 3 échecs consécutifs. Vérification censure...");
+            
+            // Vérifier si c'est de la censure
+            final isCensored = await CensorshipDetector().checkCensorship();
+            if (isCensored) {
+              print("SyncService: Censure confirmée ! Bascule SMS automatique.");
+            } else {
+              print("SyncService: Pas de censure, bascule SMS par précaution.");
+            }
+            
             await sendViaSmsFallBack(reportData);
-            _failureCount = 0; // Reset after fallback attempt
-            break; // Stop current sync batch
+            _failureCount = 0;
+            break;
           }
         }
       }
@@ -150,7 +184,7 @@ class SyncService {
       // 3. Récupération de la Gateway
       const storage = FlutterSecureStorage();
       String? gateway = await storage.read(key: 'sms_gateway_number');
-      gateway ??= "+237600000000"; // Fallback par défaut pour démo
+      gateway ??= "+237600000000"; // Fallback par défaut
 
       // 4. Envoi via Intent
       final Uri smsUri = Uri(
@@ -184,9 +218,6 @@ class SyncService {
 
   Future<bool> _sendToApi(Map<String, dynamic> data) async {
     try {
-      // Mapping vers le DTO attendu par le Backend
-      // CreateReportRequest: observer_id, incident_type, description, latitude, longitude
-      
       final payload = {
         'observer_id': data['observer_id'],
         'incident_type': data['incident_type'],
@@ -216,7 +247,7 @@ class SyncService {
       }
     } catch (e) {
       print("SyncService: Échec HTTP : $e");
-      return false; // Réessaiera plus tard
+      return false;
     }
   }
 }

@@ -1,10 +1,10 @@
 # Build Stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Dépendances système pour CGO (si besoin, mais on essaie de faire du statique)
-RUN apk add --no-cache git build-base
+# Dépendances système pour CGO et parsing PDF
+RUN apk add --no-cache git build-base poppler-utils
 
 # Mise en cache des modules
 COPY go.mod ./
@@ -22,8 +22,8 @@ FROM alpine:latest
 
 WORKDIR /root/
 
-# Certificats CA pour les requêtes HTTPS sortantes et Timezone
-RUN apk --no-cache add ca-certificates tzdata
+# Certificats CA, Timezone et Utilitaires PDF
+RUN apk --no-cache add ca-certificates tzdata poppler-utils
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/migration ./migration

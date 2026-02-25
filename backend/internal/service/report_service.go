@@ -14,6 +14,7 @@ type ReportService interface {
 	CreateReport(ctx context.Context, report *entity.Report) error
 	GetAllReports(ctx context.Context, status string) ([]entity.Report, error)
 	GetReportByID(ctx context.Context, id string) (*entity.Report, error)
+	UpdateReportStatus(ctx context.Context, id string, status entity.ReportStatus) error
 }
 
 type reportService struct {
@@ -109,4 +110,8 @@ func (s *reportService) GetAllReports(ctx context.Context, status string) ([]ent
 
 func (s *reportService) GetReportByID(ctx context.Context, id string) (*entity.Report, error) {
 	return s.repo.GetByID(ctx, id)
+}
+
+func (s *reportService) UpdateReportStatus(ctx context.Context, id string, status entity.ReportStatus) error {
+	return s.repo.UpdateStatus(ctx, id, status)
 }
