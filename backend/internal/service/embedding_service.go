@@ -15,13 +15,12 @@ import (
 // EmbeddingService gère la communication avec Ollama pour générer des embeddings vectoriels
 type EmbeddingService interface {
 	GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
-	GetDimension() int
+	GetModel() string
 }
 
 type embeddingService struct {
 	ollamaURL string
 	model     string
-	dimension int
 	client    *http.Client
 }
 
@@ -31,24 +30,55 @@ func NewEmbeddingService() EmbeddingService {
 		url = "http://localhost:11434"
 	}
 
-	// Modèle multilingue pour un meilleur support du français juridique
+	// Ordre de préférence : variable d'env > snowflake multilingue > nomic fallback
 	model := os.Getenv("EMBEDDING_MODEL")
 	if model == "" {
-		model = "snowflake-arctic-embed2"
+		// Tester si snowflake est disponible
+		if isModelAvailable(url, "snowflake-arctic-embed2") {
+			model = "snowflake-arctic-embed2"
+			log.Printf("[EMBEDDING] Modèle multilingue snowflake-arctic-embed2 détecté ✓")
+		} else {
+			model = "nomic-embed-text"
+			log.Printf("[EMBEDDING] Fallback sur nomic-embed-text (snowflake pas encore disponible)")
+		}
 	}
 
 	return &embeddingService{
 		ollamaURL: url,
 		model:     model,
-		dimension: 1024, // snowflake-arctic-embed2 produit des vecteurs 1024D
 		client: &http.Client{
 			Timeout: 60 * time.Second,
 		},
 	}
 }
 
-func (s *embeddingService) GetDimension() int {
-	return s.dimension
+func (s *embeddingService) GetModel() string {
+	return s.model
+}
+
+// isModelAvailable vérifie si un modèle est installé dans Ollama
+func isModelAvailable(ollamaURL, modelName string) bool {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(ollamaURL + "/api/tags")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Models []struct {
+			Name string `json:"name"`
+		} `json:"models"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return false
+	}
+	for _, m := range result.Models {
+		if m.Name == modelName || m.Name == modelName+":latest" {
+			return true
+		}
+	}
+	return false
 }
 
 // ollamaEmbedRequest est la requête envoyée à l'API Ollama
