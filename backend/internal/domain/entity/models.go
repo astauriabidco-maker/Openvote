@@ -201,3 +201,19 @@ type ReportLegalMatch struct {
 func (ReportLegalMatch) TableName() string {
 	return "report_legal_matches"
 }
+
+// LegalAnalysis représente l'analyse juridique d'un rapport générée par le LLM
+type LegalAnalysis struct {
+	ID             string    `json:"id" db:"id"`
+	ReportID       string    `json:"report_id" db:"report_id"`
+	Summary        string    `json:"summary" db:"summary"`
+	Recommendation string    `json:"recommendation" db:"recommendation"`
+	SeverityLevel  int       `json:"severity_level" db:"severity_level"`
+	RawResponse    string    `json:"raw_response" db:"raw_response"`
+	LLMModel       string    `json:"llm_model" db:"llm_model"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+}
+
+func (LegalAnalysis) TableName() string {
+	return "legal_analyses"
+}

@@ -16,24 +16,26 @@ import (
 )
 
 type AdminHandler struct {
-	enrolmentService service.EnrolmentService
-	userRepo         repository.UserRepository
-	auditRepo        repository.AuditLogRepository
-	reportService    service.ReportService
-	electionRepo     repository.ElectionRepository
-	legalRepo        repository.LegalRepository
-	embeddingService service.EmbeddingService
+	enrolmentService     service.EnrolmentService
+	userRepo             repository.UserRepository
+	auditRepo            repository.AuditLogRepository
+	reportService        service.ReportService
+	electionRepo         repository.ElectionRepository
+	legalRepo            repository.LegalRepository
+	embeddingService     service.EmbeddingService
+	legalAnalysisService service.LegalAnalysisService
 }
 
-func NewAdminHandler(enrolmentService service.EnrolmentService, userRepo repository.UserRepository, auditRepo repository.AuditLogRepository, reportService service.ReportService, electionRepo repository.ElectionRepository, legalRepo repository.LegalRepository, embeddingService service.EmbeddingService) *AdminHandler {
+func NewAdminHandler(enrolmentService service.EnrolmentService, userRepo repository.UserRepository, auditRepo repository.AuditLogRepository, reportService service.ReportService, electionRepo repository.ElectionRepository, legalRepo repository.LegalRepository, embeddingService service.EmbeddingService, legalAnalysisService service.LegalAnalysisService) *AdminHandler {
 	return &AdminHandler{
-		enrolmentService: enrolmentService,
-		userRepo:         userRepo,
-		auditRepo:        auditRepo,
-		reportService:    reportService,
-		electionRepo:     electionRepo,
-		legalRepo:        legalRepo,
-		embeddingService: embeddingService,
+		enrolmentService:     enrolmentService,
+		userRepo:             userRepo,
+		auditRepo:            auditRepo,
+		reportService:        reportService,
+		electionRepo:         electionRepo,
+		legalRepo:            legalRepo,
+		embeddingService:     embeddingService,
+		legalAnalysisService: legalAnalysisService,
 	}
 }
 
@@ -644,4 +646,120 @@ func (h *AdminHandler) GetReportMatches(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, matches)
+}
+
+// AnalyzeReport effectue une analyse juridique complète : RAG + LLM
+func (h *AdminHandler) AnalyzeReport(c *gin.Context) {
+	reportID := c.Param("id")
+	ctx := c.Request.Context()
+
+	// 1. Récupérer le rapport
+	reports, err := h.reportService.GetAllReports(ctx, "")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var targetReport *entity.Report
+	for _, r := range reports {
+		if r.ID == reportID {
+			targetReport = &r
+			break
+		}
+	}
+	if targetReport == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Rapport non trouvé"})
+		return
+	}
+
+	// 2. RAG : Trouver les articles pertinents
+	searchText := targetReport.IncidentType + ": " + targetReport.Description
+	queryEmbedding, err := h.embeddingService.GenerateEmbedding(ctx, searchText)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur embedding: " + err.Error()})
+		return
+	}
+
+	articles, scores, err := h.legalRepo.SemanticSearch(ctx, queryEmbedding, 5)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Sauvegarder les correspondances
+	for i, art := range articles {
+		if scores[i] < 0.3 {
+			continue
+		}
+		match := &entity.ReportLegalMatch{
+			ReportID:        reportID,
+			ArticleID:       art.ID,
+			SimilarityScore: scores[i],
+			MatchType:       "auto",
+		}
+		h.legalRepo.CreateReportMatch(ctx, match)
+	}
+
+	// 3. LLM : Analyse juridique approfondie
+	var articleMatches []service.ArticleMatch
+	for i, art := range articles {
+		articleMatches = append(articleMatches, service.ArticleMatch{
+			ArticleNumber: art.ArticleNumber,
+			Title:         art.Title,
+			Content:       art.Content,
+			Similarity:    scores[i],
+		})
+	}
+
+	incident := service.IncidentContext{
+		IncidentType: targetReport.IncidentType,
+		Description:  targetReport.Description,
+		Articles:     articleMatches,
+	}
+
+	llmAnalysis, err := h.legalAnalysisService.AnalyzeIncident(ctx, incident)
+	if err != nil {
+		log.Printf("[LLM] Erreur analyse: %v", err)
+		// On retourne quand même les résultats RAG même si le LLM échoue
+		c.JSON(http.StatusOK, gin.H{
+			"report_id":    reportID,
+			"matches":      len(articles),
+			"llm_error":    err.Error(),
+			"articles":     articleMatches,
+		})
+		return
+	}
+
+	// 4. Sauvegarder l'analyse
+	dbAnalysis := &entity.LegalAnalysis{
+		ReportID:       reportID,
+		Summary:        llmAnalysis.Summary,
+		Recommendation: llmAnalysis.Recommendation,
+		SeverityLevel:  llmAnalysis.SeverityLevel,
+		RawResponse:    llmAnalysis.RawResponse,
+		LLMModel:       "mistral",
+	}
+	if err := h.legalRepo.SaveAnalysis(ctx, dbAnalysis); err != nil {
+		log.Printf("[LLM] Erreur sauvegarde analyse: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"report_id":      reportID,
+		"incident":       targetReport.IncidentType,
+		"analysis":       llmAnalysis,
+		"matched_articles": len(articles),
+	})
+}
+
+// GetReportAnalysis retourne l'analyse juridique existante d'un rapport
+func (h *AdminHandler) GetReportAnalysis(c *gin.Context) {
+	reportID := c.Param("id")
+	analysis, err := h.legalRepo.GetAnalysisByReport(c.Request.Context(), reportID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Aucune analyse trouvée"})
+		return
+	}
+	// Charger aussi les matches
+	matches, _ := h.legalRepo.GetMatchesByReport(c.Request.Context(), reportID)
+	c.JSON(http.StatusOK, gin.H{"analysis": analysis, "matches": matches})
 }

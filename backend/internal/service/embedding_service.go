@@ -15,11 +15,13 @@ import (
 // EmbeddingService gère la communication avec Ollama pour générer des embeddings vectoriels
 type EmbeddingService interface {
 	GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
+	GetDimension() int
 }
 
 type embeddingService struct {
 	ollamaURL string
 	model     string
+	dimension int
 	client    *http.Client
 }
 
@@ -28,13 +30,25 @@ func NewEmbeddingService() EmbeddingService {
 	if url == "" {
 		url = "http://localhost:11434"
 	}
+
+	// Modèle multilingue pour un meilleur support du français juridique
+	model := os.Getenv("EMBEDDING_MODEL")
+	if model == "" {
+		model = "snowflake-arctic-embed2"
+	}
+
 	return &embeddingService{
 		ollamaURL: url,
-		model:     "nomic-embed-text",
+		model:     model,
+		dimension: 1024, // snowflake-arctic-embed2 produit des vecteurs 1024D
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
+}
+
+func (s *embeddingService) GetDimension() int {
+	return s.dimension
 }
 
 // ollamaEmbedRequest est la requête envoyée à l'API Ollama
@@ -85,6 +99,6 @@ func (s *embeddingService) GenerateEmbedding(ctx context.Context, text string) (
 		return nil, fmt.Errorf("embedding vide retourné par Ollama")
 	}
 
-	log.Printf("[EMBEDDING] Généré pour texte de %d caractères → vecteur de dimension %d", len(text), len(result.Embedding))
+	log.Printf("[EMBEDDING] Modèle %s → %d chars → vecteur %dD", s.model, len(text), len(result.Embedding))
 	return result.Embedding, nil
 }
