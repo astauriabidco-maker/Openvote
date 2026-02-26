@@ -278,3 +278,32 @@ func float32SliceToPostgresVector(v []float32) string {
 	buf = append(buf, ']')
 	return string(buf)
 }
+
+// ========================================
+// Analyses Juridiques LLM
+// ========================================
+
+func (r *legalRepo) SaveAnalysis(ctx context.Context, analysis *entity.LegalAnalysis) error {
+	query := `INSERT INTO legal_analyses (report_id, summary, recommendation, severity_level, raw_response, llm_model) 
+	          VALUES ($1, $2, $3, $4, $5, $6)
+	          ON CONFLICT (report_id) DO UPDATE SET 
+	            summary = EXCLUDED.summary, 
+	            recommendation = EXCLUDED.recommendation, 
+	            severity_level = EXCLUDED.severity_level,
+	            raw_response = EXCLUDED.raw_response,
+	            llm_model = EXCLUDED.llm_model,
+	            created_at = NOW()
+	          RETURNING id, created_at`
+	return r.db.QueryRowContext(ctx, query, analysis.ReportID, analysis.Summary, analysis.Recommendation, analysis.SeverityLevel, analysis.RawResponse, analysis.LLMModel).Scan(&analysis.ID, &analysis.CreatedAt)
+}
+
+func (r *legalRepo) GetAnalysisByReport(ctx context.Context, reportID string) (*entity.LegalAnalysis, error) {
+	query := `SELECT id, report_id, summary, recommendation, severity_level, raw_response, llm_model, created_at
+	          FROM legal_analyses WHERE report_id = $1`
+	var a entity.LegalAnalysis
+	err := r.db.QueryRowContext(ctx, query, reportID).Scan(&a.ID, &a.ReportID, &a.Summary, &a.Recommendation, &a.SeverityLevel, &a.RawResponse, &a.LLMModel, &a.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}

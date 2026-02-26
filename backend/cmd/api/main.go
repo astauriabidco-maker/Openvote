@@ -93,6 +93,7 @@ func main() {
 		{"migration/006_departments_data_enrichment.sql", "Données Démographiques"},
 		{"migration/007_document_exploitation.sql", "Exploitation Documents"},
 		{"migration/008_legal_knowledge_base.sql", "Base Connaissance Juridique"},
+		{"migration/009_multilingual_llm_upgrade.sql", "Upgrade Multilingue + LLM"},
 	} {
 		data, err := os.ReadFile(mig.file)
 		if err == nil {
@@ -111,9 +112,12 @@ func main() {
 	// Service d'embedding (connexion Ollama)
 	embeddingService := service.NewEmbeddingService()
 
+	// Service d'analyse juridique LLM (Mistral via Ollama)
+	legalAnalysisService := service.NewLegalAnalysisService()
+
 	authHandler := handler.NewAuthHandler(authService, enrolmentService)
 	reportHandler := handler.NewReportHandler(reportService, storageService)
-	adminHandler := handler.NewAdminHandler(enrolmentService, userRepo, auditLogRepo, reportService, electionRepo, legalRepo, embeddingService)
+	adminHandler := handler.NewAdminHandler(enrolmentService, userRepo, auditLogRepo, reportService, electionRepo, legalRepo, embeddingService, legalAnalysisService)
 	statsHandler := handler.NewStatsHandler(reportService)
 	regionHandler := handler.NewRegionHandler(regionRepo)
 	electionHandler := handler.NewElectionHandler(electionRepo)
@@ -191,7 +195,9 @@ func main() {
 			admin.POST("/legal/search", adminHandler.SemanticSearchArticles)
 			admin.POST("/legal/embeddings", adminHandler.GenerateEmbeddings)
 			admin.POST("/reports/:id/qualify", adminHandler.QualifyReport)
+			admin.POST("/reports/:id/analyze", adminHandler.AnalyzeReport)
 			admin.GET("/reports/:id/legal-matches", adminHandler.GetReportMatches)
+			admin.GET("/reports/:id/analysis", adminHandler.GetReportAnalysis)
 
 			// Régions & Départements (admin CRUD)
 			admin.POST("/regions", regionHandler.CreateRegion)

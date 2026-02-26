@@ -174,6 +174,7 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const [activeView, setActiveView] = useState<'map' | 'analytics' | 'admin'>('map');
   const [searchQuery, setSearchQuery] = useState('');
   const [reportLegalMatches, setReportLegalMatches] = useState<ReportLegalMatch[]>([]);
+  const [llmAnalysis, setLlmAnalysis] = useState<{ summary: string; recommendation: string; severity_level: number; raw_response: string; violations: { article_number: string; description: string; severity: string }[] } | null>(null);
 
   const isAdmin = auth.role === 'super_admin' || auth.role === 'region_admin';
 
@@ -529,51 +530,106 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
                 {/* Qualification Juridique IA */}
                 {isAdmin && (
                   <div className="admin-actions" style={{ marginTop: '15px' }}>
-                    <h4>⚖️ Qualification Juridique</h4>
-                    <button
-                      className="action-btn"
-                      style={{ background: 'linear-gradient(135deg, #6f42c1, #a855f7)', color: '#fff', border: 'none', width: '100%', marginBottom: '10px' }}
-                      onClick={async () => {
-                        setActionLoading(selectedReport.id);
-                        try {
-                          const res = await apiClient.post(`/admin/reports/${selectedReport.id}/qualify`);
-                          const matches = res.data.matches || [];
-                          setReportLegalMatches(matches);
-                          if (matches.length === 0) {
-                            alert('Aucune correspondance juridique trouvée.');
-                          }
-                        } catch { alert('Erreur lors de la qualification'); }
-                        setActionLoading(null);
-                      }}
-                      disabled={actionLoading === selectedReport.id}
-                    >
-                      {actionLoading === selectedReport.id ? '⏳ Analyse IA...' : '🧠 Qualifier juridiquement'}
-                    </button>
+                    <h4>⚖️ Analyse Juridique IA</h4>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                      <button
+                        className="action-btn"
+                        style={{ background: 'linear-gradient(135deg, #6f42c1, #a855f7)', color: '#fff', border: 'none', flex: 1 }}
+                        onClick={async () => {
+                          setActionLoading(selectedReport.id);
+                          try {
+                            const res = await apiClient.post(`/admin/reports/${selectedReport.id}/qualify`);
+                            setReportLegalMatches(res.data.matches || []);
+                          } catch { alert('Erreur qualification'); }
+                          setActionLoading(null);
+                        }}
+                        disabled={actionLoading === selectedReport.id}
+                      >
+                        🔍 Recherche
+                      </button>
+                      <button
+                        className="action-btn"
+                        style={{ background: 'linear-gradient(135deg, #0d6efd, #6610f2)', color: '#fff', border: 'none', flex: 1 }}
+                        onClick={async () => {
+                          setActionLoading(selectedReport.id);
+                          setLlmAnalysis(null);
+                          try {
+                            const res = await apiClient.post(`/admin/reports/${selectedReport.id}/analyze`);
+                            if (res.data.analysis) {
+                              setLlmAnalysis(res.data.analysis);
+                            }
+                            // Charger aussi les matches
+                            const matchRes = await apiClient.get(`/admin/reports/${selectedReport.id}/legal-matches`);
+                            setReportLegalMatches(matchRes.data || []);
+                          } catch { alert('Erreur analyse LLM'); }
+                          setActionLoading(null);
+                        }}
+                        disabled={actionLoading === selectedReport.id}
+                      >
+                        {actionLoading === selectedReport.id ? '⏳ Mistral...' : '🧠 Analyse LLM'}
+                      </button>
+                    </div>
+
+                    {/* Résultat LLM */}
+                    {llmAnalysis && (
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(13,110,253,0.08), rgba(102,16,242,0.08))',
+                        border: '1px solid rgba(102,16,242,0.3)',
+                        borderRadius: '10px',
+                        padding: '12px',
+                        marginBottom: '10px',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <strong style={{ color: '#6610f2' }}>📋 Avis Juridique</strong>
+                          <span style={{
+                            background: llmAnalysis.severity_level >= 4 ? '#f85149' : llmAnalysis.severity_level >= 3 ? '#d29922' : '#3fb950',
+                            color: '#fff',
+                            padding: '2px 10px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                          }}>
+                            Gravité: {llmAnalysis.severity_level}/5
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '8px' }}>
+                          {llmAnalysis.summary}
+                        </p>
+                        {llmAnalysis.recommendation && (
+                          <div style={{ background: 'rgba(63,185,80,0.1)', border: '1px solid rgba(63,185,80,0.3)', borderRadius: '6px', padding: '8px', marginTop: '8px' }}>
+                            <strong style={{ fontSize: '0.75rem', color: '#3fb950' }}>💡 Recommandation :</strong>
+                            <p style={{ fontSize: '0.75rem', margin: '4px 0 0', lineHeight: '1.4' }}>{llmAnalysis.recommendation}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Articles trouvés */}
                     {reportLegalMatches.length > 0 && (
-                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                        <small style={{ color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>📚 {reportLegalMatches.length} articles identifiés :</small>
                         {reportLegalMatches.map((m, idx) => (
                           <div key={idx} style={{
                             background: 'rgba(111,66,193,0.1)',
                             border: '1px solid rgba(111,66,193,0.3)',
                             borderRadius: '8px',
-                            padding: '10px',
-                            marginBottom: '8px',
+                            padding: '8px',
+                            marginBottom: '6px',
                           }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                              <strong style={{ color: '#a855f7' }}>{m.article_number}</strong>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                              <strong style={{ color: '#a855f7', fontSize: '0.8rem' }}>{m.article_number}</strong>
                               <span style={{
                                 background: m.similarity_score > 0.7 ? '#f85149' : m.similarity_score > 0.5 ? '#d29922' : '#3fb950',
                                 color: '#fff',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                fontSize: '0.7rem',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                fontSize: '0.65rem',
                               }}>
-                                {(m.similarity_score * 100).toFixed(0)}% match
+                                {(m.similarity_score * 100).toFixed(0)}%
                               </span>
                             </div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{m.article_title}</div>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                              {m.article_content?.substring(0, 120)}...
+                            <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>{m.article_title}</div>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                              {m.article_content?.substring(0, 100)}...
                             </p>
                           </div>
                         ))}

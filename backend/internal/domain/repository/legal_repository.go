@@ -28,4 +28,8 @@ type LegalRepository interface {
 	CreateReportMatch(ctx context.Context, match *entity.ReportLegalMatch) error
 	GetMatchesByReport(ctx context.Context, reportID string) ([]entity.ReportLegalMatch, error)
 	GetMatchesByArticle(ctx context.Context, articleID string) ([]entity.ReportLegalMatch, error)
+
+	// Analyses juridiques LLM
+	SaveAnalysis(ctx context.Context, analysis *entity.LegalAnalysis) error
+	GetAnalysisByReport(ctx context.Context, reportID string) (*entity.LegalAnalysis, error)
 }
