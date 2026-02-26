@@ -1,18 +1,14 @@
--- Migration 009: Upgrade vers modèle multilingue + analyses LLM
--- Passage de nomic-embed-text (768D) à snowflake-arctic-embed2 (1024D)
+-- Migration 009: Colonne vectorielle flexible + table analyses LLM
+-- Supprime la contrainte de dimension fixe pour accepter 768 (nomic) ou 1024 (snowflake)
 
--- 1. Supprimer l'ancien index HNSW (dimension incompatible)
+-- 1. Supprimer l'ancien index et la colonne (dimension fixe)
 DROP INDEX IF EXISTS idx_legal_embedding;
-
--- 2. Réinitialiser les embeddings (nouvelle dimension)  
 ALTER TABLE legal_framework DROP COLUMN IF EXISTS embedding;
-ALTER TABLE legal_framework ADD COLUMN embedding vector(1024);
 
--- 3. Recréer l'index HNSW pour la nouvelle dimension
-CREATE INDEX IF NOT EXISTS idx_legal_embedding ON legal_framework
-  USING hnsw (embedding vector_cosine_ops);
+-- 2. Recréer sans contrainte de dimension fixe (accepte toutes les dimensions)
+ALTER TABLE legal_framework ADD COLUMN embedding vector;
 
--- 4. Table pour stocker les analyses juridiques LLM
+-- 3. Table pour stocker les analyses juridiques LLM
 CREATE TABLE IF NOT EXISTS legal_analyses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
