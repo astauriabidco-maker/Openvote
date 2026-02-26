@@ -92,6 +92,7 @@ func main() {
 		{"migration/005_legal_cms.sql", "CMS Légal"},
 		{"migration/006_departments_data_enrichment.sql", "Données Démographiques"},
 		{"migration/007_document_exploitation.sql", "Exploitation Documents"},
+		{"migration/008_legal_knowledge_base.sql", "Base Connaissance Juridique"},
 	} {
 		data, err := os.ReadFile(mig.file)
 		if err == nil {
@@ -107,9 +108,12 @@ func main() {
 	enrolmentService := service.NewEnrolmentService(userRepo)
 	reportService := service.NewReportService(reportRepo, publisher)
 
+	// Service d'embedding (connexion Ollama)
+	embeddingService := service.NewEmbeddingService()
+
 	authHandler := handler.NewAuthHandler(authService, enrolmentService)
 	reportHandler := handler.NewReportHandler(reportService, storageService)
-	adminHandler := handler.NewAdminHandler(enrolmentService, userRepo, auditLogRepo, reportService, electionRepo, legalRepo)
+	adminHandler := handler.NewAdminHandler(enrolmentService, userRepo, auditLogRepo, reportService, electionRepo, legalRepo, embeddingService)
 	statsHandler := handler.NewStatsHandler(reportService)
 	regionHandler := handler.NewRegionHandler(regionRepo)
 	electionHandler := handler.NewElectionHandler(electionRepo)
@@ -182,6 +186,12 @@ func main() {
 			admin.DELETE("/legal/:id", adminHandler.DeleteLegalArticle)
 			admin.GET("/legal-documents", adminHandler.GetLegalDocuments)
 			admin.POST("/legal-documents", adminHandler.CreateLegalDocument)
+
+			// Base de Connaissance Juridique (RAG)
+			admin.POST("/legal/search", adminHandler.SemanticSearchArticles)
+			admin.POST("/legal/embeddings", adminHandler.GenerateEmbeddings)
+			admin.POST("/reports/:id/qualify", adminHandler.QualifyReport)
+			admin.GET("/reports/:id/legal-matches", adminHandler.GetReportMatches)
 
 			// Régions & Départements (admin CRUD)
 			admin.POST("/regions", regionHandler.CreateRegion)
