@@ -47,7 +47,7 @@ func NewEmbeddingService() EmbeddingService {
 		ollamaURL: url,
 		model:     model,
 		client: &http.Client{
-			Timeout: 60 * time.Second,
+			Timeout: 180 * time.Second, // Premier appel peut être lent (chargement modèle en RAM)
 		},
 	}
 }

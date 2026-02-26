@@ -1,14 +1,16 @@
--- Migration 009: Colonne vectorielle flexible + table analyses LLM
--- Supprime la contrainte de dimension fixe pour accepter 768 (nomic) ou 1024 (snowflake)
+-- Migration 009: Support LLM analyses + vecteur flexible
+-- Idempotent: ne touche pas aux embeddings existants
 
--- 1. Supprimer l'ancien index et la colonne (dimension fixe)
-DROP INDEX IF EXISTS idx_legal_embedding;
-ALTER TABLE legal_framework DROP COLUMN IF EXISTS embedding;
+-- S'assurer que la colonne embedding existe (format flexible)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'legal_framework' AND column_name = 'embedding') THEN
+        ALTER TABLE legal_framework ADD COLUMN embedding vector;
+    END IF;
+END $$;
 
--- 2. Recréer sans contrainte de dimension fixe (accepte toutes les dimensions)
-ALTER TABLE legal_framework ADD COLUMN embedding vector;
-
--- 3. Table pour stocker les analyses juridiques LLM
+-- Table pour stocker les analyses juridiques LLM
 CREATE TABLE IF NOT EXISTS legal_analyses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
