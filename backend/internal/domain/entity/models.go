@@ -165,15 +165,39 @@ func (LegalDocument) TableName() string {
 
 // LegalArticle représente un article au sein d'un document
 type LegalArticle struct {
-	ID            string    `json:"id" db:"id"`
-	DocumentID    string    `json:"document_id" db:"document_id"`
-	ArticleNumber string    `json:"article_number" db:"article_number"`
-	Title         string    `json:"title" db:"title"`
-	Content       string    `json:"content" db:"content"`
-	Category      string    `json:"category" db:"category"`
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+	ID             string    `json:"id" db:"id"`
+	DocumentID     string    `json:"document_id" db:"document_id"`
+	ArticleNumber  string    `json:"article_number" db:"article_number"`
+	Title          string    `json:"title" db:"title"`
+	Content        string    `json:"content" db:"content"`
+	Category       string    `json:"category" db:"category"`
+	Chapter        string    `json:"chapter" db:"chapter"`
+	Section        string    `json:"section" db:"section"`
+	Keywords       []string  `json:"keywords" db:"keywords"`
+	ViolationTypes []string  `json:"violation_types" db:"violation_types"`
+	SeverityLevel  int       `json:"severity_level" db:"severity_level"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 }
 
 func (LegalArticle) TableName() string {
 	return "legal_framework"
+}
+
+// ReportLegalMatch représente le croisement entre un rapport terrain et un article de loi
+type ReportLegalMatch struct {
+	ID              string    `json:"id" db:"id"`
+	ReportID        string    `json:"report_id" db:"report_id"`
+	ArticleID       string    `json:"article_id" db:"article_id"`
+	SimilarityScore float64   `json:"similarity_score" db:"similarity_score"`
+	MatchType       string    `json:"match_type" db:"match_type"` // 'auto' = IA, 'manual' = humain
+	Notes           string    `json:"notes" db:"notes"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	// Champs joints (non persistés)
+	ArticleNumber string `json:"article_number,omitempty" db:"article_number"`
+	ArticleTitle  string `json:"article_title,omitempty" db:"article_title"`
+	ArticleContent string `json:"article_content,omitempty" db:"article_content"`
+}
+
+func (ReportLegalMatch) TableName() string {
+	return "report_legal_matches"
 }

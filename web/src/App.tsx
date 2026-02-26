@@ -35,6 +35,19 @@ interface AuthState {
   username: string;
 }
 
+interface ReportLegalMatch {
+  id: string;
+  report_id: string;
+  article_id: string;
+  similarity_score: number;
+  match_type: string;
+  notes: string;
+  article_number?: string;
+  article_title?: string;
+  article_content?: string;
+  created_at: string;
+}
+
 // Composant pour recentrer la carte
 function ChangeView({ center, zoom }: { center: [number, number], zoom: number }) {
   const map = useMap();
@@ -160,6 +173,7 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'map' | 'analytics' | 'admin'>('map');
   const [searchQuery, setSearchQuery] = useState('');
+  const [reportLegalMatches, setReportLegalMatches] = useState<ReportLegalMatch[]>([]);
 
   const isAdmin = auth.role === 'super_admin' || auth.role === 'region_admin';
 
@@ -511,6 +525,62 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
                     </div>
                   </div>
                 )}
+
+                {/* Qualification Juridique IA */}
+                {isAdmin && (
+                  <div className="admin-actions" style={{ marginTop: '15px' }}>
+                    <h4>⚖️ Qualification Juridique</h4>
+                    <button
+                      className="action-btn"
+                      style={{ background: 'linear-gradient(135deg, #6f42c1, #a855f7)', color: '#fff', border: 'none', width: '100%', marginBottom: '10px' }}
+                      onClick={async () => {
+                        setActionLoading(selectedReport.id);
+                        try {
+                          const res = await apiClient.post(`/admin/reports/${selectedReport.id}/qualify`);
+                          const matches = res.data.matches || [];
+                          setReportLegalMatches(matches);
+                          if (matches.length === 0) {
+                            alert('Aucune correspondance juridique trouvée.');
+                          }
+                        } catch { alert('Erreur lors de la qualification'); }
+                        setActionLoading(null);
+                      }}
+                      disabled={actionLoading === selectedReport.id}
+                    >
+                      {actionLoading === selectedReport.id ? '⏳ Analyse IA...' : '🧠 Qualifier juridiquement'}
+                    </button>
+                    {reportLegalMatches.length > 0 && (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {reportLegalMatches.map((m, idx) => (
+                          <div key={idx} style={{
+                            background: 'rgba(111,66,193,0.1)',
+                            border: '1px solid rgba(111,66,193,0.3)',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            marginBottom: '8px',
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <strong style={{ color: '#a855f7' }}>{m.article_number}</strong>
+                              <span style={{
+                                background: m.similarity_score > 0.7 ? '#f85149' : m.similarity_score > 0.5 ? '#d29922' : '#3fb950',
+                                color: '#fff',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontSize: '0.7rem',
+                              }}>
+                                {(m.similarity_score * 100).toFixed(0)}% match
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{m.article_title}</div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                              {m.article_content?.substring(0, 120)}...
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -728,6 +798,12 @@ interface LegalArticle {
   created_at: string;
 }
 
+interface SemanticSearchResult {
+  article: LegalArticle;
+  similarity: number;
+}
+
+
 interface RegionWithDepts {
   id: string;
   name: string;
@@ -827,6 +903,12 @@ function AdminPanel({ auth, apiClient }: { auth: AuthState, apiClient: ReturnTyp
   const [showImportAssistant, setShowImportAssistant] = useState(false);
   const [rawTextToParse, setRawTextToParse] = useState('');
   const [extractedArticles, setExtractedArticles] = useState<Partial<LegalArticle>[]>([]);
+
+  // RAG / Recherche Sémantique
+  const [semanticQuery, setSemanticQuery] = useState('');
+  const [semanticResults, setSemanticResults] = useState<SemanticSearchResult[]>([]);
+  const [semanticLoading, setSemanticLoading] = useState(false);
+  const [embeddingStatus, setEmbeddingStatus] = useState<string | null>(null);
 
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [deptDraft, setDeptDraft] = useState({ population: 0, registered_voters: 0 });
@@ -1168,6 +1250,26 @@ function AdminPanel({ auth, apiClient }: { auth: AuthState, apiClient: ReturnTyp
       setNewArticle({ article_number: '', title: '', content: '', category: 'General' });
       fetchLegalArticles();
     } catch { notify('error', 'Erreur ajout article'); }
+  };
+
+  const handleSemanticSearch = async () => {
+    if (!semanticQuery.trim()) return;
+    setSemanticLoading(true);
+    try {
+      const res = await apiClient.post('/admin/legal/search', { query: semanticQuery, limit: 8 });
+      setSemanticResults(res.data.results || []);
+      if ((res.data.results || []).length === 0) notify('error', 'Aucun résultat. Vérifiez que les embeddings sont générés.');
+    } catch { notify('error', 'Erreur recherche sémantique'); }
+    setSemanticLoading(false);
+  };
+
+  const handleGenerateEmbeddings = async () => {
+    setEmbeddingStatus('⏳ Indexation en cours...');
+    try {
+      const res = await apiClient.post('/admin/legal/embeddings');
+      setEmbeddingStatus(`✅ ${res.data.processed} articles indexés (${res.data.errors} erreurs)`);
+      notify('success', `${res.data.processed} articles indexés par IA`);
+    } catch { setEmbeddingStatus('❌ Erreur'); notify('error', 'Erreur génération embeddings'); }
   };
 
   const handleCreateIncidentType = async () => {
@@ -2110,6 +2212,65 @@ function AdminPanel({ auth, apiClient }: { auth: AuthState, apiClient: ReturnTyp
                   {doc.doc_type === 'constitution' ? '🏛️' : '📜'} {doc.title}
                 </button>
               ))}
+            </div>
+
+            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>🧠 Recherche IA</h4>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                <input
+                  className="admin-input"
+                  placeholder="Ex: fermeture bureau de vote..."
+                  value={semanticQuery}
+                  onChange={e => setSemanticQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSemanticSearch()}
+                  style={{ fontSize: '0.8rem', flex: 1 }}
+                />
+                <button className="admin-primary-btn" onClick={handleSemanticSearch} disabled={semanticLoading} style={{ fontSize: '0.75rem', padding: '6px 10px' }}>
+                  {semanticLoading ? '⏳' : '🔍'}
+                </button>
+              </div>
+              <button className="admin-btn" onClick={handleGenerateEmbeddings} style={{ width: '100%', fontSize: '0.7rem', marginBottom: '6px' }}>
+                ⚡ Indexer articles (IA)
+              </button>
+              {embeddingStatus && <small style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{embeddingStatus}</small>}
+
+              {semanticResults.length > 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  <small style={{ color: 'var(--text-secondary)' }}>📊 {semanticResults.length} résultats</small>
+                  <div style={{ maxHeight: '300px', overflowY: 'auto', marginTop: '8px' }}>
+                    {semanticResults.map((r, idx) => (
+                      <div key={idx} style={{
+                        background: 'rgba(168,85,247,0.08)',
+                        border: '1px solid rgba(168,85,247,0.2)',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        marginBottom: '6px',
+                        cursor: 'pointer',
+                        transition: '0.2s',
+                      }}
+                        onClick={() => setSelectedDocId(r.article.document_id)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <strong style={{ color: '#a855f7', fontSize: '0.8rem' }}>{r.article.article_number}</strong>
+                          <span style={{
+                            background: r.similarity > 0.7 ? '#f85149' : r.similarity > 0.5 ? '#d29922' : '#3fb950',
+                            color: '#fff',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            fontSize: '0.65rem',
+                          }}>
+                            {(r.similarity * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>{r.article.title?.substring(0, 50)}</div>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: '3px 0 0', lineHeight: '1.3' }}>
+                          {r.article.content?.substring(0, 80)}...
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>

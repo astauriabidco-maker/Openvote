@@ -22,9 +22,10 @@ type AdminHandler struct {
 	reportService    service.ReportService
 	electionRepo     repository.ElectionRepository
 	legalRepo        repository.LegalRepository
+	embeddingService service.EmbeddingService
 }
 
-func NewAdminHandler(enrolmentService service.EnrolmentService, userRepo repository.UserRepository, auditRepo repository.AuditLogRepository, reportService service.ReportService, electionRepo repository.ElectionRepository, legalRepo repository.LegalRepository) *AdminHandler {
+func NewAdminHandler(enrolmentService service.EnrolmentService, userRepo repository.UserRepository, auditRepo repository.AuditLogRepository, reportService service.ReportService, electionRepo repository.ElectionRepository, legalRepo repository.LegalRepository, embeddingService service.EmbeddingService) *AdminHandler {
 	return &AdminHandler{
 		enrolmentService: enrolmentService,
 		userRepo:         userRepo,
@@ -32,6 +33,7 @@ func NewAdminHandler(enrolmentService service.EnrolmentService, userRepo reposit
 		reportService:    reportService,
 		electionRepo:     electionRepo,
 		legalRepo:        legalRepo,
+		embeddingService: embeddingService,
 	}
 }
 
@@ -464,4 +466,182 @@ func (h *AdminHandler) ExtractTextFromPDF(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"text": string(output)})
+}
+
+// ========================================
+// Base de Connaissance Juridique (RAG)
+// ========================================
+
+// GenerateEmbeddings génère les embeddings pour tous les articles sans vecteur
+func (h *AdminHandler) GenerateEmbeddings(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	articles, err := h.legalRepo.GetArticlesWithoutEmbedding(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(articles) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "Tous les articles ont déjà un embedding", "processed": 0})
+		return
+	}
+
+	processed := 0
+	errors := 0
+	for _, art := range articles {
+		// Texte enrichi pour un meilleur embedding
+		text := art.ArticleNumber + " - " + art.Title + "\n" + art.Content
+		if art.Category != "" {
+			text = "[" + art.Category + "] " + text
+		}
+
+		embedding, err := h.embeddingService.GenerateEmbedding(ctx, text)
+		if err != nil {
+			log.Printf("[EMBEDDING] Erreur pour %s: %v", art.ArticleNumber, err)
+			errors++
+			continue
+		}
+
+		if err := h.legalRepo.UpdateArticleEmbedding(ctx, art.ID, embedding); err != nil {
+			log.Printf("[EMBEDDING] Erreur DB pour %s: %v", art.ArticleNumber, err)
+			errors++
+			continue
+		}
+
+		processed++
+		log.Printf("[EMBEDDING] ✓ %s - %s", art.ArticleNumber, art.Title)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Génération d'embeddings terminée",
+		"processed": processed,
+		"errors":    errors,
+		"total":     len(articles),
+	})
+}
+
+// SemanticSearchArticles effectue une recherche par similarité sémantique
+func (h *AdminHandler) SemanticSearchArticles(c *gin.Context) {
+	var input struct {
+		Query string `json:"query" binding:"required"`
+		Limit int    `json:"limit"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if input.Limit <= 0 || input.Limit > 20 {
+		input.Limit = 5
+	}
+
+	ctx := c.Request.Context()
+
+	// Générer l'embedding de la requête
+	queryEmbedding, err := h.embeddingService.GenerateEmbedding(ctx, input.Query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur génération embedding: " + err.Error()})
+		return
+	}
+
+	// Recherche par similarité
+	articles, scores, err := h.legalRepo.SemanticSearch(ctx, queryEmbedding, input.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Formater les résultats
+	type SearchResult struct {
+		Article    entity.LegalArticle `json:"article"`
+		Similarity float64             `json:"similarity"`
+	}
+	var results []SearchResult
+	for i, art := range articles {
+		results = append(results, SearchResult{Article: art, Similarity: scores[i]})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"query": input.Query, "results": results})
+}
+
+// QualifyReport identifie les articles de loi potentiellement violés pour un rapport
+func (h *AdminHandler) QualifyReport(c *gin.Context) {
+	reportID := c.Param("id")
+	ctx := c.Request.Context()
+
+	// Récupérer le rapport
+	reports, err := h.reportService.GetAllReports(ctx, "")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var targetReport *entity.Report
+	for _, r := range reports {
+		if r.ID == reportID {
+			targetReport = &r
+			break
+		}
+	}
+	if targetReport == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Rapport non trouvé"})
+		return
+	}
+
+	// Construire le texte de recherche
+	searchText := targetReport.IncidentType + ": " + targetReport.Description
+
+	// Générer l'embedding
+	queryEmbedding, err := h.embeddingService.GenerateEmbedding(ctx, searchText)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur embedding: " + err.Error()})
+		return
+	}
+
+	// Recherche sémantique
+	articles, scores, err := h.legalRepo.SemanticSearch(ctx, queryEmbedding, 5)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Sauvegarder les correspondances
+	var matches []entity.ReportLegalMatch
+	for i, art := range articles {
+		if scores[i] < 0.3 {
+			continue // Ignorer les correspondances faibles
+		}
+		match := &entity.ReportLegalMatch{
+			ReportID:        reportID,
+			ArticleID:       art.ID,
+			SimilarityScore: scores[i],
+			MatchType:       "auto",
+		}
+		if err := h.legalRepo.CreateReportMatch(ctx, match); err != nil {
+			log.Printf("[QUALIFY] Erreur sauvegarde match: %v", err)
+			continue
+		}
+		match.ArticleNumber = art.ArticleNumber
+		match.ArticleTitle = art.Title
+		match.ArticleContent = art.Content
+		matches = append(matches, *match)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"report_id": reportID,
+		"incident":  targetReport.IncidentType,
+		"matches":   matches,
+		"total":     len(matches),
+	})
+}
+
+// GetReportMatches retourne les articles de loi associés à un rapport
+func (h *AdminHandler) GetReportMatches(c *gin.Context) {
+	reportID := c.Param("id")
+	matches, err := h.legalRepo.GetMatchesByReport(c.Request.Context(), reportID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, matches)
 }
