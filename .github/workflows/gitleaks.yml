@@ -1,0 +1,42 @@
+name: gitleaks
+
+# ============================================================
+# Gitleaks — scan de secrets côté serveur
+# ============================================================
+# Bloque le merge si un secret fuit dans le repo. Miroir du hook
+# pre-commit local pour les devs qui auraient fait --no-verify
+# ou qui n'ont pas installé le hook.
+# ============================================================
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  gitleaks:
+    name: 🔒 Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 obligatoire pour scanner l'historique complet
+          fetch-depth: 0
+
+      - name: 🔒 Run gitleaks (full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          # Options :
+          # - "detect" : scan de tout l'historique (avant merge)
+          # - "redact" : masque les valeurs dans les logs
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_SUMMARY: true

@@ -18,6 +18,8 @@ type LegalRepository interface {
 	BatchCreateArticles(ctx context.Context, articles []entity.LegalArticle) error
 	UpdateDocumentFullText(ctx context.Context, docID string, text string) error
 	DeleteArticle(ctx context.Context, id string) error
+	DeleteArticlesByDocument(ctx context.Context, docID string) (int64, error)
+	DeleteDocument(ctx context.Context, docID string) error
 
 	// Recherche sémantique (RAG)
 	UpdateArticleEmbedding(ctx context.Context, articleID string, embedding []float32) error

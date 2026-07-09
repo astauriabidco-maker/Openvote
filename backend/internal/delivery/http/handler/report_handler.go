@@ -91,7 +91,25 @@ func (h *ReportHandler) List(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, reports)
+	// M5 : pagination. Volumes attendus > 50k pendant les élections,
+	// donc clamp à MaxLimit et pagination in-memory acceptable pour
+	// la v1 ; à terme, pousser LIMIT/OFFSET au repo.
+	p := ParsePagination(c)
+	total := len(reports)
+	start := p.Offset()
+	if start > total {
+		start = total
+	}
+	end := start + p.Limit
+	if end > total {
+		end = total
+	}
+	page := reports[start:end]
+	if page == nil {
+		page = []entity.Report{}
+	}
+
+	c.JSON(http.StatusOK, PaginatedResponse(page, p, total))
 }
 
 func (h *ReportHandler) GetDetails(c *gin.Context) {

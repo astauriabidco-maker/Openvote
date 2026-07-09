@@ -1,0 +1,132 @@
+# ============================================================
+# gitleaks config — Openvote
+# ============================================================
+# Bloque tout secret avant qu'il ne touche le repo.
+# Lancé par :
+#   1. .git/hooks/pre-commit (installé par scripts/install-hooks.sh)
+#   2. GitHub Action .github/workflows/gitleaks.yml
+# ============================================================
+
+title = "Openvote Secret Detection"
+
+# Chemins à scanner par défaut (les fichiers hors-liste sont ignorés)
+[extend]
+# Héritage des règles communautaires gitleaks (AWS, GCP, GitHub, JWT, etc.)
+# useDefault = true  # décommenter si vous voulez TOUTES les règles upstream
+
+# ============================================================
+# Règles custom Openvote
+# ============================================================
+
+# Token d'activation Openvote au top-level du repo.
+# Empêche la réintroduction du pattern `activation_token.txt` (cf. C2 audit).
+# On matche tout JWT présent dans un fichier au top-level du repo OU dans un
+# fichier dont le nom contient "token" (convention Openvote pour les tokens).
+# La règle JWT générique de gitleaks (active par défaut) s'occupe du reste.
+[[rules]]
+id = "openvote-activation-token-file"
+description = "JWT/token d'activation Openvote (fichier token au top-level)"
+path = '''(^|/)(activation[_-]?token|tokens?|.*[_-]?token)\.txt$'''
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+tags = ["openvote", "jwt", "auth"]
+entropy = 4.0
+
+# Secrets JWT faibles connus — placeholder du brief instruction.md
+# Tout commit qui reintroduit ces valeurs doit échouer.
+[[rules]]
+id = "openvote-jwt-weak-default"
+description = "Secret JWT Openvote faible/placeholder (à ne jamais committer)"
+regex = '''(?i)(jwt[_-]?secret|JWT_SECRET)\s*[=:]\s*["']?(super-secret-key-change-in-prod|openvote-dev-secret-change-in-prod|change-me|please-change|changeme|default-secret|test-secret-key-ci)["']?'''
+keywords = ["super-secret-key-change-in-prod", "openvote-dev-secret-change-in-prod"]
+tags = ["openvote", "jwt", "weak-credential"]
+
+  [rules.allowlist]
+  # docker-compose.yml contient les placeholders dev par convention.
+  # Toute apparition AILLEURS (auth_service.go, .env, scripts) reste détectée.
+  paths = [
+    '''docker-compose\.yml$''',
+    '''docker-compose\.prod\.yml$''',
+    '''\.github/workflows/.*\.yml$''',
+  ]
+
+# Mots de passe PostgreSQL par défaut (postgres, securepassword, admin)
+[[rules]]
+id = "openvote-postgres-default-password"
+description = "Mot de passe PostgreSQL par défaut / faible dans la config Openvote"
+regex = '''(?i)(POSTGRES_PASSWORD|DB_PASSWORD|POSTGRES_PASS)\s*[=:]\s*["']?(securepassword|postgres|admin|root|password|changeme|test)["']?'''
+keywords = ["POSTGRES_PASSWORD", "DB_PASSWORD", "securepassword"]
+tags = ["openvote", "database", "weak-credential"]
+
+  [rules.allowlist]
+  # Les docker-compose.prod.yml utilisent ${DB_PASSWORD:-securepassword}
+  # comme fallback inoffensif dans des contextes explicitement substitués.
+  # Les docker-compose.yml (dev) ont des defaults hardcodés par convention.
+  # Les CI workflows utilisent des credentials jetables (testpassword).
+  paths = [
+    '''docker-compose\.prod\.yml''',
+    '''docker-compose\.yml''',
+    '''\.github/workflows/.*\.yml$''',
+  ]
+
+# Identifiants MinIO par défaut
+[[rules]]
+id = "openvote-minio-default-credentials"
+description = "Identifiants MinIO par défaut (minioadmin/minioadmin)"
+regex = '''(?i)(MINIO_ROOT_USER|MINIO_ROOT_PASSWORD|MINIO_ACCESS_KEY|MINIO_SECRET_KEY)\s*[=:]\s*["']?minioadmin["']?'''
+keywords = ["minioadmin"]
+tags = ["openvote", "storage", "weak-credential"]
+
+  [rules.allowlist]
+  paths = [
+    '''docker-compose\.prod\.yml''',
+    '''docker-compose\.yml''',
+    '''\.github/workflows/.*\.yml$''',
+  ]
+
+# URL Ollama exposée — toute assignation OLLAMA_URL est signalée,
+# l'allowlist ci-dessous exclut les valeurs localhost/docker.
+# (RE2 ne supporte pas le lookahead négatif, d'où cette approche.)
+[[rules]]
+id = "openvote-ollama-exposed"
+description = "URL Ollama exposée (peut fuiter un endpoint LLM)"
+regex = '''OLLAMA_URL\s*[=:]\s*["']?https?://[^"'\s]+["']?'''
+keywords = ["OLLAMA_URL"]
+tags = ["openvote", "config-leak"]
+
+  [rules.allowlist]
+  # Les URLs locales acceptables en dev/staging sont exclues.
+  regexes = ['''localhost''', '''127\.0\.0\.1''', '''host\.docker\.internal''']
+  regexTarget = "match"
+
+# ============================================================
+# Allowlist globale (faux positifs connus)
+# ============================================================
+
+[allowlist]
+description = "Allowlist globale pour faux positifs structurels"
+paths = [
+  # Snapshots / fixtures de tests
+  '''.*_test\.go$''',
+  '''.*\.test\.[jt]sx?$''',
+  '''tests?/fixtures/''',
+  # Documentation d'exemple
+  '''.*\.md$''',
+  '''.*\.example$''',
+  '''README''',
+]
+# Mots dont la présence seule ne signifie pas fuite (réduit les faux positifs)
+regexes = [
+  '''example\.com''',
+  '''placeholder''',
+  '''your[-_]?token[-_]?here''',
+  '''xxx+''',
+]
+
+# ============================================================
+# Métadonnées
+# ============================================================
+[detect]
+# Étend la détection au contenu sérialisé (JSON/YAML imbriqué)
+encoding = "utf-8"
+# Profondeur d'extraction (archives, etc.)
+depth = 3

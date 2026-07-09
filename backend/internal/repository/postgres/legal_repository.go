@@ -1,11 +1,14 @@
 package postgres
 
 import (
+
 	"context"
 	"database/sql"
 	"fmt"
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
+	"github.com/openvote/backend/internal/platform/database"
+
 )
 
 type legalRepo struct {
@@ -18,8 +21,10 @@ func NewLegalRepository(db *sql.DB) repository.LegalRepository {
 
 // Documents
 func (r *legalRepo) GetAllDocuments(ctx context.Context) ([]entity.LegalDocument, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, title, description, doc_type, version, full_text, file_path, created_at FROM legal_documents ORDER BY title`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(queryCtx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -37,20 +42,26 @@ func (r *legalRepo) GetAllDocuments(ctx context.Context) ([]entity.LegalDocument
 }
 
 func (r *legalRepo) CreateDocument(ctx context.Context, d *entity.LegalDocument) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `INSERT INTO legal_documents (title, description, doc_type, version, full_text, file_path) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`
-	return r.db.QueryRowContext(ctx, query, d.Title, d.Description, d.Type, d.Version, d.FullText, d.FilePath).Scan(&d.ID, &d.CreatedAt)
+	return r.db.QueryRowContext(queryCtx, query, d.Title, d.Description, d.Type, d.Version, d.FullText, d.FilePath).Scan(&d.ID, &d.CreatedAt)
 }
 
 func (r *legalRepo) UpdateDocumentFullText(ctx context.Context, docID string, text string) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `UPDATE legal_documents SET full_text = $1 WHERE id = $2`
-	_, err := r.db.ExecContext(ctx, query, text, docID)
+	_, err := r.db.ExecContext(queryCtx, query, text, docID)
 	return err
 }
 
 // Articles
 func (r *legalRepo) GetAllArticles(ctx context.Context) ([]entity.LegalArticle, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, document_id, article_number, title, content, category, created_at FROM legal_framework ORDER BY article_number`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(queryCtx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +79,10 @@ func (r *legalRepo) GetAllArticles(ctx context.Context) ([]entity.LegalArticle, 
 }
 
 func (r *legalRepo) GetArticlesByDocument(ctx context.Context, docID string) ([]entity.LegalArticle, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, document_id, article_number, title, content, category, created_at FROM legal_framework WHERE document_id = $1 ORDER BY article_number`
-	rows, err := r.db.QueryContext(ctx, query, docID)
+	rows, err := r.db.QueryContext(queryCtx, query, docID)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +100,10 @@ func (r *legalRepo) GetArticlesByDocument(ctx context.Context, docID string) ([]
 }
 
 func (r *legalRepo) GetArticlesByCategory(ctx context.Context, category string) ([]entity.LegalArticle, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, document_id, article_number, title, content, category, created_at FROM legal_framework WHERE category = $1 ORDER BY article_number`
-	rows, err := r.db.QueryContext(ctx, query, category)
+	rows, err := r.db.QueryContext(queryCtx, query, category)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +121,10 @@ func (r *legalRepo) GetArticlesByCategory(ctx context.Context, category string) 
 }
 
 func (r *legalRepo) CreateArticle(ctx context.Context, art *entity.LegalArticle) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `INSERT INTO legal_framework (article_number, title, content, category, document_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`
-	return r.db.QueryRowContext(ctx, query, art.ArticleNumber, art.Title, art.Content, art.Category, art.DocumentID).Scan(&art.ID, &art.CreatedAt)
+	return r.db.QueryRowContext(queryCtx, query, art.ArticleNumber, art.Title, art.Content, art.Category, art.DocumentID).Scan(&art.ID, &art.CreatedAt)
 }
 
 func (r *legalRepo) BatchCreateArticles(ctx context.Context, articles []entity.LegalArticle) error {
@@ -140,8 +157,33 @@ func (r *legalRepo) BatchCreateArticles(ctx context.Context, articles []entity.L
 }
 
 func (r *legalRepo) DeleteArticle(ctx context.Context, id string) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+	// Supprimer les matches associés d'abord
+	r.db.ExecContext(queryCtx, `DELETE FROM report_legal_matches WHERE article_id = $1`, id)
 	query := `DELETE FROM legal_framework WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id)
+	_, err := r.db.ExecContext(queryCtx, query, id)
+	return err
+}
+
+func (r *legalRepo) DeleteArticlesByDocument(ctx context.Context, docID string) (int64, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+	// Supprimer les matches associés d'abord
+	r.db.ExecContext(queryCtx, `DELETE FROM report_legal_matches WHERE article_id IN (SELECT id FROM legal_framework WHERE document_id = $1)`, docID)
+	result, err := r.db.ExecContext(queryCtx, `DELETE FROM legal_framework WHERE document_id = $1`, docID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (r *legalRepo) DeleteDocument(ctx context.Context, docID string) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+	// Supprimer articles d'abord (cascade)
+	r.DeleteArticlesByDocument(ctx, docID)
+	_, err := r.db.ExecContext(queryCtx, `DELETE FROM legal_documents WHERE id = $1`, docID)
 	return err
 }
 
@@ -150,14 +192,18 @@ func (r *legalRepo) DeleteArticle(ctx context.Context, id string) error {
 // ========================================
 
 func (r *legalRepo) UpdateArticleEmbedding(ctx context.Context, articleID string, embedding []float32) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	// Convertir le slice en format pgvector string
 	vecStr := float32SliceToPostgresVector(embedding)
 	query := `UPDATE legal_framework SET embedding = $1::vector WHERE id = $2`
-	_, err := r.db.ExecContext(ctx, query, vecStr, articleID)
+	_, err := r.db.ExecContext(queryCtx, query, vecStr, articleID)
 	return err
 }
 
 func (r *legalRepo) SemanticSearch(ctx context.Context, queryEmbedding []float32, limit int) ([]entity.LegalArticle, []float64, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	vecStr := float32SliceToPostgresVector(queryEmbedding)
 	query := `
 		SELECT id, document_id, article_number, title, content, category, created_at,
@@ -167,7 +213,7 @@ func (r *legalRepo) SemanticSearch(ctx context.Context, queryEmbedding []float32
 		ORDER BY embedding <=> $1::vector
 		LIMIT $2
 	`
-	rows, err := r.db.QueryContext(ctx, query, vecStr, limit)
+	rows, err := r.db.QueryContext(queryCtx, query, vecStr, limit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -188,8 +234,10 @@ func (r *legalRepo) SemanticSearch(ctx context.Context, queryEmbedding []float32
 }
 
 func (r *legalRepo) GetArticlesWithoutEmbedding(ctx context.Context) ([]entity.LegalArticle, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, document_id, article_number, title, content, category, created_at FROM legal_framework WHERE embedding IS NULL ORDER BY created_at`
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(queryCtx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -211,21 +259,25 @@ func (r *legalRepo) GetArticlesWithoutEmbedding(ctx context.Context) ([]entity.L
 // ========================================
 
 func (r *legalRepo) CreateReportMatch(ctx context.Context, match *entity.ReportLegalMatch) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `INSERT INTO report_legal_matches (report_id, article_id, similarity_score, match_type, notes) 
 	          VALUES ($1, $2, $3, $4, $5) 
 	          ON CONFLICT (report_id, article_id) DO UPDATE SET similarity_score = EXCLUDED.similarity_score, notes = EXCLUDED.notes
 	          RETURNING id, created_at`
-	return r.db.QueryRowContext(ctx, query, match.ReportID, match.ArticleID, match.SimilarityScore, match.MatchType, match.Notes).Scan(&match.ID, &match.CreatedAt)
+	return r.db.QueryRowContext(queryCtx, query, match.ReportID, match.ArticleID, match.SimilarityScore, match.MatchType, match.Notes).Scan(&match.ID, &match.CreatedAt)
 }
 
 func (r *legalRepo) GetMatchesByReport(ctx context.Context, reportID string) ([]entity.ReportLegalMatch, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT m.id, m.report_id, m.article_id, m.similarity_score, m.match_type, m.notes, m.created_at,
 	                 a.article_number, a.title, a.content
 	          FROM report_legal_matches m
 	          JOIN legal_framework a ON a.id = m.article_id
 	          WHERE m.report_id = $1
 	          ORDER BY m.similarity_score DESC`
-	rows, err := r.db.QueryContext(ctx, query, reportID)
+	rows, err := r.db.QueryContext(queryCtx, query, reportID)
 	if err != nil {
 		return nil, err
 	}
@@ -244,11 +296,13 @@ func (r *legalRepo) GetMatchesByReport(ctx context.Context, reportID string) ([]
 }
 
 func (r *legalRepo) GetMatchesByArticle(ctx context.Context, articleID string) ([]entity.ReportLegalMatch, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT m.id, m.report_id, m.article_id, m.similarity_score, m.match_type, m.notes, m.created_at
 	          FROM report_legal_matches m
 	          WHERE m.article_id = $1
 	          ORDER BY m.similarity_score DESC`
-	rows, err := r.db.QueryContext(ctx, query, articleID)
+	rows, err := r.db.QueryContext(queryCtx, query, articleID)
 	if err != nil {
 		return nil, err
 	}
@@ -284,6 +338,8 @@ func float32SliceToPostgresVector(v []float32) string {
 // ========================================
 
 func (r *legalRepo) SaveAnalysis(ctx context.Context, analysis *entity.LegalAnalysis) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `INSERT INTO legal_analyses (report_id, summary, recommendation, severity_level, raw_response, llm_model) 
 	          VALUES ($1, $2, $3, $4, $5, $6)
 	          ON CONFLICT (report_id) DO UPDATE SET 
@@ -294,14 +350,16 @@ func (r *legalRepo) SaveAnalysis(ctx context.Context, analysis *entity.LegalAnal
 	            llm_model = EXCLUDED.llm_model,
 	            created_at = NOW()
 	          RETURNING id, created_at`
-	return r.db.QueryRowContext(ctx, query, analysis.ReportID, analysis.Summary, analysis.Recommendation, analysis.SeverityLevel, analysis.RawResponse, analysis.LLMModel).Scan(&analysis.ID, &analysis.CreatedAt)
+	return r.db.QueryRowContext(queryCtx, query, analysis.ReportID, analysis.Summary, analysis.Recommendation, analysis.SeverityLevel, analysis.RawResponse, analysis.LLMModel).Scan(&analysis.ID, &analysis.CreatedAt)
 }
 
 func (r *legalRepo) GetAnalysisByReport(ctx context.Context, reportID string) (*entity.LegalAnalysis, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, report_id, summary, recommendation, severity_level, raw_response, llm_model, created_at
 	          FROM legal_analyses WHERE report_id = $1`
 	var a entity.LegalAnalysis
-	err := r.db.QueryRowContext(ctx, query, reportID).Scan(&a.ID, &a.ReportID, &a.Summary, &a.Recommendation, &a.SeverityLevel, &a.RawResponse, &a.LLMModel, &a.CreatedAt)
+	err := r.db.QueryRowContext(queryCtx, query, reportID).Scan(&a.ID, &a.ReportID, &a.Summary, &a.Recommendation, &a.SeverityLevel, &a.RawResponse, &a.LLMModel, &a.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

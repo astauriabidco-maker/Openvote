@@ -37,11 +37,14 @@ func AuthMiddleware(authService service.AuthService, userRepo ...repository.User
 		if sub, ok := (*claims)["sub"].(string); ok {
 			c.Set("userID", sub)
 
-			// Résolution du username si le repo est disponible
+			// Résolution du username + region si le repo est disponible.
+			// Ces champs sont utilisés par les handlers pour le scope régional
+			// (cf. M6 audit) et pour les logs d'audit.
 			if len(userRepo) > 0 && userRepo[0] != nil {
 				user, err := userRepo[0].GetByID(c.Request.Context(), sub)
 				if err == nil && user != nil {
 					c.Set("username", user.Username)
+					c.Set("regionID", user.RegionID)
 				}
 			}
 		}

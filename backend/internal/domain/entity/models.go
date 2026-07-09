@@ -33,6 +33,27 @@ type User struct {
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
+
+	// ---- H3 audit : MFA TOTP + lockout (migration 015) ----
+	// MFASecret est en base32 (20 chars pour 160 bits). NULL = MFA désactivé.
+	MFASecret *string `json:"-" db:"mfa_secret"` // Jamais sérialisé
+	// MFABackupCodes est un JSONB : [{"hash": "...", "used": false, "used_at": null}, ...]
+	MFABackupCodes []byte `json:"-" db:"mfa_backup_codes"`
+	// FailedLoginAttempts : compteur incrémenté à chaque échec, reset au succès.
+	FailedLoginAttempts int `json:"-" db:"failed_login_attempts"`
+	// LockedUntil : timestamp de fin de lockout (NULL = pas verrouillé).
+	LockedUntil *time.Time `json:"-" db:"locked_until"`
+}
+
+// IsLocked retourne true si le compte est actuellement verrouillé.
+// Un compte verrouillé a locked_until > now().
+func (u *User) IsLocked() bool {
+	return u.LockedUntil != nil && u.LockedUntil.After(time.Now())
+}
+
+// HasMFA retourne true si la MFA est activée pour cet utilisateur.
+func (u *User) HasMFA() bool {
+	return u.MFASecret != nil && *u.MFASecret != ""
 }
 
 // Report représente un signalement d'incident sur le terrain
@@ -82,11 +103,46 @@ type Department struct {
 	RegionID         string    `json:"region_id" db:"region_id"`
 	Population       int       `json:"population" db:"population"`
 	RegisteredVoters int       `json:"registered_voters" db:"registered_voters"`
+	DataSource       string    `json:"data_source" db:"data_source"`
+	DataConfidence   string    `json:"data_confidence" db:"data_confidence"`
+	DataYear         int       `json:"data_year" db:"data_year"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 }
 
 func (Department) TableName() string {
 	return "departments"
+}
+
+// Arrondissement représente un arrondissement au sein d'un département
+type Arrondissement struct {
+	ID               string    `json:"id" db:"id"`
+	Name             string    `json:"name" db:"name"`
+	Code             string    `json:"code" db:"code"`
+	DepartmentID     string    `json:"department_id" db:"department_id"`
+	Population       int       `json:"population" db:"population"`
+	RegisteredVoters int       `json:"registered_voters" db:"registered_voters"`
+	IsChefLieu       bool      `json:"is_chef_lieu" db:"is_chef_lieu"`
+	DataSource       string    `json:"data_source" db:"data_source"`
+	DataConfidence   string    `json:"data_confidence" db:"data_confidence"`
+	DataYear         int       `json:"data_year" db:"data_year"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+}
+
+func (Arrondissement) TableName() string {
+	return "arrondissements"
+}
+
+// DataImport trace l'historique des importations de données
+type DataImport struct {
+	ID             string    `json:"id" db:"id"`
+	ImportType     string    `json:"import_type" db:"import_type"`
+	SourceName     string    `json:"source_name" db:"source_name"`
+	FileName       string    `json:"file_name" db:"file_name"`
+	RecordsUpdated int       `json:"records_updated" db:"records_updated"`
+	RecordsFailed  int       `json:"records_failed" db:"records_failed"`
+	ImportedBy     string    `json:"imported_by" db:"imported_by"`
+	Notes          string    `json:"notes" db:"notes"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 }
 
 // ElectionStatus définit l'état d'un scrutin

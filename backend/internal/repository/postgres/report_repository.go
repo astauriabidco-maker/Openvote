@@ -1,12 +1,15 @@
 package postgres
 
 import (
+
 	"context"
 	"database/sql"
 	"time"
 
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
+	"github.com/openvote/backend/internal/platform/database"
+
 )
 
 type reportRepo struct {
@@ -18,10 +21,12 @@ func NewReportRepository(db *sql.DB) repository.ReportRepository {
 }
 
 func (r *reportRepo) Create(ctx context.Context, report *entity.Report) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	// Note: on attend que report.GPSLocation soit formaté WKT "POINT(lon lat)"
 	query := `INSERT INTO reports (id, observer_id, incident_type, description, gps_location, h3_index, status, proof_url, created_at) 
 	          VALUES ($1, $2, $3, $4, ST_GeomFromText($5, 4326), $6, $7, $8, $9)`
-	_, err := r.db.ExecContext(ctx, query,
+	_, err := r.db.ExecContext(queryCtx, query,
 		report.ID,
 		report.ObserverID,
 		report.IncidentType,
@@ -36,6 +41,8 @@ func (r *reportRepo) Create(ctx context.Context, report *entity.Report) error {
 }
 
 func (r *reportRepo) GetAll(ctx context.Context, status string) ([]entity.Report, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	// On récupère la géométrie au format Text (WKT) pour le mapper dans le struct
 	query := `SELECT id, observer_id, incident_type, COALESCE(description, '') as description, ST_AsText(gps_location) as gps_location, h3_index, status, COALESCE(proof_url, '') as proof_url, created_at FROM reports`
 
@@ -47,7 +54,7 @@ func (r *reportRepo) GetAll(ctx context.Context, status string) ([]entity.Report
 
 	query += " ORDER BY created_at DESC"
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(queryCtx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,9 +84,11 @@ func (r *reportRepo) GetAll(ctx context.Context, status string) ([]entity.Report
 }
 
 func (r *reportRepo) GetByID(ctx context.Context, id string) (*entity.Report, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `SELECT id, observer_id, incident_type, COALESCE(description, '') as description, ST_AsText(gps_location) as gps_location, h3_index, status, COALESCE(proof_url, '') as proof_url, created_at FROM reports WHERE id = $1`
 	report := &entity.Report{}
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(queryCtx, query, id).Scan(
 		&report.ID,
 		&report.ObserverID,
 		&report.IncidentType,
@@ -96,16 +105,21 @@ func (r *reportRepo) GetByID(ctx context.Context, id string) (*entity.Report, er
 	return report, err
 }
 
-func (r *reportRepo) FindNearbyWithRole(ctx context.Context, h3Index string, lat, lon, radius float64, start, end time.Time) ([]entity.Report, error) {
-	// Sélection avec jointure pour avoir le rôle
+func (r *reportRepo) FindNearbyWithRole(ctx context.Context, excludeID, h3Index string, lat, lon, radius float64, start, end time.Time) ([]entity.Report, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+	// Sélection avec jointure pour avoir le rôle du rapporteur.
+	// excludeID permet d'écarter le rapport cible de ses propres voisins — sans
+	// cela, un rapport isolé s'auto-vérifierait (cf. C3 audit).
 	query := `
 		SELECT r.id, r.observer_id, r.incident_type, COALESCE(r.description, '') as description, ST_AsText(r.gps_location) as gps_location, r.h3_index, r.status, COALESCE(r.proof_url, '') as proof_url, r.created_at, u.role
 		FROM reports r
 		JOIN users u ON r.observer_id = u.id
-		WHERE (r.h3_index = $1 OR ST_DWithin(r.gps_location::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4))
-		AND r.created_at BETWEEN $5 AND $6
+		WHERE r.id != $1
+		  AND (r.h3_index = $2 OR ST_DWithin(r.gps_location::geography, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, $5))
+		  AND r.created_at BETWEEN $6 AND $7
 	`
-	rows, err := r.db.QueryContext(ctx, query, h3Index, lon, lat, radius, start, end)
+	rows, err := r.db.QueryContext(queryCtx, query, excludeID, h3Index, lon, lat, radius, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +151,9 @@ func (r *reportRepo) FindNearbyWithRole(ctx context.Context, h3Index string, lat
 }
 
 func (r *reportRepo) UpdateStatus(ctx context.Context, id string, status entity.ReportStatus) error {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
 	query := `UPDATE reports SET status = $1 WHERE id = $2`
-	_, err := r.db.ExecContext(ctx, query, status, id)
+	_, err := r.db.ExecContext(queryCtx, query, status, id)
 	return err
 }

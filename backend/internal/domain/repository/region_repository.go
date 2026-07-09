@@ -18,4 +18,14 @@ type RegionRepository interface {
 	CreateDepartment(ctx context.Context, dept *entity.Department) error
 	UpdateDepartment(ctx context.Context, id, name, code, regionID string, population, voters int) error
 	DeleteDepartment(ctx context.Context, id string) error
+
+	GetArrondissementsByDepartment(ctx context.Context, departmentID string) ([]entity.Arrondissement, error)
+	CreateArrondissement(ctx context.Context, arr *entity.Arrondissement) error
+	UpdateArrondissement(ctx context.Context, id, name, code, departmentID string, population, voters int, isChefLieu bool) error
+	DeleteArrondissement(ctx context.Context, id string) error
+
+	// Import CSV
+	UpdateDepartmentDemographics(ctx context.Context, code string, population, voters int, source, confidence string, year int) error
+	LogDataImport(ctx context.Context, importType, sourceName, fileName, importedBy, notes string, updated, failed int) error
+	GetDataImports(ctx context.Context) ([]entity.DataImport, error)
 }

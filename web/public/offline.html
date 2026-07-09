@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0d1117">
+  <title>Openvote — Hors Ligne</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .offline-icon {
+      width: 120px; height: 120px;
+      margin-bottom: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; }
+    p { color: #8b949e; font-size: 0.95rem; max-width: 400px; line-height: 1.6; margin-bottom: 8px; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(248,81,73,0.12); border: 1px solid rgba(248,81,73,0.3);
+      border-radius: 20px; padding: 8px 16px; margin: 20px 0;
+      font-size: 0.85rem; color: #f85149;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #f85149;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .pending-section {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 20px; margin-top: 24px; width: 100%; max-width: 400px;
+    }
+    .pending-section h3 { font-size: 0.9rem; margin-bottom: 12px; }
+    .pending-count {
+      font-size: 2rem; font-weight: 700; color: #d29922; margin-bottom: 4px;
+    }
+    .pending-label { font-size: 0.75rem; color: #8b949e; }
+    .retry-btn {
+      display: inline-block; margin-top: 24px; padding: 12px 24px;
+      background: linear-gradient(135deg, #238636, #2ea043);
+      color: #fff; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .retry-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46,160,67,0.3); }
+    .features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-top: 24px; width: 100%; max-width: 400px;
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px; padding: 12px; text-align: left;
+    }
+    .feature-card .icon { font-size: 1.2rem; margin-bottom: 4px; }
+    .feature-card .label { font-size: 0.75rem; color: #8b949e; }
+    .feature-card .value { font-size: 0.85rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <img src="/icon-192.png" alt="Openvote" class="offline-icon">
+  <h1>Mode Hors Ligne</h1>
+  <p>Votre appareil n'est pas connecté à Internet. Les données affichées sont celles de votre dernière connexion.</p>
+
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    <span>Connexion interrompue</span>
+  </div>
+
+  <div class="pending-section">
+    <h3>📋 Signalements en attente</h3>
+    <div class="pending-count" id="pendingCount">0</div>
+    <div class="pending-label">Seront synchronisés dès le retour en ligne</div>
+  </div>
+
+  <div class="features">
+    <div class="feature-card">
+      <div class="icon">📡</div>
+      <div class="label">Sync Auto</div>
+      <div class="value">Activée</div>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔋</div>
+      <div class="label">Cache</div>
+      <div class="value">Actif</div>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📍</div>
+      <div class="label">GPS</div>
+      <div class="value" id="gpsStatus">Vérifie...</div>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🕐</div>
+      <div class="label">Dernière sync</div>
+      <div class="value" id="lastSync">—</div>
+    </div>
+  </div>
+
+  <button class="retry-btn" onclick="window.location.reload()">
+    🔄 Réessayer la connexion
+  </button>
+
+  <script>
+    // Compter les signalements en attente (IndexedDB)
+    const request = indexedDB.open('openvote-offline', 1);
+    request.onsuccess = () => {
+      try {
+        const db = request.result;
+        const tx = db.transaction('pending-reports', 'readonly');
+        const store = tx.objectStore('pending-reports');
+        const count = store.count();
+        count.onsuccess = () => {
+          document.getElementById('pendingCount').textContent = count.result;
+        };
+      } catch(e) {}
+    };
+
+    // GPS status
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => { document.getElementById('gpsStatus').textContent = 'Disponible'; },
+        () => { document.getElementById('gpsStatus').textContent = 'Indisponible'; }
+      );
+    } else {
+      document.getElementById('gpsStatus').textContent = 'Non supporté';
+    }
+
+    // Dernière sync
+    const lastSync = localStorage.getItem('openvote_last_sync');
+    if (lastSync) {
+      const d = new Date(lastSync);
+      document.getElementById('lastSync').textContent = d.toLocaleTimeString('fr');
+    }
+
+    // Auto-reload si reconnexion
+    window.addEventListener('online', () => { window.location.reload(); });
+  </script>
+</body>
+</html>
