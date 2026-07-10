@@ -37,6 +37,7 @@ import { useUsersTab } from './hooks/useUsersTab';
 import { useAuditLogsTab } from './hooks/useAuditLogsTab';
 import { useIncidentTypesTab, type NewIncidentForm } from './hooks/useIncidentTypesTab';
 import { useTokensTab } from './hooks/useTokensTab';
+import { useConfigTab } from './hooks/useConfigTab';
 
 // ============================================================
 // Types de formulaires
@@ -375,17 +376,13 @@ export function useAdminPanelState(
         } catch { notify('error', 'Erreur chargement KPIs'); }
     }, [apiClient, notify]);
 
-    // ---- Configuration runtime ----
-    const [config, setConfig] = useState<Record<string, unknown> | null>(null);
-    const [editingConfig, setEditingConfig] = useState(false);
-    const [configDraft, setConfigDraft] = useState('');
-
-    const fetchConfig = useCallback(async () => {
-        try {
-            const res = await apiClient.get('/admin/config');
-            setConfig(res.data);
-        } catch { notify('error', 'Erreur chargement config'); }
-    }, [apiClient, notify]);
+    // ---- Configuration runtime — délégué à useConfigTab (refactor admin) ----
+    const {
+        config,
+        editingConfig, setEditingConfig,
+        configDraft, setConfigDraft,
+        fetchConfig, handleSaveConfig,
+    } = useConfigTab(apiClient, notify);
 
     // ---- Cadre légal (CMS + RAG) ----
     const [legalDocuments, setLegalDocuments] = useState<LegalDocument[]>([]);
@@ -561,16 +558,7 @@ export function useAdminPanelState(
     }, [apiClient, notify, fetchElections]);
 
     // NOTE : handleCreateIncidentType et handleDeleteIncidentType sont dans useIncidentTypesTab.
-
-    const handleSaveConfig = useCallback(async () => {
-        try {
-            const parsed = JSON.parse(configDraft);
-            await apiClient.patch('/admin/config', parsed);
-            notify('success', 'Configuration sauvegardée');
-            setEditingConfig(false);
-            fetchConfig();
-        } catch { notify('error', 'JSON invalide ou erreur serveur'); }
-    }, [apiClient, notify, configDraft, fetchConfig]);
+    // NOTE : handleSaveConfig est dans useConfigTab.
 
     // NOTE : handleGenerateToken est dans useTokensTab.
 
