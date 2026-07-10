@@ -17,15 +17,19 @@ INSERT INTO arrondissements (name, code, department_id, population, registered_v
 ON CONFLICT (code) DO UPDATE SET population = EXCLUDED.population, registered_voters = EXCLUDED.registered_voters;
 
 -- ========================================
--- LITTORAL — Wouri (LT-WR) : 6 arrondissements (Douala)
+-- LITTORAL — Wouri (LT-WO) : 6 arrondissements (Douala)
+-- NOTE : ancien code erroné "LT-WR" — le département Wouri est codé
+-- "LT-WO" dans le système (cf. migration 002). Cette erreur faisait
+-- silencieusement échouer les 6 inserts via une contrainte NOT NULL
+-- sur department_id (sous-requête retournait NULL). Corrigé.
 -- ========================================
 INSERT INTO arrondissements (name, code, department_id, population, registered_voters, is_chef_lieu) VALUES
-('Douala I (Bonanjo)', 'LT-WR-D1', (SELECT id FROM departments WHERE code = 'LT-WR'), 290000, 95000, TRUE),
-('Douala II (New-Bell)', 'LT-WR-D2', (SELECT id FROM departments WHERE code = 'LT-WR'), 480000, 155000, FALSE),
-('Douala III (Logbaba)', 'LT-WR-D3', (SELECT id FROM departments WHERE code = 'LT-WR'), 680000, 220000, FALSE),
-('Douala IV (Bonassama)', 'LT-WR-D4', (SELECT id FROM departments WHERE code = 'LT-WR'), 350000, 115000, FALSE),
-('Douala V (Kotto)', 'LT-WR-D5', (SELECT id FROM departments WHERE code = 'LT-WR'), 730000, 235000, FALSE),
-('Douala VI (Manoka)', 'LT-WR-D6', (SELECT id FROM departments WHERE code = 'LT-WR'), 12000, 4000, FALSE)
+('Douala I (Bonanjo)', 'LT-WO-D1', (SELECT id FROM departments WHERE code = 'LT-WO'), 290000, 95000, TRUE),
+('Douala II (New-Bell)', 'LT-WO-D2', (SELECT id FROM departments WHERE code = 'LT-WO'), 480000, 155000, FALSE),
+('Douala III (Logbaba)', 'LT-WO-D3', (SELECT id FROM departments WHERE code = 'LT-WO'), 680000, 220000, FALSE),
+('Douala IV (Bonassama)', 'LT-WO-D4', (SELECT id FROM departments WHERE code = 'LT-WO'), 350000, 115000, FALSE),
+('Douala V (Kotto)', 'LT-WO-D5', (SELECT id FROM departments WHERE code = 'LT-WO'), 730000, 235000, FALSE),
+('Douala VI (Manoka)', 'LT-WO-D6', (SELECT id FROM departments WHERE code = 'LT-WO'), 12000, 4000, FALSE)
 ON CONFLICT (code) DO UPDATE SET population = EXCLUDED.population, registered_voters = EXCLUDED.registered_voters;
 
 -- ========================================
