@@ -22,7 +22,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { type AxiosInstance, isAxiosError } from 'axios';
+import { type AxiosInstance } from 'axios';
 import QRCode from 'qrcode';
 import type {
     AdminUser, AuditLog, DepartmentData, ElectionData, AuthState,
@@ -32,8 +32,9 @@ import type {
 import type { ApiPagination } from '../../apiTypes';
 import { REGION_COORDS } from '../../constants';
 import {
-    USERS_PAGE_SIZE, AUDIT_PAGE_SIZE, type TabKey,
+    AUDIT_PAGE_SIZE, type TabKey,
 } from './constants';
+import { useUsersTab } from './hooks/useUsersTab';
 
 // ============================================================
 // Types de formulaires
@@ -321,26 +322,14 @@ export function useAdminPanelState(
         };
     }, []);
 
-    // ---- Users pagination + M6 scope ----
-    const [users, setUsers] = useState<AdminUser[]>([]);
-    const [usersPage, setUsersPage] = useState(1);
-    const [usersPagination, setUsersPagination] = useState<ApiPagination>({
-        page: 1, limit: USERS_PAGE_SIZE, total: 0, total_pages: 0,
-    });
-    const [usersLoading, setUsersLoading] = useState(false);
-
-    const fetchUsers = useCallback(async (page = usersPage) => {
-        setUsersLoading(true);
-        try {
-            const res = await apiClient.get(`/admin/users?page=${page}&limit=${USERS_PAGE_SIZE}`);
-            setUsers(res.data.items || []);
-            setUsersPagination(res.data.pagination || {
-                page, limit: USERS_PAGE_SIZE, total: 0, total_pages: 0,
-            });
-            setUsersPage(page);
-        } catch { notify('error', 'Erreur chargement utilisateurs'); }
-        finally { setUsersLoading(false); }
-    }, [apiClient, notify, usersPage]);
+    // ---- Users (M5 + M6) — délégué à useUsersTab (refactor admin) ----
+    // La logique (state + handlers) est extraite dans hooks/useUsersTab.ts.
+    // On récupère le résultat et on l'expose tel quel pour ne pas casser
+    // les autres consommateurs (UsersTab, AdminPanel PDF, observersByRegion).
+    const {
+        users, usersPage, usersPagination, usersLoading,
+        fetchUsers, handleRoleChange, handleDeleteUser, handleRegionChange, exportUsersCSV,
+    } = useUsersTab(apiClient, notify);
 
     // ---- Audit logs pagination ----
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -528,54 +517,9 @@ export function useAdminPanelState(
     // ============================================================
     // Handlers (useCallback pour stabilité des refs)
     // ============================================================
-
-    const handleRoleChange = useCallback(async (userId: string, newRole: string) => {
-        try {
-            await apiClient.patch(`/admin/users/${userId}`, { role: newRole, region_id: '' });
-            notify('success', `Rôle mis à jour`);
-            fetchUsers();
-        } catch (err) {
-            const msg = isAxiosError(err) ? err.response?.data?.error : 'Erreur';
-            notify('error', msg || 'Erreur lors de la mise à jour');
-        }
-    }, [apiClient, notify, fetchUsers]);
-
-    const handleDeleteUser = useCallback(async (userId: string, username: string) => {
-        if (!confirm(`Supprimer l'utilisateur "${username}" ?\nCette action est irréversible.`)) return;
-        try {
-            await apiClient.delete(`/admin/users/${userId}`);
-            notify('success', `Utilisateur "${username}" supprimé`);
-            fetchUsers();
-        } catch (err) {
-            const msg = isAxiosError(err) ? err.response?.data?.error : 'Erreur';
-            notify('error', msg || 'Erreur lors de la suppression');
-        }
-    }, [apiClient, notify, fetchUsers]);
-
-    const handleRegionChange = useCallback(async (userId: string, newRegionId: string) => {
-        const user = users.find((u) => u.id === userId);
-        if (!user) return;
-        try {
-            await apiClient.patch(`/admin/users/${userId}`, { role: user.role, region_id: newRegionId });
-            notify('success', 'Région assignée');
-            fetchUsers();
-        } catch { notify('error', 'Erreur assignation région'); }
-    }, [apiClient, notify, users, fetchUsers]);
-
-    const exportUsersCSV = useCallback(() => {
-        if (users.length === 0) {
-            notify('error', 'Aucun utilisateur à exporter');
-            return;
-        }
-        const csv = 'Username,Role,Region,Created\n' +
-            users.map((u) => `${u.username},${u.role},${u.region_id},${u.created_at}`).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `openvote_users_page${usersPage}.csv`;
-        a.click();
-        notify('info', `CSV exporté pour la page ${usersPage}/${usersPagination.total_pages} — pour un export complet, contactez l'admin`);
-    }, [users, usersPage, usersPagination.total_pages, notify]);
+    // NOTE : les handlers Users (handleRoleChange, handleDeleteUser, handleRegionChange,
+    // exportUsersCSV) sont extraits dans useUsersTab. Voir le commentaire au-dessus
+    // du déréférencement useUsersTab plus haut dans ce fichier.
 
     const handleAddRegion = useCallback(async () => {
         if (!newRegionName.trim() || !newRegionCode.trim()) { notify('error', 'Nom et code requis'); return; }
