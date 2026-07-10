@@ -1,0 +1,18 @@
+/* ============================================================
+ * index.css — Point d'entrée CSS de l'application
+ * ============================================================
+ *
+ * Importé par App.tsx (à la place de l'ancien App.css monolithique).
+ * L'ordre est important :
+ *   1. tokens.css    → définit les variables (doit être en premier)
+ *   2. base.css      → reset, landing, animations partagées
+ *   3. login.css     → styles de l'écran de login
+ *   4. admin.css     → dashboard + panneau d'admin
+ *   5. mfa.css       → onglet MFA du panneau admin
+ * ============================================================ */
+
+@import './tokens.css';
+@import './base.css';
+@import './login.css';
+@import './admin.css';
+@import './mfa.css';

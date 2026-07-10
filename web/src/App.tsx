@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import './App.css';
+import './styles/index.css';
 import { unlock, lock } from './session';
 import { wipeAllReports } from './offlineManager';
 import LoginScreen from './screens/LoginScreen';

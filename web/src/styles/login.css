@@ -1,0 +1,282 @@
+/* ============================================================
+ * login.css — Écran de connexion et formulaire d'auth
+ * ============================================================
+ *
+ * Contient :
+ *   - .login-card : conteneur principal
+ *   - .login-header, .login-logo, .login-subtitle
+ *   - .login-form et .input-group (utilisé uniquement par login)
+ *   - .login-btn, .login-spinner
+ *   - .login-toggle, .login-error
+ *   - .login-mfa-info : bloc MFA affiché dans le login (H3)
+ *   - .login-roles, .login-roles-grid, .login-role-item
+ *   - .login-footer
+ *
+ * Les couleurs hardcodées ont été migrées vers les tokens
+ * sémantiques (--color-accent, --color-text-primary, etc.).
+ * ============================================================ */
+
+/* ========================================
+   LOGIN SCREEN
+   ======================================== */
+
+/* Login Card (reused) */
+.login-card {
+  background: rgba(13, 17, 23, 0.8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-logo {
+  font-size: 42px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 12px rgba(88, 166, 255, 0.3));
+}
+
+.login-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: var(--color-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-subtitle {
+  color: var(--color-text-secondary);
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-group input {
+  background: rgba(13, 17, 23, 0.6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.12);
+}
+
+.login-btn {
+  background: linear-gradient(135deg, var(--color-success-dark), var(--color-success-bright));
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(46, 160, 67, 0.3);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-toggle {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px;
+  transition: color 0.2s;
+}
+
+.login-toggle:hover {
+  color: var(--color-accent-soft);
+  text-decoration: underline;
+}
+
+.login-error {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--color-danger);
+  font-size: 0.82rem;
+  animation: shake 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* MFA (H3) — bloc d'info 2FA affiché dans le login */
+.login-mfa-info {
+  text-align: center;
+  padding: 16px 12px;
+  margin-bottom: 8px;
+  background: rgba(88, 166, 255, 0.06);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+  border-radius: 12px;
+}
+
+.login-mfa-info .login-mfa-icon {
+  font-size: 2.2rem;
+  margin-bottom: 6px;
+}
+
+.login-mfa-info h2 {
+  font-size: 1.05rem;
+  margin: 0 0 6px;
+  color: var(--color-text-primary);
+}
+
+.login-mfa-info p {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.login-mfa-info strong {
+  color: var(--color-accent);
+}
+
+/* Roles info */
+.login-roles {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(48, 54, 61, 0.5);
+}
+
+.login-roles-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.login-roles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.login-role-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.15s;
+}
+
+.login-role-item:hover {
+  background: rgba(56, 139, 253, 0.06);
+  border-color: rgba(56, 139, 253, 0.15);
+}
+
+.login-role-item span {
+  font-size: 1.1rem;
+}
+
+.login-role-item strong {
+  font-size: 0.72rem;
+  color: var(--color-text-primary);
+  display: block;
+}
+
+.login-role-item small {
+  font-size: 0.62rem;
+  color: var(--color-text-secondary);
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 16px;
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+}

@@ -1,0 +1,140 @@
+/* ============================================================
+ * Design Tokens — Openvote
+ * ============================================================
+ *
+ * Source unique de vérité pour les couleurs, espacements, etc.
+ * Toutes les valeurs sont scopées à :root (variables globales).
+ *
+ * Convention de nommage :
+ *   --color-*      → couleurs sémantiques (préférer ces noms)
+ *   --space-*      → échelle d'espacement (rem)
+ *   --radius-*     → border-radius
+ *   --text-*       → font-size
+ *   --font-weight-*→ graisse de texte
+ *   --shadow-*     → ombres
+ *   --transition-* → durées de transition
+ *   --z-*          → z-index
+ *
+ * Aliases legacy (--bg-color, --accent-color, etc.) — conservés
+ * pour ne pas casser le code existant. Préférer les nouveaux noms
+ * dans les nouveaux composants.
+ * ============================================================ */
+
+:root {
+  /* ---------- Couleurs sémantiques (nouvelle convention) ---------- */
+  --color-bg-primary: #0d1117;       /* fond principal */
+  --color-bg-surface: #161b22;       /* surface élevée (cards, panels) */
+  --color-bg-elevated: #21262d;      /* surface encore plus élevée (hover) */
+  --color-bg-overlay: rgba(22, 27, 34, 0.95);
+
+  --color-text-primary: #e6edf3;     /* texte principal */
+  --color-text-secondary: #8b949e;   /* texte secondaire */
+  --color-text-muted: #6e7681;       /* texte tertiaire / désactivé */
+  --color-text-inverse: #ffffff;     /* texte sur fond foncé (boutons primaires) */
+
+  --color-accent: #58a6ff;           /* bleu — couleur d'accent principale */
+  --color-accent-hover: #79b8ff;     /* hover de l'accent */
+  --color-accent-soft: #79c0ff;      /* variante claire (liens, codes) */
+
+  --color-success: #3fb950;          /* vert — vérifié / OK */
+  --color-success-dark: #238636;     /* vert foncé (gradient) */
+  --color-success-bright: #2ea043;   /* vert vif (gradient) */
+  --color-warning: #d29922;          /* jaune/orange — attention */
+  --color-warning-bright: #f0883e;   /* orange vif (pending) */
+  --color-warning-dark: #9e6a03;     /* orange foncé (gradient) */
+  --color-danger: #f85149;           /* rouge — rejeté / erreur */
+  --color-danger-dark: #da3633;      /* rouge foncé (gradient) */
+
+  --color-border: #30363d;           /* bordure subtile */
+  --color-border-strong: #484f58;   /* bordure marquée */
+
+  --color-purple: #a371f7;           /* KPI / rôles spéciaux */
+  --color-purple-bright: #bc8cff;    /* gradient secondary */
+
+  /* ---------- Gradients ---------- */
+  --color-gradient-primary: linear-gradient(135deg, #58a6ff 0%, #bc8cff 100%);
+  --color-gradient-success: linear-gradient(135deg, #238636 0%, #3fb950 100%);
+  --color-gradient-warning: linear-gradient(135deg, #9e6a03 0%, #f0883e 100%);
+  --color-gradient-danger: linear-gradient(135deg, #da3633 0%, #f85149 100%);
+
+  /* ---------- Espacement (rem) ---------- */
+  --space-1: 0.25rem;   /*  4px */
+  --space-2: 0.5rem;    /*  8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 3rem;      /* 48px */
+  --space-8: 4rem;      /* 64px */
+
+  /* ---------- Border-radius ---------- */
+  --radius-sm: 4px;     /* chips, badges, mini éléments */
+  --radius-md: 8px;     /* inputs, boutons */
+  --radius-lg: 12px;    /* cards, panels */
+  --radius-xl: 16px;    /* grandes cards (login, KPI) */
+
+  /* ---------- Font sizes ---------- */
+  --text-xs: 0.65rem;     /*  10px — labels très petits */
+  --text-sm: 0.75rem;     /*  12px — labels, captions */
+  --text-base: 0.875rem;  /*  14px — corps de texte */
+  --text-md: 1rem;        /*  16px — corps large */
+  --text-lg: 1.1rem;      /*  18px — titres de section */
+  --text-xl: 1.4rem;      /*  22px — H2 */
+  --text-2xl: 1.8rem;     /*  29px — hero */
+  --text-3xl: 2.4rem;     /*  38px — hero large */
+
+  /* ---------- Font weights ---------- */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 800;
+
+  /* ---------- Shadows ---------- */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(88, 166, 255, 0.15);
+
+  /* ---------- Transitions ---------- */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* ---------- Z-index ---------- */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-header: 1000;
+  --z-modal: 9999;
+  --z-toast: 10000;
+
+  /* ---------- Police ---------- */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', Menlo, monospace;
+}
+
+/* ============================================================
+ * Aliases legacy — conservés pour compatibilité ascendante.
+ * Les anciens noms pointent vers les nouvelles variables. Pour
+ * tout nouveau code, préférer --color-* / --space-* / --text-*
+ * etc. ci-dessus.
+ * ============================================================ */
+:root {
+  --bg-color: var(--color-bg-primary);
+  --bg-secondary: var(--color-bg-surface);
+  --panel-bg: var(--color-bg-overlay);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --accent-color: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --verified-color: var(--color-success);
+  --pending-color: var(--color-warning-bright);
+  --rejected-color: var(--color-danger);
+  --border-color: var(--color-border);
+  --border-light: var(--color-bg-elevated);
+  --gradient-primary: var(--color-gradient-primary);
+  --gradient-verified: var(--color-gradient-success);
+  --gradient-pending: var(--color-gradient-warning);
+  --gradient-rejected: var(--color-gradient-danger);
+}
