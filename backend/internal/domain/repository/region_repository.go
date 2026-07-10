@@ -31,4 +31,10 @@ type RegionRepository interface {
 	// d'imports, avec `limit` lignes par page (capped à 100), plus le
 	// total global pour la pagination. Trié par created_at DESC.
 	GetDataImports(ctx context.Context, page, limit int) ([]entity.DataImport, int, error)
+
+	// GetDepartmentDemographicsHistory retourne la série temporelle
+	// d'évolution démographique d'un département, triée par recorded_at ASC
+	// (du plus ancien au plus récent). Si limit > 0, plafonne le nombre
+	// de points retournés (typiquement les N derniers).
+	GetDepartmentDemographicsHistory(ctx context.Context, departmentID string, limit int) ([]entity.DepartmentDemographicsSnapshot, error)
 }

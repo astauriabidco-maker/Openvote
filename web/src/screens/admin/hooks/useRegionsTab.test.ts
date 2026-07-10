@@ -486,4 +486,78 @@ describe('useRegionsTab — Import CSV démographie', () => {
             expect(result.current.historyPagination.total_pages).toBe(0);
         });
     });
+
+    // ---- Graphique d'évolution démographique ----
+    describe('handleFetchEvolutionChart', () => {
+        it('appelle GET /admin/departments/:id/demographics-history et stocke les snapshots', async () => {
+            api.get.mockResolvedValueOnce({
+                data: {
+                    snapshots: [
+                        { id: 's1', department_id: 'd1', year: 2025, population: 1_000_000,
+                          registered_voters: 200_000, data_source: 'X', data_confidence: 'official',
+                          recorded_at: '2026-01-01T00:00:00Z' },
+                        { id: 's2', department_id: 'd1', year: 2025, population: 1_200_000,
+                          registered_voters: 250_000, data_source: 'X', data_confidence: 'official',
+                          recorded_at: '2026-07-01T00:00:00Z' },
+                    ],
+                    total: 2, dept_id: 'd1',
+                },
+            });
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            expect(result.current.evolutionChartDept).toBeNull();
+            expect(result.current.evolutionChartData).toEqual([]);
+
+            await act(async () => {
+                await result.current.handleFetchEvolutionChart('d1', 'Mfoundi');
+            });
+
+            expect(api.get).toHaveBeenCalledWith(
+                '/admin/departments/d1/demographics-history?limit=100',
+            );
+            expect(result.current.evolutionChartDept).toEqual({ deptId: 'd1', deptName: 'Mfoundi' });
+            expect(result.current.evolutionChartData).toHaveLength(2);
+            expect(result.current.evolutionChartData[0].population).toBe(1_000_000);
+            expect(result.current.evolutionChartLoading).toBe(false);
+        });
+
+        it('notifie une erreur et reset les snapshots si l\'appel échoue', async () => {
+            api.get.mockRejectedValueOnce(new Error('Network'));
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchEvolutionChart('d1', 'Mfoundi');
+            });
+
+            expect(notify).toHaveBeenCalledWith('error', expect.stringContaining('évolution'));
+            expect(result.current.evolutionChartData).toEqual([]);
+        });
+
+        it('gère une réponse sans champ snapshots (defensive)', async () => {
+            api.get.mockResolvedValueOnce({ data: { total: 0, dept_id: 'd1' } });
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchEvolutionChart('d1', 'Mfoundi');
+            });
+
+            expect(result.current.evolutionChartData).toEqual([]);
+        });
+
+        it('closeEvolutionChart reset le state', async () => {
+            api.get.mockResolvedValueOnce({
+                data: { snapshots: [{ id: 's1', department_id: 'd1', year: 2025, population: 1_000_000,
+                                     registered_voters: 200_000, data_source: '', data_confidence: '',
+                                     recorded_at: '2026-01-01T00:00:00Z' }], total: 1, dept_id: 'd1' },
+            });
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchEvolutionChart('d1', 'Mfoundi');
+            });
+            expect(result.current.evolutionChartDept).not.toBeNull();
+            act(() => result.current.closeEvolutionChart());
+            expect(result.current.evolutionChartDept).toBeNull();
+            expect(result.current.evolutionChartData).toEqual([]);
+        });
+    });
 });

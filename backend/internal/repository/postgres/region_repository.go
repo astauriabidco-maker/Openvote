@@ -287,3 +287,49 @@ func (r *regionRepo) GetDataImports(ctx context.Context, page, limit int) ([]ent
 	}
 	return imports, total, nil
 }
+
+func (r *regionRepo) GetDepartmentDemographicsHistory(ctx context.Context, departmentID string, limit int) ([]entity.DepartmentDemographicsSnapshot, error) {
+	// Clamp défensif du limit (cf. memory entry "Next.js pagination → 500 silencieux")
+	if limit < 1 {
+		limit = 100
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+
+	// Tri ASC : du plus ancien au plus récent, pour qu'un graphe SVG
+	// ait les X (temps) dans le bon sens. On prend les N derniers points
+	// via ORDER DESC + LIMIT puis on re-trie en ASC côté Go (plus simple
+	// qu'une sous-requête).
+	rows, err := r.db.QueryContext(queryCtx, `
+		SELECT id, department_id, year, population, registered_voters,
+		       COALESCE(data_source,''), COALESCE(data_confidence,''),
+		       source_import_id, recorded_at
+		FROM department_demographics_history
+		WHERE department_id = $1
+		ORDER BY recorded_at DESC
+		LIMIT $2
+	`, departmentID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]entity.DepartmentDemographicsSnapshot, 0, limit)
+	for rows.Next() {
+		var s entity.DepartmentDemographicsSnapshot
+		if err := rows.Scan(&s.ID, &s.DepartmentID, &s.Year, &s.Population,
+			&s.RegisteredVoters, &s.DataSource, &s.DataConfidence,
+			&s.SourceImportID, &s.RecordedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	// Reverse pour avoir ASC (du plus ancien au plus récent)
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out, nil
+}

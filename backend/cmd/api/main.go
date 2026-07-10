@@ -194,6 +194,7 @@ func main() {
 		{"migration/013_all_arrondissements.sql", "Arrondissements complets"},
 		{"migration/014_missing_arrondissements.sql", "Arrondissements manquants (360 total)"},
 		{"migration/015_mfa_and_lockout.sql", "MFA TOTP + lockout par tentatives (H3 audit)"},
+		{"migration/016_department_demographics_history.sql", "Historique démographique département (time series)"},
 	} {
 		data, err := os.ReadFile(mig.file)
 		if err == nil {
@@ -361,6 +362,8 @@ func main() {
 			admin.POST("/regions/import-csv", regionHandler.ImportCSV)
 			admin.GET("/regions/import-csv/template", regionHandler.DownloadCSVTemplate)
 			admin.GET("/regions/import-csv/history", regionHandler.GetDataImports)
+			// Évolution démographique d'un département (time series pour graphique)
+			admin.GET("/departments/:id/demographics-history", regionHandler.GetDepartmentDemographicsHistory)
 
 			// Arrondissements (admin CRUD)
 			admin.POST("/arrondissements", regionHandler.CreateArrondissement)

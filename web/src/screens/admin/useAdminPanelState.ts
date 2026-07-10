@@ -149,6 +149,13 @@ export interface AdminPanelState {
      * courante, avec un `page` navigue vers cette page.
      */
     handleFetchImportHistory: (page?: number) => Promise<void>;
+    // Graphique d'évolution démographique d'un département
+    evolutionChartDept: { deptId: string; deptName: string } | null;
+    setEvolutionChartDept: (d: { deptId: string; deptName: string } | null) => void;
+    evolutionChartData: import('./hooks/useRegionsTab').DepartmentDemographicsSnapshot[];
+    evolutionChartLoading: boolean;
+    handleFetchEvolutionChart: (deptId: string, deptName: string) => Promise<void>;
+    closeEvolutionChart: () => void;
 
     // ---- Élections ----
     elections: ElectionData[];
@@ -307,6 +314,9 @@ export function useAdminPanelState(
         importHistoryOpen, setImportHistoryOpen,
         importHistory, importHistoryLoading,
         historyPage, historyPagination, handleFetchImportHistory,
+        evolutionChartDept, setEvolutionChartDept,
+        evolutionChartData, evolutionChartLoading,
+        handleFetchEvolutionChart, closeEvolutionChart,
     } = useRegionsTab(apiClient, notify);
 
     // ---- Élections — délégué à useElectionsTab (refactor admin) ----
@@ -479,6 +489,9 @@ export function useAdminPanelState(
         importHistoryOpen, setImportHistoryOpen,
         importHistory, importHistoryLoading,
         historyPage, historyPagination, handleFetchImportHistory,
+        evolutionChartDept, setEvolutionChartDept,
+        evolutionChartData, evolutionChartLoading,
+        handleFetchEvolutionChart, closeEvolutionChart,
         // Élections
         elections, fetchElections,
         newElection, setNewElection,

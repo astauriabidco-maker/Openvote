@@ -104,6 +104,16 @@ export interface RegionsTabState {
      * → 500 silencieux").
      */
     handleFetchImportHistory: (page?: number) => Promise<void>;
+
+    // Graphique d'évolution démographique d'un département
+    // (endpoint /admin/departments/:id/demographics-history)
+    /** État du graphique : null si fermé, {deptId, deptName} si ouvert. */
+    evolutionChartDept: { deptId: string; deptName: string } | null;
+    setEvolutionChartDept: (d: { deptId: string; deptName: string } | null) => void;
+    evolutionChartData: DepartmentDemographicsSnapshot[];
+    evolutionChartLoading: boolean;
+    handleFetchEvolutionChart: (deptId: string, deptName: string) => Promise<void>;
+    closeEvolutionChart: () => void;
 }
 
 /** Shape d'une ligne d'historique (cf. entity.DataImport côté Go). */
@@ -117,6 +127,18 @@ export interface DataImportRow {
     imported_by: string;
     notes: string;
     created_at: string;
+}
+
+/** Snapshot démographique d'un département (cf. entity.DepartmentDemographicsSnapshot). */
+export interface DepartmentDemographicsSnapshot {
+    id: string;
+    department_id: string;
+    year: number;
+    population: number;
+    registered_voters: number;
+    data_source: string;
+    data_confidence: string;
+    recorded_at: string;
 }
 
 export function useRegionsTab(
@@ -390,6 +412,37 @@ export function useRegionsTab(
         }
     }, [apiClient, notify, historyPage]);
 
+    // -------- Graphique d'évolution démographique --------
+    // GET /admin/departments/:id/demographics-history?limit=100 →
+    //   { snapshots: DepartmentDemographicsSnapshot[], total, dept_id }
+    // Les snapshots sont ordonnés ASC (du plus ancien au plus récent)
+    // par le backend, prêts à être tracés par <LineChart>.
+    const [evolutionChartDept, setEvolutionChartDept] = useState<{ deptId: string; deptName: string } | null>(null);
+    const [evolutionChartData, setEvolutionChartData] = useState<DepartmentDemographicsSnapshot[]>([]);
+    const [evolutionChartLoading, setEvolutionChartLoading] = useState(false);
+
+    const handleFetchEvolutionChart = useCallback(async (deptId: string, deptName: string) => {
+        setEvolutionChartDept({ deptId, deptName });
+        setEvolutionChartLoading(true);
+        try {
+            const res = await apiClient.get(
+                `/admin/departments/${deptId}/demographics-history?limit=100`,
+            );
+            const snapshots: DepartmentDemographicsSnapshot[] = res.data?.snapshots ?? [];
+            setEvolutionChartData(snapshots);
+        } catch {
+            notify('error', 'Erreur chargement de l\'évolution démographique');
+            setEvolutionChartData([]);
+        } finally {
+            setEvolutionChartLoading(false);
+        }
+    }, [apiClient, notify]);
+
+    const closeEvolutionChart = useCallback(() => {
+        setEvolutionChartDept(null);
+        setEvolutionChartData([]);
+    }, []);
+
     return {
         regions,
         expandedRegion, setExpandedRegion,
@@ -429,5 +482,11 @@ export function useRegionsTab(
         importHistoryLoading,
         historyPage, historyPagination,
         handleFetchImportHistory,
+        // Graphique d'évolution démographique
+        evolutionChartDept, setEvolutionChartDept,
+        evolutionChartData,
+        evolutionChartLoading,
+        handleFetchEvolutionChart,
+        closeEvolutionChart,
     };
 }

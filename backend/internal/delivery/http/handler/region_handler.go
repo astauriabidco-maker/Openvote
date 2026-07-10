@@ -475,6 +475,37 @@ func (h *RegionHandler) GetDataImports(c *gin.Context) {
 	})
 }
 
+// GetDepartmentDemographicsHistory retourne la série temporelle
+// d'évolution démographique d'un département pour le graphique
+// d'évolution dans l'UI admin. Triée par date ASC.
+// ?limit=N plafonne le nombre de points (défaut 100, max 500).
+func (h *RegionHandler) GetDepartmentDemographicsHistory(c *gin.Context) {
+	deptID := c.Param("id")
+	if deptID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID département requis"})
+		return
+	}
+	limit := 100
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	snapshots, err := h.regionRepo.GetDepartmentDemographicsHistory(c.Request.Context(), deptID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if snapshots == nil {
+		snapshots = []entity.DepartmentDemographicsSnapshot{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"snapshots": snapshots,
+		"total":     len(snapshots),
+		"dept_id":   deptID,
+	})
+}
+
 // DownloadCSVTemplate retourne un fichier CSV modèle
 func (h *RegionHandler) DownloadCSVTemplate(c *gin.Context) {
 	depts, err := h.regionRepo.GetAllDepartments(c.Request.Context())

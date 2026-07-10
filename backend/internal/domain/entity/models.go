@@ -145,6 +145,22 @@ type DataImport struct {
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 }
 
+// DepartmentDemographicsSnapshot est un point dans la série temporelle
+// d'évolution démographique d'un département. Alimenté par le trigger
+// SQL log_department_demographics_change (migration 016) à chaque
+// UPDATE de population/registered_voters.
+type DepartmentDemographicsSnapshot struct {
+	ID                string    `json:"id" db:"id"`
+	DepartmentID      string    `json:"department_id" db:"department_id"`
+	Year              int       `json:"year" db:"year"`
+	Population        int       `json:"population" db:"population"`
+	RegisteredVoters  int       `json:"registered_voters" db:"registered_voters"`
+	DataSource        string    `json:"data_source" db:"data_source"`
+	DataConfidence    string    `json:"data_confidence" db:"data_confidence"`
+	SourceImportID    *string   `json:"source_import_id,omitempty" db:"source_import_id"`
+	RecordedAt        time.Time `json:"recorded_at" db:"recorded_at"`
+}
+
 // ElectionStatus définit l'état d'un scrutin
 type ElectionStatus string
 

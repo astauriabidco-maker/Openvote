@@ -16,6 +16,10 @@
  * Historique des imports : une modale ad-hoc (pas de form, juste un
  * <DataTable>) affiche les imports passés via GET /admin/regions/import-csv/history.
  * Fetch paresseux à l'ouverture pour éviter un GET inutile au mount.
+ *
+ * Graphique d'évolution : un bouton 📈 sur chaque département ouvre
+ * une modale avec un <LineChart> (SVG custom) traçant l'évolution
+ * population + électeurs. Données via GET /admin/departments/:id/demographics-history.
  */
 
 import { useEffect } from 'react';
@@ -23,6 +27,7 @@ import type { AdminPanelState } from '../useAdminPanelState';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import DataTable, { type DataTableColumn } from '../components/DataTable';
+import LineChart from '../components/LineChart';
 import type { DataImportRow } from '../hooks/useRegionsTab';
 
 export default function RegionsTab({ state }: { state: AdminPanelState }) {
@@ -43,6 +48,8 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         importHistoryOpen, setImportHistoryOpen,
         importHistory, importHistoryLoading,
         historyPage, historyPagination, handleFetchImportHistory,
+        evolutionChartDept, closeEvolutionChart, evolutionChartData,
+        evolutionChartLoading, handleFetchEvolutionChart,
     } = state;
 
     // Fetch paresseux : on ne charge l'historique qu'à l'ouverture de la modale.
@@ -201,7 +208,15 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                                             }}>
                                                 <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <span className="dept-code" style={{ marginRight: 8 }}>{dept.code}</span>
-                                                    <button className="dept-delete" onClick={() => handleDeleteDepartment(dept.id, dept.name)}>×</button>
+                                                    <div style={{ display: 'flex', gap: 4 }}>
+                                                        <button
+                                                            className="dept-delete"
+                                                            onClick={() => handleFetchEvolutionChart(dept.id, dept.name)}
+                                                            title="Voir l'évolution démographique"
+                                                            style={{ fontSize: '0.8rem' }}
+                                                        >📈</button>
+                                                        <button className="dept-delete" onClick={() => handleDeleteDepartment(dept.id, dept.name)}>×</button>
+                                                    </div>
                                                 </div>
                                                 <span className="dept-name" style={{ fontWeight: 600, marginBottom: 4 }}>{dept.name}</span>
                                                 {dept.population > 0 && (
@@ -335,6 +350,133 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                                 onPageChange={(p) => handleFetchImportHistory(p)}
                             />
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modale Graphique d'évolution démographique. */}
+            {evolutionChartDept && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="evolution-chart-title"
+                    onClick={closeEvolutionChart}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 10000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 20,
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(4px)',
+                        animation: 'confirm-fade-in 200ms ease',
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'linear-gradient(135deg, #161b22, #0d1117)',
+                            border: '1px solid rgba(48,54,61,0.8)',
+                            borderRadius: 14,
+                            padding: '24px 28px',
+                            maxWidth: 720,
+                            width: '100%',
+                            maxHeight: '90vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: 16,
+                            }}
+                        >
+                            <h2
+                                id="evolution-chart-title"
+                                style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem' }}
+                            >
+                                📈 Évolution : {evolutionChartDept.deptName}
+                            </h2>
+                            <button
+                                type="button"
+                                aria-label="Fermer"
+                                onClick={closeEvolutionChart}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '1.2rem',
+                                    cursor: 'pointer',
+                                    padding: '2px 8px',
+                                    borderRadius: 6,
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {evolutionChartLoading ? (
+                            <div
+                                style={{
+                                    height: 220,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '0.85rem',
+                                }}
+                            >
+                                ⏳ Chargement…
+                            </div>
+                        ) : evolutionChartData.length > 0 ? (
+                            <>
+                                <LineChart
+                                    data={evolutionChartData as unknown as Array<{ recorded_at: string; [key: string]: string | number }>}
+                                    series={[
+                                        { key: 'population', label: 'Population', color: '#58a6ff' },
+                                        { key: 'registered_voters', label: 'Électeurs inscrits', color: '#3fb950' },
+                                    ]}
+                                    height={240}
+                                    yFormat={(n) => {
+                                        if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+                                        if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+                                        return n.toString();
+                                    }}
+                                />
+                                <div
+                                    style={{
+                                        marginTop: 12,
+                                        padding: '8px 12px',
+                                        background: 'rgba(255,255,255,0.04)',
+                                        borderRadius: 6,
+                                        fontSize: '0.78rem',
+                                        color: 'var(--text-secondary)',
+                                    }}
+                                >
+                                    {evolutionChartData.length} point{evolutionChartData.length > 1 ? 's' : ''} mesuré{evolutionChartData.length > 1 ? 's' : ''} —
+                                    source : trigger SQL sur mise à jour départements (migration 016)
+                                </div>
+                            </>
+                        ) : (
+                            <div
+                                style={{
+                                    height: 220,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '0.85rem',
+                                }}
+                            >
+                                Aucune donnée d'évolution disponible.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
