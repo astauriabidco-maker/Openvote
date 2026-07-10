@@ -356,6 +356,12 @@ func main() {
 			admin.PATCH("/departments/:id", regionHandler.UpdateDepartment)
 			admin.DELETE("/departments/:id", regionHandler.DeleteDepartment)
 
+			// Import CSV démographie (admin) — handlers existants depuis
+			// backend/internal/delivery/http/handler/region_handler.go
+			admin.POST("/regions/import-csv", regionHandler.ImportCSV)
+			admin.GET("/regions/import-csv/template", regionHandler.DownloadCSVTemplate)
+			admin.GET("/regions/import-csv/history", regionHandler.GetDataImports)
+
 			// Arrondissements (admin CRUD)
 			admin.POST("/arrondissements", regionHandler.CreateArrondissement)
 			admin.PATCH("/arrondissements/:id", regionHandler.UpdateArrondissement)
