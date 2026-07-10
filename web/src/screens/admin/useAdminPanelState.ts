@@ -137,7 +137,14 @@ export interface AdminPanelState {
     setImportHistoryOpen: (b: boolean) => void;
     importHistory: import('./hooks/useRegionsTab').DataImportRow[];
     importHistoryLoading: boolean;
-    handleFetchImportHistory: () => Promise<void>;
+    /** Page courante (1-indexed) de l'historique. */
+    historyPage: number;
+    historyPagination: ApiPagination;
+    /**
+     * Récupère une page d'historique. Sans argument recharge la page
+     * courante, avec un `page` navigue vers cette page.
+     */
+    handleFetchImportHistory: (page?: number) => Promise<void>;
 
     // ---- Élections ----
     elections: ElectionData[];
@@ -293,7 +300,8 @@ export function useAdminPanelState(
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
         importHistoryOpen, setImportHistoryOpen,
-        importHistory, importHistoryLoading, handleFetchImportHistory,
+        importHistory, importHistoryLoading,
+        historyPage, historyPagination, handleFetchImportHistory,
     } = useRegionsTab(apiClient, notify);
 
     // ---- Élections — délégué à useElectionsTab (refactor admin) ----
@@ -463,7 +471,8 @@ export function useAdminPanelState(
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
         importHistoryOpen, setImportHistoryOpen,
-        importHistory, importHistoryLoading, handleFetchImportHistory,
+        importHistory, importHistoryLoading,
+        historyPage, historyPagination, handleFetchImportHistory,
         // Élections
         elections, fetchElections,
         newElection, setNewElection,

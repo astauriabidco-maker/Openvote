@@ -438,9 +438,23 @@ func (h *RegionHandler) ImportCSV(c *gin.Context) {
 	})
 }
 
-// GetDataImports retourne l'historique des importations
+// GetDataImports retourne l'historique des importations, paginé
+// server-side (?page=N&limit=M). Renvoie aussi `total` (count global)
+// pour permettre la pagination côté client.
 func (h *RegionHandler) GetDataImports(c *gin.Context) {
-	imports, err := h.regionRepo.GetDataImports(c.Request.Context())
+	page := 1
+	limit := 20
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	imports, total, err := h.regionRepo.GetDataImports(c.Request.Context(), page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -448,7 +462,17 @@ func (h *RegionHandler) GetDataImports(c *gin.Context) {
 	if imports == nil {
 		imports = []entity.DataImport{}
 	}
-	c.JSON(http.StatusOK, gin.H{"imports": imports, "total": len(imports)})
+	totalPages := 0
+	if total > 0 {
+		totalPages = (total + limit - 1) / limit
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"imports":     imports,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
+	})
 }
 
 // DownloadCSVTemplate retourne un fichier CSV modèle

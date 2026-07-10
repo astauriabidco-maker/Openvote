@@ -40,7 +40,8 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
         importHistoryOpen, setImportHistoryOpen,
-        importHistory, importHistoryLoading, handleFetchImportHistory,
+        importHistory, importHistoryLoading,
+        historyPage, historyPagination, handleFetchImportHistory,
     } = state;
 
     // Fetch paresseux : on ne charge l'historique qu'à l'ouverture de la modale.
@@ -298,6 +299,11 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                                 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem' }}
                             >
                                 📊 Historique des imports CSV
+                                {historyPagination.total > 0 && (
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginLeft: 10, fontWeight: 400 }}>
+                                        ({historyPagination.total} import{historyPagination.total > 1 ? 's' : ''} — page {historyPage}/{historyPagination.total_pages})
+                                    </span>
+                                )}
                             </h2>
                             <button
                                 type="button"
@@ -324,6 +330,8 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                                 loading={importHistoryLoading}
                                 emptyMessage="Aucun import enregistré pour le moment"
                                 rowLabel="import"
+                                pagination={historyPagination}
+                                onPageChange={(p) => handleFetchImportHistory(p)}
                             />
                         </div>
                     </div>

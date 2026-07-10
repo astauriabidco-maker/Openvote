@@ -27,5 +27,8 @@ type RegionRepository interface {
 	// Import CSV
 	UpdateDepartmentDemographics(ctx context.Context, code string, population, voters int, source, confidence string, year int) error
 	LogDataImport(ctx context.Context, importType, sourceName, fileName, importedBy, notes string, updated, failed int) error
-	GetDataImports(ctx context.Context) ([]entity.DataImport, error)
+	// GetDataImports retourne la page `page` (1-indexed) d'historique
+	// d'imports, avec `limit` lignes par page (capped à 100), plus le
+	// total global pour la pagination. Trié par created_at DESC.
+	GetDataImports(ctx context.Context, page, limit int) ([]entity.DataImport, int, error)
 }

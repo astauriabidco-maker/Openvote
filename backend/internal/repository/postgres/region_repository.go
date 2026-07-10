@@ -244,23 +244,46 @@ func (r *regionRepo) LogDataImport(ctx context.Context, importType, sourceName, 
 	return err
 }
 
-func (r *regionRepo) GetDataImports(ctx context.Context) ([]entity.DataImport, error) {
+func (r *regionRepo) GetDataImports(ctx context.Context, page, limit int) ([]entity.DataImport, int, error) {
+	// Clamp défensif des paramètres (cf. memory entry "Next.js pagination
+	// → 500 silencieux"). On évite ainsi les skip négatifs ou les limites
+	// extrêmes qui ne sont pas des erreurs SQL mais des résultats absurdes.
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	offset := (page - 1) * limit
+
 	queryCtx, cancel := database.WithQueryTimeout(ctx)
 	defer cancel()
-	query := `SELECT id, import_type, source_name, COALESCE(file_name,''), records_updated, records_failed, COALESCE(imported_by,''), COALESCE(notes,''), created_at FROM data_imports ORDER BY created_at DESC LIMIT 20`
-	rows, err := r.db.QueryContext(queryCtx, query)
+
+	// 1) Count total (1 seule requête, COUNT(*) sur PK est O(n) sur PG mais
+	//    acceptable pour < 10k imports).
+	var total int
+	if err := r.db.QueryRowContext(queryCtx, `SELECT COUNT(*) FROM data_imports`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// 2) Page demandée.
+	query := `SELECT id, import_type, source_name, COALESCE(file_name,''), records_updated, records_failed, COALESCE(imported_by,''), COALESCE(notes,''), created_at FROM data_imports ORDER BY created_at DESC LIMIT $1 OFFSET $2`
+	rows, err := r.db.QueryContext(queryCtx, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
-	var imports []entity.DataImport
+	imports := make([]entity.DataImport, 0, limit)
 	for rows.Next() {
 		var di entity.DataImport
 		if err := rows.Scan(&di.ID, &di.ImportType, &di.SourceName, &di.FileName, &di.RecordsUpdated, &di.RecordsFailed, &di.ImportedBy, &di.Notes, &di.CreatedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		imports = append(imports, di)
 	}
-	return imports, nil
+	return imports, total, nil
 }

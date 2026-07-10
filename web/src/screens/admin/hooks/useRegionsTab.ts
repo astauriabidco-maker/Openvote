@@ -12,7 +12,13 @@
 import { useCallback, useState } from 'react';
 import { type AxiosInstance, isAxiosError } from 'axios';
 import type { RegionWithDepts } from '../../../types';
+import type { ApiPagination } from '../../../apiTypes';
 import type { NotifyFn } from './useUsersTab';
+
+// Taille de page pour l'historique des imports. Cohérent avec
+// USERS_PAGE_SIZE=25 (cf. admin/constants.ts) — petit dataset, ça reste
+// lisible sans scroller ; > 50 imports justifie la pagination.
+const HISTORY_PAGE_SIZE = 25;
 
 export interface RegionsTabState {
     // Données
@@ -78,7 +84,16 @@ export interface RegionsTabState {
     setImportHistoryOpen: (b: boolean) => void;
     importHistory: DataImportRow[];
     importHistoryLoading: boolean;
-    handleFetchImportHistory: () => Promise<void>;
+    /** Page courante (1-indexed) pour la pagination de l'historique. */
+    historyPage: number;
+    historyPagination: ApiPagination;
+    /**
+     * Récupère une page d'historique. Sans argument, recharge la page
+     * courante. Avec un `page`, navigue vers cette page. Le backend
+     * clamp défensivement page/limit (cf. memory entry "Next.js pagination
+     * → 500 silencieux").
+     */
+    handleFetchImportHistory: (page?: number) => Promise<void>;
 }
 
 /** Shape d'une ligne d'historique (cf. entity.DataImport côté Go). */
@@ -292,27 +307,44 @@ export function useRegionsTab(
     }, [apiClient, notify]);
 
     // -------- Historique des imports CSV --------
-    // GET /admin/regions/import-csv/history → { imports: DataImportRow[], total }
+    // GET /admin/regions/import-csv/history?page=N&limit=M →
+    // { imports: DataImportRow[], total, page, limit, total_pages }.
     // Le state importHistory est exposé pour que la modale <DataTable>
     // affiche les lignes. L'appel est paresseux (à l'ouverture de la
     // modale) pour éviter un fetch inutile au mount du tab.
+    // Pagination server-side (M5 audit) via le composant <Pagination>
+    // intégré au <DataTable>.
     const [importHistoryOpen, setImportHistoryOpen] = useState(false);
     const [importHistory, setImportHistory] = useState<DataImportRow[]>([]);
     const [importHistoryLoading, setImportHistoryLoading] = useState(false);
+    const [historyPage, setHistoryPage] = useState(1);
+    const [historyPagination, setHistoryPagination] = useState<ApiPagination>({
+        page: 1, limit: HISTORY_PAGE_SIZE, total: 0, total_pages: 0,
+    });
 
-    const handleFetchImportHistory = useCallback(async () => {
+    const handleFetchImportHistory = useCallback(async (page?: number) => {
+        const target = page ?? historyPage;
         setImportHistoryLoading(true);
         try {
-            const res = await apiClient.get('/admin/regions/import-csv/history');
+            const res = await apiClient.get(
+                `/admin/regions/import-csv/history?page=${target}&limit=${HISTORY_PAGE_SIZE}`,
+            );
             const rows: DataImportRow[] = res.data?.imports ?? [];
             setImportHistory(rows);
+            setHistoryPage(res.data?.page ?? target);
+            setHistoryPagination({
+                page: res.data?.page ?? target,
+                limit: res.data?.limit ?? HISTORY_PAGE_SIZE,
+                total: res.data?.total ?? 0,
+                total_pages: res.data?.total_pages ?? 0,
+            });
         } catch {
             notify('error', 'Erreur chargement de l\'historique');
             setImportHistory([]);
         } finally {
             setImportHistoryLoading(false);
         }
-    }, [apiClient, notify]);
+    }, [apiClient, notify, historyPage]);
 
     return {
         regions,
@@ -348,6 +380,7 @@ export function useRegionsTab(
         importHistoryOpen, setImportHistoryOpen,
         importHistory,
         importHistoryLoading,
+        historyPage, historyPagination,
         handleFetchImportHistory,
     };
 }

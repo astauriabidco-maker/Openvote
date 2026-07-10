@@ -286,7 +286,9 @@ describe('useRegionsTab — Import CSV démographie', () => {
                     created_at: '2026-07-09T10:30:00Z',
                 },
             ];
-            api.get.mockResolvedValueOnce({ data: { imports: sampleImports, total: 2 } });
+            api.get.mockResolvedValueOnce({
+                data: { imports: sampleImports, total: 2, page: 1, limit: 25, total_pages: 1 },
+            });
 
             const { result } = renderHook(() => useRegionsTab(api, notify));
             expect(result.current.importHistory).toEqual([]);
@@ -296,7 +298,7 @@ describe('useRegionsTab — Import CSV démographie', () => {
             });
 
             expect(api.get).toHaveBeenCalledTimes(1);
-            expect(api.get).toHaveBeenCalledWith('/admin/regions/import-csv/history');
+            expect(api.get).toHaveBeenCalledWith('/admin/regions/import-csv/history?page=1&limit=25');
             expect(result.current.importHistory).toHaveLength(2);
             expect(result.current.importHistory[0].source_name).toBe('BUCREP 2023');
             expect(result.current.importHistory[0].records_updated).toBe(12);
@@ -355,6 +357,54 @@ describe('useRegionsTab — Import CSV démographie', () => {
 
             act(() => result.current.setImportHistoryOpen(true));
             expect(result.current.importHistoryOpen).toBe(true);
+        });
+
+        // ---- Pagination server-side (M5 audit) ----
+        it('appelle GET avec ?page=1&limit=25 par défaut', async () => {
+            api.get.mockResolvedValueOnce({
+                data: { imports: [], total: 0, page: 1, limit: 25, total_pages: 0 },
+            });
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchImportHistory();
+            });
+            expect(api.get).toHaveBeenCalledWith(
+                '/admin/regions/import-csv/history?page=1&limit=25',
+            );
+            expect(result.current.historyPage).toBe(1);
+        });
+
+        it('appelle GET avec la page demandée (pagination)', async () => {
+            api.get.mockResolvedValueOnce({
+                data: {
+                    imports: [{ id: 'p3', import_type: 'demographics', source_name: 'X', file_name: 'f',
+                                records_updated: 1, records_failed: 0, imported_by: 'admin',
+                                notes: '', created_at: '2026-07-10T00:00:00Z' }],
+                    total: 75, page: 3, limit: 25, total_pages: 3,
+                },
+            });
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchImportHistory(3);
+            });
+            expect(api.get).toHaveBeenCalledWith(
+                '/admin/regions/import-csv/history?page=3&limit=25',
+            );
+            expect(result.current.historyPage).toBe(3);
+            expect(result.current.historyPagination).toEqual({
+                page: 3, limit: 25, total: 75, total_pages: 3,
+            });
+        });
+
+        it('stocke correctement la pagination même si la réponse omet total_pages', async () => {
+            api.get.mockResolvedValueOnce({
+                data: { imports: [], total: 0, page: 1, limit: 25 }, // pas de total_pages
+            });
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchImportHistory();
+            });
+            expect(result.current.historyPagination.total_pages).toBe(0);
         });
     });
 });
