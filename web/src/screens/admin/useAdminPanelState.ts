@@ -32,9 +32,10 @@ import type {
 import type { ApiPagination } from '../../apiTypes';
 import { REGION_COORDS } from '../../constants';
 import {
-    AUDIT_PAGE_SIZE, type TabKey,
+    type TabKey,
 } from './constants';
 import { useUsersTab } from './hooks/useUsersTab';
+import { useAuditLogsTab } from './hooks/useAuditLogsTab';
 
 // ============================================================
 // Types de formulaires
@@ -331,26 +332,10 @@ export function useAdminPanelState(
         fetchUsers, handleRoleChange, handleDeleteUser, handleRegionChange, exportUsersCSV,
     } = useUsersTab(apiClient, notify);
 
-    // ---- Audit logs pagination ----
-    const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-    const [auditPage, setAuditPage] = useState(1);
-    const [auditPagination, setAuditPagination] = useState<ApiPagination>({
-        page: 1, limit: AUDIT_PAGE_SIZE, total: 0, total_pages: 0,
-    });
-    const [auditLoading, setAuditLoading] = useState(false);
-
-    const fetchAuditLogs = useCallback(async (page = auditPage) => {
-        setAuditLoading(true);
-        try {
-            const res = await apiClient.get(`/admin/audit-logs?page=${page}&limit=${AUDIT_PAGE_SIZE}`);
-            setAuditLogs(res.data.items || []);
-            setAuditPagination(res.data.pagination || {
-                page, limit: AUDIT_PAGE_SIZE, total: 0, total_pages: 0,
-            });
-            setAuditPage(page);
-        } catch { notify('error', 'Erreur chargement logs'); }
-        finally { setAuditLoading(false); }
-    }, [apiClient, notify, auditPage]);
+    // ---- Audit logs (M5) — délégué à useAuditLogsTab (refactor admin) ----
+    const {
+        auditLogs, auditPage, auditPagination, auditLoading, fetchAuditLogs,
+    } = useAuditLogsTab(apiClient, notify);
 
     // ---- Régions ----
     const [regions, setRegions] = useState<RegionWithDepts[]>([]);
