@@ -33,7 +33,18 @@ export interface IncidentTypesTabState {
     // Actions
     fetchIncidentTypes: () => Promise<void>;
     handleCreateIncidentType: () => Promise<void>;
-    handleDeleteIncidentType: (id: string, name: string) => Promise<void>;
+    /**
+     * Demande de suppression. Ouvre la <ConfirmDialog> : l'appelant doit
+     * aussi rendre le dialogue et brancher confirm/cancel sur
+     * `pendingDeleteIncidentType` exposé ci-dessous.
+     */
+    handleDeleteIncidentType: (id: string, name: string) => void;
+
+    // Confirmation de suppression (ConfirmDialog — voir IncidentsTab)
+    pendingDeleteIncidentType: { id: string; name: string } | null;
+    confirmDeleteIncidentType: () => Promise<void>;
+    cancelDeleteIncidentType: () => void;
+    deletingIncidentType: boolean;
 }
 
 export function useIncidentTypesTab(
@@ -44,6 +55,10 @@ export function useIncidentTypesTab(
     const [newIncident, setNewIncident] = useState<NewIncidentForm>({
         name: '', code: '', description: '', severity: 3, color: '#f0883e',
     });
+
+    // Confirmation de suppression (ConfirmDialog — voir IncidentsTab)
+    const [pendingDeleteIncidentType, setPendingDeleteIncidentType] = useState<{ id: string; name: string } | null>(null);
+    const [deletingIncidentType, setDeletingIncidentType] = useState(false);
 
     const fetchIncidentTypes = useCallback(async () => {
         try {
@@ -69,16 +84,34 @@ export function useIncidentTypesTab(
         }
     }, [apiClient, notify, newIncident, fetchIncidentTypes]);
 
-    const handleDeleteIncidentType = useCallback(async (id: string, name: string) => {
-        if (!confirm(`Supprimer le type "${name}" ?`)) return;
+    /**
+     * Demande de suppression. Remplace `window.confirm()` : on stocke la
+     * cible dans `pendingDeleteIncidentType` et l'UI ouvre un <ConfirmDialog>.
+     */
+    const handleDeleteIncidentType = useCallback((id: string, name: string) => {
+        setPendingDeleteIncidentType({ id, name });
+    }, []);
+
+    const confirmDeleteIncidentType = useCallback(async () => {
+        if (!pendingDeleteIncidentType) return;
+        const { id, name } = pendingDeleteIncidentType;
+        setDeletingIncidentType(true);
         try {
             await apiClient.delete(`/admin/incident-types/${id}`);
-            notify('success', `Type supprimé`);
+            notify('success', `Type "${name}" supprimé`);
+            setPendingDeleteIncidentType(null);
             await fetchIncidentTypes();
         } catch {
             notify('error', 'Erreur suppression type');
+        } finally {
+            setDeletingIncidentType(false);
         }
-    }, [apiClient, notify, fetchIncidentTypes]);
+    }, [pendingDeleteIncidentType, apiClient, notify, fetchIncidentTypes]);
+
+    const cancelDeleteIncidentType = useCallback(() => {
+        if (deletingIncidentType) return; // ignore pendant un delete en cours
+        setPendingDeleteIncidentType(null);
+    }, [deletingIncidentType]);
 
     return {
         incidentTypes,
@@ -87,5 +120,10 @@ export function useIncidentTypesTab(
         fetchIncidentTypes,
         handleCreateIncidentType,
         handleDeleteIncidentType,
+        // Confirmation de suppression (ConfirmDialog)
+        pendingDeleteIncidentType,
+        confirmDeleteIncidentType,
+        cancelDeleteIncidentType,
+        deletingIncidentType,
     };
 }

@@ -65,9 +65,14 @@ export interface LegalTabState {
     extractedArticles: Partial<LegalArticle>[];
     setExtractedArticles: (a: Partial<LegalArticle>[]) => void;
 
-    // Confirmation de suppression doc
+    // Confirmation de suppression doc (inline pattern — pas ConfirmDialog)
     confirmDeleteDocId: string | null;
     setConfirmDeleteDocId: (id: string | null) => void;
+
+    // Confirmation de suppression article (idem doc, inline Oui/Non pattern
+    // pour rester cohérent avec le delete doc dans la même UI).
+    pendingDeleteArticleId: string | null;
+    setPendingDeleteArticleId: (id: string | null) => void;
 
     // RAG (sémantique)
     semanticQuery: string;
@@ -112,6 +117,7 @@ export function useLegalTab(
     });
     const [showImportAssistant, setShowImportAssistant] = useState(false);
     const [confirmDeleteDocId, setConfirmDeleteDocId] = useState<string | null>(null);
+    const [pendingDeleteArticleId, setPendingDeleteArticleId] = useState<string | null>(null);
     const [rawTextToParse, setRawTextToParse] = useState('');
     const [extractedArticles, setExtractedArticles] = useState<Partial<LegalArticle>[]>([]);
     const [semanticQuery, setSemanticQuery] = useState('');
@@ -363,6 +369,7 @@ export function useLegalTab(
         extractedArticles, setExtractedArticles,
         // Confirm delete
         confirmDeleteDocId, setConfirmDeleteDocId,
+        pendingDeleteArticleId, setPendingDeleteArticleId,
         // RAG
         semanticQuery, setSemanticQuery,
         semanticResults, semanticLoading,

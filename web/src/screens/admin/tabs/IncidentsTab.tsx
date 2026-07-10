@@ -1,13 +1,19 @@
 /**
  * Onglet Incidents — gestion des types d'incidents (fraude, violence, etc.).
+ *
+ * ConfirmDialog : la suppression passe par une modale au lieu de
+ * `window.confirm()`. Le hook `useIncidentTypesTab` expose `pendingDeleteIncidentType` /
+ * `confirmDeleteIncidentType` / `cancelDeleteIncidentType` ; on rend la modale ici.
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function IncidentsTab({ state }: { state: AdminPanelState }) {
     const {
         incidentTypes, newIncident, setNewIncident,
         handleCreateIncidentType, handleDeleteIncidentType,
+        pendingDeleteIncidentType, confirmDeleteIncidentType, cancelDeleteIncidentType, deletingIncidentType,
     } = state;
 
     return (
@@ -78,6 +84,21 @@ export default function IncidentsTab({ state }: { state: AdminPanelState }) {
                     </div>
                 ))}
             </div>
+
+            {/* ConfirmDialog : confirme la suppression avant DELETE. */}
+            <ConfirmDialog
+                open={!!pendingDeleteIncidentType}
+                title="Supprimer le type d'incident ?"
+                message={
+                    pendingDeleteIncidentType
+                        ? `Cette action est irréversible. Supprimer "${pendingDeleteIncidentType.name}" ?`
+                        : ''
+                }
+                confirmLabel={deletingIncidentType ? 'Suppression…' : 'Supprimer'}
+                variant="danger"
+                onConfirm={confirmDeleteIncidentType}
+                onCancel={cancelDeleteIncidentType}
+            />
         </div>
     );
 }

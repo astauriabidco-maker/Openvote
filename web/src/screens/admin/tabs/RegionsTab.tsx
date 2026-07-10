@@ -4,9 +4,13 @@
  * Affiche les régions sous forme de cards expansibles avec leurs
  * départements. Inclut deux formulaires : ajouter une région, ajouter
  * un département. Toutes les opérations passent par les handlers du hook.
+ *
+ * ConfirmDialog : deux modales distinctes pour la suppression (région vs
+ * département) — les messages diffèrent (région = cascade départements).
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function RegionsTab({ state }: { state: AdminPanelState }) {
     const {
@@ -15,6 +19,8 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         newRegionName, setNewRegionName, newRegionCode, setNewRegionCode,
         newDeptName, setNewDeptName, newDeptCode, setNewDeptCode, newDeptRegionId, setNewDeptRegionId,
         handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
+        pendingDeleteRegion, confirmDeleteRegion, cancelDeleteRegion, deletingRegion,
+        pendingDeleteDepartment, confirmDeleteDepartment, cancelDeleteDepartment, deletingDepartment,
     } = state;
 
     return (
@@ -121,6 +127,36 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                     </div>
                 ))}
             </div>
+
+            {/* ConfirmDialog : suppression d'une région (avec cascade départements). */}
+            <ConfirmDialog
+                open={!!pendingDeleteRegion}
+                title="Supprimer la région ?"
+                message={
+                    pendingDeleteRegion
+                        ? `Cette action supprimera "${pendingDeleteRegion.name}" et TOUS ses départements. Irréversible.`
+                        : ''
+                }
+                confirmLabel={deletingRegion ? 'Suppression…' : 'Supprimer'}
+                variant="danger"
+                onConfirm={confirmDeleteRegion}
+                onCancel={cancelDeleteRegion}
+            />
+
+            {/* ConfirmDialog : suppression d'un département. */}
+            <ConfirmDialog
+                open={!!pendingDeleteDepartment}
+                title="Supprimer le département ?"
+                message={
+                    pendingDeleteDepartment
+                        ? `Cette action est irréversible. Supprimer "${pendingDeleteDepartment.name}" ?`
+                        : ''
+                }
+                confirmLabel={deletingDepartment ? 'Suppression…' : 'Supprimer'}
+                variant="danger"
+                onConfirm={confirmDeleteDepartment}
+                onCancel={cancelDeleteDepartment}
+            />
         </div>
     );
 }

@@ -1,14 +1,20 @@
 /**
  * Onglet Elections — gestion des scrutins (créer, démarrer, clôturer, archiver).
+ *
+ * ConfirmDialog : la suppression passe par une modale au lieu de
+ * `window.confirm()`. Le hook `useElectionsTab` expose `pendingDeleteElection` /
+ * `confirmDeleteElection` / `cancelDeleteElection` ; on rend la modale ici.
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
 import { ELECTION_TYPES, STATUS_LABELS, STATUS_COLORS } from '../constants';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function ElectionsTab({ state }: { state: AdminPanelState }) {
     const {
         elections, regions, newElection, setNewElection,
         handleCreateElection, handleElectionStatus, handleDeleteElection, fetchElections,
+        pendingDeleteElection, confirmDeleteElection, cancelDeleteElection, deletingElection,
     } = state;
 
     return (
@@ -113,6 +119,21 @@ export default function ElectionsTab({ state }: { state: AdminPanelState }) {
                 ))}
                 {elections.length === 0 && <div className="admin-empty">Aucun scrutin enregistré.</div>}
             </div>
+
+            {/* ConfirmDialog : confirme la suppression avant DELETE. */}
+            <ConfirmDialog
+                open={!!pendingDeleteElection}
+                title="Supprimer le scrutin ?"
+                message={
+                    pendingDeleteElection
+                        ? `Cette action est irréversible. Supprimer "${pendingDeleteElection.name}" ?`
+                        : ''
+                }
+                confirmLabel={deletingElection ? 'Suppression…' : 'Supprimer'}
+                variant="danger"
+                onConfirm={confirmDeleteElection}
+                onCancel={cancelDeleteElection}
+            />
         </div>
     );
 }

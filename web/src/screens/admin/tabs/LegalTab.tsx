@@ -20,6 +20,7 @@ export default function LegalTab({ state }: { state: AdminPanelState }) {
         newDoc, setNewDoc, newArticle, setNewArticle,
         showImportAssistant, setShowImportAssistant,
         confirmDeleteDocId, setConfirmDeleteDocId,
+        pendingDeleteArticleId, setPendingDeleteArticleId,
         rawTextToParse, setRawTextToParse, extractedArticles, setExtractedArticles,
         semanticQuery, setSemanticQuery, semanticResults, semanticLoading,
         embeddingStatus,
@@ -309,18 +310,44 @@ export default function LegalTab({ state }: { state: AdminPanelState }) {
                                         <h3 style={{ margin: '5px 0', fontSize: '1rem' }}>{art.title}</h3>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.4', flex: 1 }}>{art.content}</p>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                                            <button
-                                                type="button"
-                                                className="admin-delete-btn"
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    if (!confirm(`Supprimer l'article ${art.article_number} ?`)) return;
-                                                    await handleDeleteLegalArticle(art.id);
-                                                }}
-                                                style={{ fontSize: '0.7rem', opacity: loadingArticles ? 0.3 : 1 }}
-                                            >
-                                                🗑️ Supprimer
-                                            </button>
+                                            {pendingDeleteArticleId === art.id ? (
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setPendingDeleteArticleId(null);
+                                                            await handleDeleteLegalArticle(art.id);
+                                                        }}
+                                                        style={{
+                                                            background: '#e74c3c', border: 'none', cursor: 'pointer',
+                                                            fontSize: '0.65rem', padding: '4px 10px', borderRadius: '4px',
+                                                            color: 'white', fontWeight: 600,
+                                                        }}
+                                                    >Oui</button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); setPendingDeleteArticleId(null); }}
+                                                        style={{
+                                                            background: 'var(--bg-tertiary)', border: 'none', cursor: 'pointer',
+                                                            fontSize: '0.65rem', padding: '4px 10px', borderRadius: '4px',
+                                                            color: 'var(--text-primary)', fontWeight: 600,
+                                                        }}
+                                                    >Non</button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    className="admin-delete-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPendingDeleteArticleId(art.id);
+                                                    }}
+                                                    style={{ fontSize: '0.7rem', opacity: loadingArticles ? 0.3 : 1 }}
+                                                >
+                                                    🗑️ Supprimer
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

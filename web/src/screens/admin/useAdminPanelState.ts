@@ -108,9 +108,18 @@ export interface AdminPanelState {
     newDeptCode: string; setNewDeptCode: (s: string) => void;
     newDeptRegionId: string; setNewDeptRegionId: (s: string) => void;
     handleAddRegion: () => Promise<void>;
-    handleDeleteRegion: (id: string, name: string) => Promise<void>;
+    handleDeleteRegion: (id: string, name: string) => void;
     handleAddDepartment: () => Promise<void>;
-    handleDeleteDepartment: (id: string, name: string) => Promise<void>;
+    handleDeleteDepartment: (id: string, name: string) => void;
+    // ConfirmDialog : state partagé pour la confirmation de suppression région/département
+    pendingDeleteRegion: { id: string; name: string } | null;
+    confirmDeleteRegion: () => Promise<void>;
+    cancelDeleteRegion: () => void;
+    deletingRegion: boolean;
+    pendingDeleteDepartment: { id: string; name: string } | null;
+    confirmDeleteDepartment: () => Promise<void>;
+    cancelDeleteDepartment: () => void;
+    deletingDepartment: boolean;
 
     // ---- Élections ----
     elections: ElectionData[];
@@ -119,7 +128,12 @@ export interface AdminPanelState {
     setNewElection: (e: NewElectionForm) => void;
     handleCreateElection: () => Promise<void>;
     handleElectionStatus: (id: string, status: string) => Promise<void>;
-    handleDeleteElection: (id: string, name: string) => Promise<void>;
+    handleDeleteElection: (id: string, name: string) => void;
+    // ConfirmDialog : state partagé pour la confirmation de suppression scrutin
+    pendingDeleteElection: { id: string; name: string } | null;
+    confirmDeleteElection: () => Promise<void>;
+    cancelDeleteElection: () => void;
+    deletingElection: boolean;
 
     // ---- Types d'incidents ----
     incidentTypes: IncidentTypeData[];
@@ -127,7 +141,12 @@ export interface AdminPanelState {
     newIncident: NewIncidentForm;
     setNewIncident: (i: NewIncidentForm) => void;
     handleCreateIncidentType: () => Promise<void>;
-    handleDeleteIncidentType: (id: string, name: string) => Promise<void>;
+    handleDeleteIncidentType: (id: string, name: string) => void;
+    // ConfirmDialog : state partagé pour la confirmation de suppression type d'incident
+    pendingDeleteIncidentType: { id: string; name: string } | null;
+    confirmDeleteIncidentType: () => Promise<void>;
+    cancelDeleteIncidentType: () => void;
+    deletingIncidentType: boolean;
 
     // ---- KPIs ----
     kpis: KPIData | null;
@@ -167,6 +186,8 @@ export interface AdminPanelState {
     setShowImportAssistant: (b: boolean) => void;
     confirmDeleteDocId: string | null;
     setConfirmDeleteDocId: (id: string | null) => void;
+    pendingDeleteArticleId: string | null;
+    setPendingDeleteArticleId: (id: string | null) => void;
     rawTextToParse: string;
     setRawTextToParse: (s: string) => void;
     extractedArticles: Partial<LegalArticle>[];
@@ -246,18 +267,22 @@ export function useAdminPanelState(
         newRegionName, setNewRegionName, newRegionCode, setNewRegionCode,
         newDeptName, setNewDeptName, newDeptCode, setNewDeptCode, newDeptRegionId, setNewDeptRegionId,
         fetchRegions, handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
+        pendingDeleteRegion, confirmDeleteRegion, cancelDeleteRegion, deletingRegion,
+        pendingDeleteDepartment, confirmDeleteDepartment, cancelDeleteDepartment, deletingDepartment,
     } = useRegionsTab(apiClient, notify);
 
     // ---- Élections — délégué à useElectionsTab (refactor admin) ----
     const {
         elections, newElection, setNewElection,
         fetchElections, handleCreateElection, handleElectionStatus, handleDeleteElection,
+        pendingDeleteElection, confirmDeleteElection, cancelDeleteElection, deletingElection,
     } = useElectionsTab(apiClient, notify);
 
     // ---- Types d'incidents — délégué à useIncidentTypesTab (refactor admin) ----
     const {
         incidentTypes, newIncident, setNewIncident,
         fetchIncidentTypes, handleCreateIncidentType, handleDeleteIncidentType,
+        pendingDeleteIncidentType, confirmDeleteIncidentType, cancelDeleteIncidentType, deletingIncidentType,
     } = useIncidentTypesTab(apiClient, notify);
 
     // ---- KPIs ----
@@ -285,6 +310,7 @@ export function useAdminPanelState(
         newDoc, setNewDoc, newArticle, setNewArticle,
         showImportAssistant, setShowImportAssistant,
         confirmDeleteDocId, setConfirmDeleteDocId,
+        pendingDeleteArticleId, setPendingDeleteArticleId,
         rawTextToParse, setRawTextToParse,
         extractedArticles, setExtractedArticles,
         semanticQuery, setSemanticQuery,
@@ -404,14 +430,18 @@ export function useAdminPanelState(
         newDeptCode, setNewDeptCode,
         newDeptRegionId, setNewDeptRegionId,
         handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
+        pendingDeleteRegion, confirmDeleteRegion, cancelDeleteRegion, deletingRegion,
+        pendingDeleteDepartment, confirmDeleteDepartment, cancelDeleteDepartment, deletingDepartment,
         // Élections
         elections, fetchElections,
         newElection, setNewElection,
         handleCreateElection, handleElectionStatus, handleDeleteElection,
+        pendingDeleteElection, confirmDeleteElection, cancelDeleteElection, deletingElection,
         // Incidents
         incidentTypes, fetchIncidentTypes,
         newIncident, setNewIncident,
         handleCreateIncidentType, handleDeleteIncidentType,
+        pendingDeleteIncidentType, confirmDeleteIncidentType, cancelDeleteIncidentType, deletingIncidentType,
         // KPIs
         kpis, fetchKPIs,
         // Config
@@ -433,6 +463,7 @@ export function useAdminPanelState(
         newArticle, setNewArticle,
         showImportAssistant, setShowImportAssistant,
         confirmDeleteDocId, setConfirmDeleteDocId,
+        pendingDeleteArticleId, setPendingDeleteArticleId,
         rawTextToParse, setRawTextToParse,
         extractedArticles, setExtractedArticles,
         semanticQuery, setSemanticQuery,

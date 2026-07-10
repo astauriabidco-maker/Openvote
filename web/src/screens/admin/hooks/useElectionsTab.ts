@@ -31,7 +31,17 @@ export interface ElectionsTabState {
     fetchElections: () => Promise<void>;
     handleCreateElection: () => Promise<void>;
     handleElectionStatus: (id: string, status: string) => Promise<void>;
-    handleDeleteElection: (id: string, name: string) => Promise<void>;
+    /**
+     * Demande de suppression. N'exécute plus rien de destructif : on stocke
+     * la cible dans `pendingDeleteElection` et l'UI ouvre un <ConfirmDialog>.
+     */
+    handleDeleteElection: (id: string, name: string) => void;
+
+    // Confirmation de suppression (ConfirmDialog — voir ElectionsTab)
+    pendingDeleteElection: { id: string; name: string } | null;
+    confirmDeleteElection: () => Promise<void>;
+    cancelDeleteElection: () => void;
+    deletingElection: boolean;
 }
 
 export function useElectionsTab(
@@ -42,6 +52,10 @@ export function useElectionsTab(
     const [newElection, setNewElection] = useState<NewElectionForm>({
         name: '', type: 'general', date: '', description: '', region_ids: 'all',
     });
+
+    // Confirmation de suppression (ConfirmDialog — voir ElectionsTab)
+    const [pendingDeleteElection, setPendingDeleteElection] = useState<{ id: string; name: string } | null>(null);
+    const [deletingElection, setDeletingElection] = useState(false);
 
     const fetchElections = useCallback(async () => {
         try {
@@ -77,16 +91,34 @@ export function useElectionsTab(
         }
     }, [apiClient, notify, fetchElections]);
 
-    const handleDeleteElection = useCallback(async (id: string, name: string) => {
-        if (!confirm(`Supprimer le scrutin "${name}" ?`)) return;
+    /**
+     * Demande de suppression. Remplace l'ancien `window.confirm()` : on
+     * stocke la cible dans `pendingDeleteElection` et l'UI ouvre un <ConfirmDialog>.
+     */
+    const handleDeleteElection = useCallback((id: string, name: string) => {
+        setPendingDeleteElection({ id, name });
+    }, []);
+
+    const confirmDeleteElection = useCallback(async () => {
+        if (!pendingDeleteElection) return;
+        const { id, name } = pendingDeleteElection;
+        setDeletingElection(true);
         try {
             await apiClient.delete(`/admin/elections/${id}`);
-            notify('success', `Scrutin supprimé`);
+            notify('success', `Scrutin "${name}" supprimé`);
+            setPendingDeleteElection(null);
             await fetchElections();
         } catch {
             notify('error', 'Erreur suppression scrutin');
+        } finally {
+            setDeletingElection(false);
         }
-    }, [apiClient, notify, fetchElections]);
+    }, [pendingDeleteElection, apiClient, notify, fetchElections]);
+
+    const cancelDeleteElection = useCallback(() => {
+        if (deletingElection) return; // ignore pendant un delete en cours
+        setPendingDeleteElection(null);
+    }, [deletingElection]);
 
     return {
         elections,
@@ -95,5 +127,10 @@ export function useElectionsTab(
         handleCreateElection,
         handleElectionStatus,
         handleDeleteElection,
+        // Confirmation de suppression (ConfirmDialog)
+        pendingDeleteElection,
+        confirmDeleteElection,
+        cancelDeleteElection,
+        deletingElection,
     };
 }
