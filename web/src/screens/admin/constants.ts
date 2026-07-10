@@ -86,3 +86,65 @@ export const TAB_KEYS = [
 ] as const;
 
 export type TabKey = (typeof TAB_KEYS)[number];
+
+/**
+ * Traductions FR/EN du chrome (libellés d'onglets, actions globales, etc.).
+ * Centralisé ici plutôt que dans useAdminUI pour faciliter la migration
+ * future vers un système i18n complet (react-i18next).
+ */
+export const TRANSLATIONS: Record<string, Record<string, string>> = {
+    dashboard: { fr: '📊 Tableau de Bord', en: '📊 Dashboard' },
+    users: { fr: '👥 Utilisateurs', en: '👥 Users' },
+    elections: { fr: '🗳️ Scrutins', en: '🗳️ Elections' },
+    tokens: { fr: '🔑 Enrôlement', en: '🔑 Enrollment' },
+    regions: { fr: '🗺️ Régions', en: '🗺️ Regions' },
+    incidents: { fr: '⚠️ Incidents', en: '⚠️ Incidents' },
+    logs: { fr: '📜 Audit', en: '📜 Audit' },
+    config: { fr: '⚙️ Config', en: '⚙️ Config' },
+    rbac: { fr: '🛡️ RBAC', en: '🛡️ RBAC' },
+    mfa: { fr: '🔐 MFA', en: '🔐 MFA' },
+    map: { fr: '🗺️ Carte Observateurs', en: '🗺️ Observers Map' },
+    intelligence: { fr: '📊 Veille Électorale', en: '📊 Election Intel' },
+    legal: { fr: '📜 Cadre Légal', en: '📜 Legal Framework' },
+    observers_map: { fr: '🗺️ Carte Observateurs', en: '🗺️ Observers Map' },
+    search_placeholder: { fr: '🔍 Rechercher par nom, rôle, ID...', en: '🔍 Search by name, role, ID...' },
+    export_csv: { fr: '📥 CSV', en: '📥 CSV' },
+    export_pdf: { fr: '📄 PDF', en: '📄 PDF' },
+    refresh: { fr: '🔄 Actualiser', en: '🔄 Refresh' },
+    create: { fr: '➕ Créer', en: '➕ Create' },
+    delete_confirm: { fr: 'Confirmer la suppression ?', en: 'Confirm deletion?' },
+    never: { fr: 'Jamais', en: 'Never' },
+    no_region: { fr: '— Aucune', en: '— None' },
+    alerts: { fr: 'alertes', en: 'alerts' },
+    // Tokens tab
+    generate: { fr: '🔑 Générer Token', en: '🔑 Generate Token' },
+    token_role: { fr: 'Rôle', en: 'Role' },
+    token_region: { fr: 'Région', en: 'Region' },
+    token_placeholder: { fr: 'Sélectionner une région', en: 'Select a region' },
+    token_expires: { fr: 'Expire le', en: 'Expires on' },
+    // Login
+    login_subtitle: { fr: 'Accédez au tableau de bord tactique et aux données terrain', en: 'Access the tactical dashboard and field data' },
+    // Export PDF
+    user_count: { fr: 'Utilisateurs', en: 'Users' },
+    report_count: { fr: 'Signalements', en: 'Reports' },
+    election_count: { fr: 'Scrutins', en: 'Elections' },
+    regions_table: { fr: 'Régions', en: 'Regions' },
+    elections_table: { fr: 'Scrutins', en: 'Elections' },
+    users_table: { fr: 'Utilisateurs', en: 'Users' },
+    code: { fr: 'Code', en: 'Code' },
+    region: { fr: 'Région', en: 'Region' },
+    name: { fr: 'Nom', en: 'Name' },
+    role: { fr: 'Rôle', en: 'Role' },
+    created: { fr: 'Créé', en: 'Created' },
+    status: { fr: 'Statut', en: 'Status' },
+    date: { fr: 'Date', en: 'Date' },
+    departements: { fr: 'Départements', en: 'Departments' },
+    // Config tab
+    config_title: { fr: '⚙️ Configuration runtime', en: '⚙️ Runtime config' },
+    save_config: { fr: '💾 Sauvegarder', en: '💾 Save' },
+    edit_config: { fr: '✏️ Modifier', en: '✏️ Edit' },
+    // Intelligence tab
+    intelligence_subtitle: { fr: 'Données démographiques et projections par région/département', en: 'Demographic data and projections by region/department' },
+    // Users tab
+    users_subtitle: { fr: 'Liste, modification de rôle/région, suppression', en: 'List, role/region change, deletion' },
+};

@@ -21,7 +21,7 @@
  * re-renders inutiles des onglets enfants.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { type AxiosInstance } from 'axios';
 import type {
     AdminUser, AuditLog, DepartmentData, ElectionData, AuthState,
@@ -29,7 +29,6 @@ import type {
     SemanticSearchResult,
 } from '../../types';
 import type { ApiPagination } from '../../apiTypes';
-import { REGION_COORDS } from '../../constants';
 import {
     type TabKey,
 } from './constants';
@@ -41,6 +40,8 @@ import { useConfigTab } from './hooks/useConfigTab';
 import { useElectionsTab, type NewElectionForm } from './hooks/useElectionsTab';
 import { useRegionsTab } from './hooks/useRegionsTab';
 import { useLegalTab, type NewDocForm, type NewArticleForm } from './hooks/useLegalTab';
+import { useAdminUI } from './hooks/useAdminUI';
+import { useObserversMap } from './hooks/useObserversMap';
 
 // ============================================================
 // Types de formulaires — les types des formulaires sont maintenant dans
@@ -195,36 +196,9 @@ export interface AdminPanelState {
 }
 
 // ============================================================
-// i18n (closure, pas dans le state — figé par `lang`)
+// i18n : les traductions sont dans constants.ts (TRANSLATIONS), importées
+// par useAdminUI. Le god-hook ne les connaît plus directement.
 // ============================================================
-
-const TRANSLATIONS: Record<string, Record<string, string>> = {
-    dashboard: { fr: '📊 Tableau de Bord', en: '📊 Dashboard' },
-    users: { fr: '👥 Utilisateurs', en: '👥 Users' },
-    elections: { fr: '🗳️ Scrutins', en: '🗳️ Elections' },
-    tokens: { fr: '🔑 Enrôlement', en: '🔑 Enrollment' },
-    regions: { fr: '🗺️ Régions', en: '🗺️ Regions' },
-    incidents: { fr: '⚠️ Incidents', en: '⚠️ Incidents' },
-    logs: { fr: '📜 Audit', en: '📜 Audit' },
-    config: { fr: '⚙️ Config', en: '⚙️ Config' },
-    rbac: { fr: '🛡️ RBAC', en: '🛡️ RBAC' },
-    mfa: { fr: '🔐 MFA', en: '🔐 MFA' },
-    intelligence: { fr: '📊 Veille Électorale', en: '📊 Election Intel' },
-    legal: { fr: '📜 Cadre Légal', en: '📜 Legal Framework' },
-    observers_map: { fr: '🗺️ Carte Observateurs', en: '🗺️ Observers Map' },
-    search_placeholder: { fr: '🔍 Rechercher par nom, rôle, ID...', en: '🔍 Search by name, role, ID...' },
-    export_csv: { fr: '📥 CSV', en: '📥 CSV' },
-    export_pdf: { fr: '📄 PDF', en: '📄 PDF' },
-    refresh: { fr: '🔄 Actualiser', en: '🔄 Refresh' },
-    create: { fr: '➕ Créer', en: '➕ Create' },
-    delete_confirm: { fr: 'Confirmer la suppression ?', en: 'Confirm deletion?' },
-    never: { fr: 'Jamais', en: 'Never' },
-    no_region: { fr: '— Aucune', en: '— None' },
-    save_config: { fr: '💾 Sauvegarder', en: '💾 Save' },
-    edit_config: { fr: '✏️ Modifier', en: '✏️ Edit' },
-    cancel: { fr: 'Annuler', en: 'Cancel' },
-    alerts: { fr: 'Alertes', en: 'Alerts' },
-};
 
 // ============================================================
 // Hook
@@ -234,69 +208,17 @@ export function useAdminPanelState(
     apiClient: AxiosInstance,
     auth: AuthState,
 ): AdminPanelState {
-    // ---- Active tab ----
-    const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
-
-    // ---- Theme + lang ----
-    const [theme, setTheme] = useState<'dark' | 'light'>(() =>
-        (localStorage.getItem('openvote_theme') as 'dark' | 'light') || 'dark',
-    );
-    const [lang, setLang] = useState<'fr' | 'en'>(() =>
-        (localStorage.getItem('openvote_lang') as 'fr' | 'en') || 'fr',
-    );
-
-    const t = useCallback(
-        (key: string) => TRANSLATIONS[key]?.[lang] || key,
-        [lang],
-    );
-
-    const toggleTheme = useCallback(() => {
-        setTheme((prev) => {
-            const next = prev === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('openvote_theme', next);
-            document.documentElement.setAttribute('data-theme', next);
-            return next;
-        });
-    }, []);
-
-    const toggleLang = useCallback(() => {
-        setLang((prev) => {
-            const next = prev === 'fr' ? 'en' : 'fr';
-            localStorage.setItem('openvote_lang', next);
-            return next;
-        });
-    }, []);
-
-    // Apply theme on mount + when it changes.
-    useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-    }, [theme]);
-
-    // ---- Notifications ----
-    const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
-    const notify = useCallback((type: 'success' | 'error' | 'info', text: string) => {
-        setNotification({ type, text });
-        setTimeout(() => setNotification(null), 4000);
-    }, []);
-
-    // ---- PWA ----
-    const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
-    const [showInstallBanner, setShowInstallBanner] = useState(false);
-    const [pendingReportsCount, setPendingReportsCount] = useState(0);
-
-    useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-        const handleInstallable = () => setShowInstallBanner(true);
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-        document.addEventListener('openvote:installable', handleInstallable);
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-            document.removeEventListener('openvote:installable', handleInstallable);
-        };
-    }, []);
+    // ---- Chrome UI (refactor admin) ----
+    // Navigation, thème, i18n, notifications, PWA : tout est extrait.
+    // `notify` est passé aux hooks de domaine qui en ont besoin.
+    const {
+        activeTab, setActiveTab,
+        theme, toggleTheme,
+        lang, toggleLang, t,
+        notification, notify,
+        isOnline, showInstallBanner, setShowInstallBanner,
+        pendingReportsCount,
+    } = useAdminUI();
 
     // ---- Users (M5 + M6) — délégué à useUsersTab (refactor admin) ----
     // La logique (state + handlers) est extraite dans hooks/useUsersTab.ts.
@@ -407,26 +329,7 @@ export function useAdminPanelState(
         if (kpis) setAlertCount(kpis.reports.pending);
     }, [kpis]);
 
-    // ---- Pending reports count from IndexedDB (PWA offline) ----
-    useEffect(() => {
-        const checkPending = () => {
-            try {
-                const req = indexedDB.open('openvote-offline', 1);
-                req.onsuccess = () => {
-                    try {
-                        const db = req.result;
-                        if (!db.objectStoreNames.contains('pending-reports')) return;
-                        const tx = db.transaction('pending-reports', 'readonly');
-                        const count = tx.objectStore('pending-reports').count();
-                        count.onsuccess = () => setPendingReportsCount(count.result);
-                    } catch { /* store absent (v2 DB) */ }
-                };
-            } catch { /* IndexedDB not available */ }
-        };
-        checkPending();
-        const interval = setInterval(checkPending, 30000);
-        return () => clearInterval(interval);
-    }, []);
+    // NOTE : le useEffect IndexedDB pour pendingReportsCount est dans useAdminUI.
 
     // ============================================================
     // Handlers (useCallback pour stabilité des refs)
@@ -461,13 +364,9 @@ export function useAdminPanelState(
     }, [apiClient, notify, deptDraft, fetchRegions]);
 
     // ---- Computed : observateurs par région (pour la carte) ----
-    const observersByRegion = useMemo(() => regions.map((r) => ({
-        ...r,
-        lat: REGION_COORDS[r.code]?.lat,
-        lon: REGION_COORDS[r.code]?.lon,
-        observers: users.filter((u) => u.region_id === r.id && (u.role === 'observer' || u.role === 'local_coord')).length,
-        totalUsers: users.filter((u) => u.region_id === r.id).length,
-    })), [regions, users]);
+    // Délégué à useObserversMap (refactor admin) — pure compute, testable
+    // en isolation sans mock axios.
+    const observersByRegion = useObserversMap(regions, users);
 
     // ============================================================
     // Retour du hook — objet aplati pour faciliter la déstructuration
