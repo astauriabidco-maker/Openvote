@@ -7,10 +7,16 @@
  *
  * ConfirmDialog : deux modales distinctes pour la suppression (région vs
  * département) — les messages diffèrent (région = cascade départements).
+ *
+ * Import CSV : un troisième FormModal permet d'uploader un CSV
+ * démographique (colonnes code, population, registered_voters, data_source)
+ * via POST /admin/regions/import-csv. Bouton "📥 Import CSV" + lien de
+ * téléchargement du modèle pré-rempli.
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
 import ConfirmDialog from '../components/ConfirmDialog';
+import FormModal from '../components/FormModal';
 
 export default function RegionsTab({ state }: { state: AdminPanelState }) {
     const {
@@ -21,13 +27,21 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
         pendingDeleteRegion, confirmDeleteRegion, cancelDeleteRegion, deletingRegion,
         pendingDeleteDepartment, confirmDeleteDepartment, cancelDeleteDepartment, deletingDepartment,
+        importCSVMopen, setImportCSVMopen,
+        importCSVFile, setImportCSVFile,
+        importCSVYear, setImportCSVYear,
+        importCSVSource, setImportCSVSource,
+        importingCSV, handleImportCSV, handleDownloadTemplate,
     } = state;
 
     return (
         <div className="admin-section">
             <div className="admin-section-header">
                 <h2>🗺️ Régions & Départements ({regions.length} régions, {regions.reduce((a, r) => a + r.dept_count, 0)} départements)</h2>
-                <button className="admin-refresh-btn" onClick={fetchRegions}>🔄 Actualiser</button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="admin-refresh-btn" onClick={() => setImportCSVMopen(true)}>📥 Import CSV</button>
+                    <button className="admin-refresh-btn" onClick={fetchRegions}>🔄 Actualiser</button>
+                </div>
             </div>
 
             {/* Ajouter une région */}
@@ -157,6 +171,113 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                 onConfirm={confirmDeleteDepartment}
                 onCancel={cancelDeleteDepartment}
             />
+
+            {/* FormModal : import CSV démographique. */}
+            <FormModal
+                open={importCSVMopen}
+                title="📥 Import CSV démographie"
+                onClose={() => {
+                    if (importingCSV) return;
+                    setImportCSVMopen(false);
+                    setImportCSVFile(null);
+                }}
+                onSubmit={handleImportCSV}
+                submitting={importingCSV}
+                submitLabel={importingCSV ? 'Import en cours…' : 'Importer'}
+                submitDisabled={!importCSVFile}
+            >
+                <div style={{
+                    padding: '10px 12px',
+                    background: 'rgba(88,166,255,0.08)',
+                    border: '1px solid rgba(88,166,255,0.25)',
+                    borderRadius: 6,
+                    fontSize: '0.78rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                }}>
+                    <strong style={{ color: 'var(--accent-blue)' }}>Format attendu :</strong>
+                    <br />Colonnes <code>code</code>, <code>population</code>,{' '}
+                    <code>registered_voters</code> (ou <code>inscrits</code>),{' '}
+                    <code>data_source</code> (optionnel).
+                    <br />Le <code>code</code> doit correspondre à un département existant
+                    (voir le modèle).
+                </div>
+
+                <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    style={{
+                        background: 'none',
+                        border: '1px dashed rgba(88,166,255,0.4)',
+                        color: 'var(--accent-blue)',
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: '0.78rem',
+                        alignSelf: 'flex-start',
+                    }}
+                >
+                    📋 Télécharger le modèle pré-rempli
+                </button>
+
+                <div className="form-group">
+                    <label style={{ color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: 6, display: 'block' }}>
+                        Fichier CSV
+                    </label>
+                    <input
+                        type="file"
+                        accept=".csv,text/csv"
+                        onChange={(e) => setImportCSVFile(e.target.files?.[0] ?? null)}
+                        disabled={importingCSV}
+                        style={{
+                            color: 'var(--text-primary)',
+                            fontSize: '0.85rem',
+                            padding: 6,
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 6,
+                            width: '100%',
+                        }}
+                    />
+                    {importCSVFile && (
+                        <small style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', marginTop: 4, display: 'block' }}>
+                            ✓ {importCSVFile.name} ({(importCSVFile.size / 1024).toFixed(1)} KB)
+                        </small>
+                    )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                        <label style={{ color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: 6, display: 'block' }}>
+                            Année des données
+                        </label>
+                        <input
+                            type="number"
+                            min="2000"
+                            max="2100"
+                            value={importCSVYear}
+                            onChange={(e) => setImportCSVYear(parseInt(e.target.value, 10) || 2025)}
+                            disabled={importingCSV}
+                            className="admin-input"
+                            style={{ width: '100%' }}
+                        />
+                    </div>
+                    <div className="form-group" style={{ flex: 2 }}>
+                        <label style={{ color: 'var(--text-primary)', fontSize: '0.85rem', marginBottom: 6, display: 'block' }}>
+                            Source
+                        </label>
+                        <input
+                            type="text"
+                            value={importCSVSource}
+                            onChange={(e) => setImportCSVSource(e.target.value)}
+                            disabled={importingCSV}
+                            placeholder="Ex: BUCREP 2023, MINATD, Estimé"
+                            className="admin-input"
+                            style={{ width: '100%' }}
+                        />
+                    </div>
+                </div>
+            </FormModal>
         </div>
     );
 }

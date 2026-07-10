@@ -120,6 +120,18 @@ export interface AdminPanelState {
     confirmDeleteDepartment: () => Promise<void>;
     cancelDeleteDepartment: () => void;
     deletingDepartment: boolean;
+    // Import CSV démographie (UI : FormModal dans RegionsTab)
+    importCSVMopen: boolean;
+    setImportCSVMopen: (b: boolean) => void;
+    importCSVFile: File | null;
+    setImportCSVFile: (f: File | null) => void;
+    importCSVYear: number;
+    setImportCSVYear: (n: number) => void;
+    importCSVSource: string;
+    setImportCSVSource: (s: string) => void;
+    importingCSV: boolean;
+    handleImportCSV: (e: React.FormEvent) => Promise<void>;
+    handleDownloadTemplate: () => Promise<void>;
 
     // ---- Élections ----
     elections: ElectionData[];
@@ -269,6 +281,11 @@ export function useAdminPanelState(
         fetchRegions, handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
         pendingDeleteRegion, confirmDeleteRegion, cancelDeleteRegion, deletingRegion,
         pendingDeleteDepartment, confirmDeleteDepartment, cancelDeleteDepartment, deletingDepartment,
+        importCSVMopen, setImportCSVMopen,
+        importCSVFile, setImportCSVFile,
+        importCSVYear, setImportCSVYear,
+        importCSVSource, setImportCSVSource,
+        importingCSV, handleImportCSV, handleDownloadTemplate,
     } = useRegionsTab(apiClient, notify);
 
     // ---- Élections — délégué à useElectionsTab (refactor admin) ----
@@ -432,6 +449,11 @@ export function useAdminPanelState(
         handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
         pendingDeleteRegion, confirmDeleteRegion, cancelDeleteRegion, deletingRegion,
         pendingDeleteDepartment, confirmDeleteDepartment, cancelDeleteDepartment, deletingDepartment,
+        importCSVMopen, setImportCSVMopen,
+        importCSVFile, setImportCSVFile,
+        importCSVYear, setImportCSVYear,
+        importCSVSource, setImportCSVSource,
+        importingCSV, handleImportCSV, handleDownloadTemplate,
         // Élections
         elections, fetchElections,
         newElection, setNewElection,

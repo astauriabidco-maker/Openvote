@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { type AxiosInstance } from 'axios';
+import { type AxiosInstance, isAxiosError } from 'axios';
 import type { RegionWithDepts } from '../../../types';
 import type { NotifyFn } from './useUsersTab';
 
@@ -59,6 +59,19 @@ export interface RegionsTabState {
     confirmDeleteDepartment: () => Promise<void>;
     cancelDeleteDepartment: () => void;
     deletingDepartment: boolean;
+
+    // Import CSV démographie (endpoint /admin/regions/import-csv)
+    importCSVMopen: boolean;
+    setImportCSVMopen: (b: boolean) => void;
+    importCSVFile: File | null;
+    setImportCSVFile: (f: File | null) => void;
+    importCSVYear: number;
+    setImportCSVYear: (n: number) => void;
+    importCSVSource: string;
+    setImportCSVSource: (s: string) => void;
+    importingCSV: boolean;
+    handleImportCSV: (e: React.FormEvent) => Promise<void>;
+    handleDownloadTemplate: () => Promise<void>;
 }
 
 export function useRegionsTab(
@@ -80,6 +93,13 @@ export function useRegionsTab(
     const [deletingRegion, setDeletingRegion] = useState(false);
     const [pendingDeleteDepartment, setPendingDeleteDepartment] = useState<{ id: string; name: string } | null>(null);
     const [deletingDepartment, setDeletingDepartment] = useState(false);
+
+    // State de la modale Import CSV démographie (voir RegionsTab)
+    const [importCSVMopen, setImportCSVMopen] = useState(false);
+    const [importCSVFile, setImportCSVFile] = useState<File | null>(null);
+    const [importCSVYear, setImportCSVYear] = useState(2025);
+    const [importCSVSource, setImportCSVSource] = useState('BUCREP');
+    const [importingCSV, setImportingCSV] = useState(false);
 
     const fetchRegions = useCallback(async () => {
         try {
@@ -182,6 +202,75 @@ export function useRegionsTab(
         setPendingDeleteDepartment(null);
     }, [deletingDepartment]);
 
+    // -------- Import CSV démographie --------
+    // Upload multipart du fichier CSV + champs data_year et source_name.
+    // Le backend (region_handler.ImportCSV) parse, met à jour les
+    // départements par code et renvoie { updated, failed, errors, filename }.
+    // On notifie le résultat avec un récapitulatif.
+    const handleImportCSV = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!importCSVFile) {
+            notify('error', 'Aucun fichier sélectionné');
+            return;
+        }
+        setImportingCSV(true);
+        const formData = new FormData();
+        formData.append('file', importCSVFile);
+        formData.append('data_year', String(importCSVYear));
+        formData.append('source_name', importCSVSource || 'Import CSV');
+        try {
+            const res = await apiClient.post('/admin/regions/import-csv', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const updated: number = res.data?.updated ?? 0;
+            const failed: number = res.data?.failed ?? 0;
+            if (failed === 0) {
+                notify('success', `✅ ${updated} départements mis à jour depuis "${res.data?.filename || importCSVFile.name}"`);
+            } else {
+                notify('info', `⚠️ ${updated} maj, ${failed} échoués (codes introuvables). Voir logs serveur.`);
+            }
+            setImportCSVMopen(false);
+            setImportCSVFile(null);
+            await fetchRegions();
+        } catch (err: unknown) {
+            const msg = isAxiosError(err)
+                ? (err.response?.data?.error as string) || 'Format CSV invalide'
+                : 'Erreur lors de l\'import';
+            // Le backend renvoie les colonnes trouvées + le format attendu
+            // quand le header est invalide. On l'affiche à l'utilisateur.
+            if (isAxiosError(err) && err.response?.data?.format_attendu) {
+                notify('error', `${msg} — Format attendu : ${err.response.data.format_attendu}`);
+            } else {
+                notify('error', msg);
+            }
+        } finally {
+            setImportingCSV(false);
+        }
+    }, [importCSVFile, importCSVYear, importCSVSource, apiClient, notify, fetchRegions]);
+
+    // Télécharge le CSV modèle (avec tous les codes départements pré-remplis).
+    // Le backend renvoie text/csv avec Content-Disposition: attachment.
+    // On fetch en blob et on déclenche un download via createObjectURL.
+    const handleDownloadTemplate = useCallback(async () => {
+        try {
+            const res = await apiClient.get('/admin/regions/import-csv/template', {
+                responseType: 'blob',
+            });
+            const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'openvote_departments_template.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            notify('info', 'Modèle CSV téléchargé — remplis les colonnes population et registered_voters');
+        } catch {
+            notify('error', 'Erreur téléchargement du modèle');
+        }
+    }, [apiClient, notify]);
+
     return {
         regions,
         expandedRegion, setExpandedRegion,
@@ -204,5 +293,13 @@ export function useRegionsTab(
         confirmDeleteDepartment,
         cancelDeleteDepartment,
         deletingDepartment,
+        // Import CSV démographie
+        importCSVMopen, setImportCSVMopen,
+        importCSVFile, setImportCSVFile,
+        importCSVYear, setImportCSVYear,
+        importCSVSource, setImportCSVSource,
+        importingCSV,
+        handleImportCSV,
+        handleDownloadTemplate,
     };
 }
