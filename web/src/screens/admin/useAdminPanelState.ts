@@ -38,18 +38,11 @@ import { useAuditLogsTab } from './hooks/useAuditLogsTab';
 import { useIncidentTypesTab, type NewIncidentForm } from './hooks/useIncidentTypesTab';
 import { useTokensTab } from './hooks/useTokensTab';
 import { useConfigTab } from './hooks/useConfigTab';
+import { useElectionsTab, type NewElectionForm } from './hooks/useElectionsTab';
 
 // ============================================================
 // Types de formulaires
 // ============================================================
-
-interface NewElectionForm {
-    name: string;
-    type: string;
-    date: string;
-    description: string;
-    region_ids: string;
-}
 
 interface NewDocForm {
     title: string;
@@ -347,20 +340,12 @@ export function useAdminPanelState(
         } catch { notify('error', 'Erreur chargement régions'); }
     }, [apiClient, notify]);
 
-    // ---- Élections ----
-    const [elections, setElections] = useState<ElectionData[]>([]);
-    const [newElection, setNewElection] = useState({
-        name: '', type: 'general', date: '', description: '', region_ids: 'all',
-    });
+    // ---- Élections — délégué à useElectionsTab (refactor admin) ----
+    const {
+        elections, newElection, setNewElection,
+        fetchElections, handleCreateElection, handleElectionStatus, handleDeleteElection,
+    } = useElectionsTab(apiClient, notify);
 
-    const fetchElections = useCallback(async () => {
-        try {
-            const res = await apiClient.get('/admin/elections');
-            setElections(res.data.elections || []);
-        } catch { notify('error', 'Erreur chargement scrutins'); }
-    }, [apiClient, notify]);
-
-    // ---- Types d'incidents ----
     // ---- Types d'incidents — délégué à useIncidentTypesTab (refactor admin) ----
     const {
         incidentTypes, newIncident, setNewIncident,
@@ -530,32 +515,7 @@ export function useAdminPanelState(
         } catch { notify('error', 'Erreur suppression département'); }
     }, [apiClient, notify, fetchRegions]);
 
-    const handleCreateElection = useCallback(async () => {
-        if (!newElection.name || !newElection.date) { notify('error', 'Nom et date requis'); return; }
-        try {
-            await apiClient.post('/admin/elections', newElection);
-            notify('success', `Scrutin "${newElection.name}" créé`);
-            setNewElection({ name: '', type: 'general', date: '', description: '', region_ids: 'all' });
-            fetchElections();
-        } catch { notify('error', 'Erreur création scrutin'); }
-    }, [apiClient, notify, newElection, fetchElections]);
-
-    const handleElectionStatus = useCallback(async (id: string, status: string) => {
-        try {
-            await apiClient.patch(`/admin/elections/${id}/status`, { status });
-            notify('success', `Statut mis à jour`);
-            fetchElections();
-        } catch { notify('error', 'Erreur mise à jour statut'); }
-    }, [apiClient, notify, fetchElections]);
-
-    const handleDeleteElection = useCallback(async (id: string, name: string) => {
-        if (!confirm(`Supprimer le scrutin "${name}" ?`)) return;
-        try {
-            await apiClient.delete(`/admin/elections/${id}`);
-            notify('success', `Scrutin supprimé`);
-            fetchElections();
-         } catch { notify('error', 'Erreur suppression scrutin'); }
-    }, [apiClient, notify, fetchElections]);
+    // NOTE : handleCreateElection/handleElectionStatus/handleDeleteElection sont dans useElectionsTab.
 
     // NOTE : handleCreateIncidentType et handleDeleteIncidentType sont dans useIncidentTypesTab.
     // NOTE : handleSaveConfig est dans useConfigTab.
