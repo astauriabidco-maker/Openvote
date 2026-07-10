@@ -36,6 +36,7 @@ import {
 } from './constants';
 import { useUsersTab } from './hooks/useUsersTab';
 import { useAuditLogsTab } from './hooks/useAuditLogsTab';
+import { useIncidentTypesTab, type NewIncidentForm } from './hooks/useIncidentTypesTab';
 
 // ============================================================
 // Types de formulaires
@@ -47,14 +48,6 @@ interface NewElectionForm {
     date: string;
     description: string;
     region_ids: string;
-}
-
-interface NewIncidentForm {
-    name: string;
-    code: string;
-    description: string;
-    severity: number;
-    color: string;
 }
 
 interface NewDocForm {
@@ -367,17 +360,11 @@ export function useAdminPanelState(
     }, [apiClient, notify]);
 
     // ---- Types d'incidents ----
-    const [incidentTypes, setIncidentTypes] = useState<IncidentTypeData[]>([]);
-    const [newIncident, setNewIncident] = useState({
-        name: '', code: '', description: '', severity: 3, color: '#f0883e',
-    });
-
-    const fetchIncidentTypes = useCallback(async () => {
-        try {
-            const res = await apiClient.get('/incident-types');
-            setIncidentTypes(res.data.incident_types || []);
-        } catch { notify('error', 'Erreur chargement types incidents'); }
-    }, [apiClient, notify]);
+    // ---- Types d'incidents — délégué à useIncidentTypesTab (refactor admin) ----
+    const {
+        incidentTypes, newIncident, setNewIncident,
+        fetchIncidentTypes, handleCreateIncidentType, handleDeleteIncidentType,
+    } = useIncidentTypesTab(apiClient, notify);
 
     // ---- KPIs ----
     const [kpis, setKpis] = useState<KPIData | null>(null);
@@ -568,27 +555,10 @@ export function useAdminPanelState(
             await apiClient.delete(`/admin/elections/${id}`);
             notify('success', `Scrutin supprimé`);
             fetchElections();
-        } catch { notify('error', 'Erreur suppression scrutin'); }
+         } catch { notify('error', 'Erreur suppression scrutin'); }
     }, [apiClient, notify, fetchElections]);
 
-    const handleCreateIncidentType = useCallback(async () => {
-        if (!newIncident.name || !newIncident.code) { notify('error', 'Nom et code requis'); return; }
-        try {
-            await apiClient.post('/admin/incident-types', newIncident);
-            notify('success', `Type "${newIncident.name}" créé`);
-            setNewIncident({ name: '', code: '', description: '', severity: 3, color: '#f0883e' });
-            fetchIncidentTypes();
-        } catch { notify('error', 'Erreur création type'); }
-    }, [apiClient, notify, newIncident, fetchIncidentTypes]);
-
-    const handleDeleteIncidentType = useCallback(async (id: string, name: string) => {
-        if (!confirm(`Supprimer le type "${name}" ?`)) return;
-        try {
-            await apiClient.delete(`/admin/incident-types/${id}`);
-            notify('success', `Type supprimé`);
-            fetchIncidentTypes();
-        } catch { notify('error', 'Erreur suppression type'); }
-    }, [apiClient, notify, fetchIncidentTypes]);
+    // NOTE : handleCreateIncidentType et handleDeleteIncidentType sont dans useIncidentTypesTab.
 
     const handleSaveConfig = useCallback(async () => {
         try {
