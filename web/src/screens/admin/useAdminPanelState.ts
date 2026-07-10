@@ -39,6 +39,7 @@ import { useIncidentTypesTab, type NewIncidentForm } from './hooks/useIncidentTy
 import { useTokensTab } from './hooks/useTokensTab';
 import { useConfigTab } from './hooks/useConfigTab';
 import { useElectionsTab, type NewElectionForm } from './hooks/useElectionsTab';
+import { useRegionsTab } from './hooks/useRegionsTab';
 
 // ============================================================
 // Types de formulaires
@@ -324,21 +325,13 @@ export function useAdminPanelState(
         auditLogs, auditPage, auditPagination, auditLoading, fetchAuditLogs,
     } = useAuditLogsTab(apiClient, notify);
 
-    // ---- Régions ----
-    const [regions, setRegions] = useState<RegionWithDepts[]>([]);
-    const [expandedRegion, setExpandedRegion] = useState<string | null>(null);
-    const [newRegionName, setNewRegionName] = useState('');
-    const [newRegionCode, setNewRegionCode] = useState('');
-    const [newDeptName, setNewDeptName] = useState('');
-    const [newDeptCode, setNewDeptCode] = useState('');
-    const [newDeptRegionId, setNewDeptRegionId] = useState('');
-
-    const fetchRegions = useCallback(async () => {
-        try {
-            const res = await apiClient.get('/regions');
-            setRegions(res.data.regions || []);
-        } catch { notify('error', 'Erreur chargement régions'); }
-    }, [apiClient, notify]);
+    // ---- Régions & Départements — délégué à useRegionsTab (refactor admin) ----
+    const {
+        regions, expandedRegion, setExpandedRegion,
+        newRegionName, setNewRegionName, newRegionCode, setNewRegionCode,
+        newDeptName, setNewDeptName, newDeptCode, setNewDeptCode, newDeptRegionId, setNewDeptRegionId,
+        fetchRegions, handleAddRegion, handleDeleteRegion, handleAddDepartment, handleDeleteDepartment,
+    } = useRegionsTab(apiClient, notify);
 
     // ---- Élections — délégué à useElectionsTab (refactor admin) ----
     const {
@@ -477,43 +470,7 @@ export function useAdminPanelState(
     // exportUsersCSV) sont extraits dans useUsersTab. Voir le commentaire au-dessus
     // du déréférencement useUsersTab plus haut dans ce fichier.
 
-    const handleAddRegion = useCallback(async () => {
-        if (!newRegionName.trim() || !newRegionCode.trim()) { notify('error', 'Nom et code requis'); return; }
-        try {
-            await apiClient.post('/admin/regions', { name: newRegionName, code: newRegionCode });
-            notify('success', `Région "${newRegionName}" créée`);
-            setNewRegionName(''); setNewRegionCode('');
-            fetchRegions();
-        } catch { notify('error', 'Erreur création région'); }
-    }, [apiClient, notify, newRegionName, newRegionCode, fetchRegions]);
-
-    const handleDeleteRegion = useCallback(async (id: string, name: string) => {
-        if (!confirm(`Supprimer la région "${name}" et TOUS ses départements ?`)) return;
-        try {
-            await apiClient.delete(`/admin/regions/${id}`);
-            notify('success', `Région "${name}" supprimée`);
-            fetchRegions();
-        } catch { notify('error', 'Erreur suppression région'); }
-    }, [apiClient, notify, fetchRegions]);
-
-    const handleAddDepartment = useCallback(async () => {
-        if (!newDeptName.trim() || !newDeptCode.trim() || !newDeptRegionId) { notify('error', 'Tous les champs requis'); return; }
-        try {
-            await apiClient.post('/admin/departments', { name: newDeptName, code: newDeptCode, region_id: newDeptRegionId });
-            notify('success', `Département "${newDeptName}" créé`);
-            setNewDeptName(''); setNewDeptCode(''); setNewDeptRegionId('');
-            fetchRegions();
-        } catch { notify('error', 'Erreur création département'); }
-    }, [apiClient, notify, newDeptName, newDeptCode, newDeptRegionId, fetchRegions]);
-
-    const handleDeleteDepartment = useCallback(async (id: string, name: string) => {
-        if (!confirm(`Supprimer le département "${name}" ?`)) return;
-        try {
-            await apiClient.delete(`/admin/departments/${id}`);
-            notify('success', `Département "${name}" supprimé`);
-            fetchRegions();
-        } catch { notify('error', 'Erreur suppression département'); }
-    }, [apiClient, notify, fetchRegions]);
+    // NOTE : handleAddRegion/handleDeleteRegion/handleAddDepartment/handleDeleteDepartment sont dans useRegionsTab.
 
     // NOTE : handleCreateElection/handleElectionStatus/handleDeleteElection sont dans useElectionsTab.
 
