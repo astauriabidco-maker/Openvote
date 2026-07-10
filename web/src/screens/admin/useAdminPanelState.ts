@@ -23,7 +23,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type AxiosInstance } from 'axios';
-import QRCode from 'qrcode';
 import type {
     AdminUser, AuditLog, DepartmentData, ElectionData, AuthState,
     IncidentTypeData, KPIData, LegalDocument, LegalArticle, RegionWithDepts,
@@ -37,6 +36,7 @@ import {
 import { useUsersTab } from './hooks/useUsersTab';
 import { useAuditLogsTab } from './hooks/useAuditLogsTab';
 import { useIncidentTypesTab, type NewIncidentForm } from './hooks/useIncidentTypesTab';
+import { useTokensTab } from './hooks/useTokensTab';
 
 // ============================================================
 // Types de formulaires
@@ -428,11 +428,13 @@ export function useAdminPanelState(
         finally { setLoadingArticles(false); }
     }, [apiClient, notify, selectedDocId]);
 
-    // ---- Tokens d'enrôlement ----
-    const [tokenRole, setTokenRole] = useState('observer');
-    const [tokenRegion, setTokenRegion] = useState('');
-    const [generatedToken, setGeneratedToken] = useState('');
-    const [qrDataUrl, setQrDataUrl] = useState('');
+    // ---- Tokens d'enrôlement — délégué à useTokensTab (refactor admin) ----
+    const {
+        tokenRole, setTokenRole,
+        tokenRegion, setTokenRegion,
+        generatedToken, qrDataUrl,
+        handleGenerateToken,
+    } = useTokensTab(apiClient, notify);
 
     // ---- Department data editing (intelligence tab) ----
     const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
@@ -570,21 +572,7 @@ export function useAdminPanelState(
         } catch { notify('error', 'JSON invalide ou erreur serveur'); }
     }, [apiClient, notify, configDraft, fetchConfig]);
 
-    const handleGenerateToken = useCallback(async () => {
-        if (!tokenRegion.trim()) { notify('error', 'Région requise'); return; }
-        try {
-            const res = await apiClient.post('/admin/generate-token', {
-                role: tokenRole, region_id: tokenRegion,
-            });
-            const token = res.data.activation_token;
-            setGeneratedToken(token);
-            try {
-                const url = await QRCode.toDataURL(token, { width: 256, margin: 2, color: { dark: '#e6edf3', light: '#0d1117' } });
-                setQrDataUrl(url);
-            } catch { setQrDataUrl(''); }
-            notify('success', 'Token généré avec succès');
-        } catch { notify('error', 'Erreur génération token'); }
-    }, [apiClient, notify, tokenRole, tokenRegion]);
+    // NOTE : handleGenerateToken est dans useTokensTab.
 
     // ---- Legal handlers ----
     const handleCreateLegalDoc = useCallback(async () => {
