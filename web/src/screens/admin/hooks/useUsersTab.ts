@@ -39,9 +39,20 @@ export interface UsersTabState {
     // Actions
     fetchUsers: (page?: number) => Promise<void>;
     handleRoleChange: (userId: string, newRole: string) => Promise<void>;
-    handleDeleteUser: (userId: string, username: string) => Promise<void>;
+    /**
+     * Demande de suppression d'un utilisateur. Ouvre la <ConfirmDialog> :
+     * l'appelant doit aussi rendre le dialogue et brancher confirm/cancel
+     * sur `pendingDelete` exposé ci-dessous.
+     */
+    handleDeleteUser: (userId: string, username: string) => void;
     handleRegionChange: (userId: string, newRegionId: string) => Promise<void>;
     exportUsersCSV: () => void;
+
+    // Confirmation de suppression (POC ConfirmDialog — voir UsersTab)
+    pendingDelete: { id: string; name: string } | null;
+    confirmDeleteUser: () => Promise<void>;
+    cancelDeleteUser: () => void;
+    deletingUser: boolean;
 }
 
 // ============================================================
@@ -67,6 +78,10 @@ export function useUsersTab(
         page: 1, limit: USERS_PAGE_SIZE, total: 0, total_pages: 0,
     });
     const [usersLoading, setUsersLoading] = useState(false);
+
+    // Confirmation de suppression (POC ConfirmDialog — voir UsersTab)
+    const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+    const [deletingUser, setDeletingUser] = useState(false);
 
     // -------- Fetch paginé --------
     const fetchUsers = useCallback(async (page = usersPage) => {
@@ -99,19 +114,39 @@ export function useUsersTab(
         }
     }, [apiClient, notify, fetchUsers]);
 
-    const handleDeleteUser = useCallback(async (userId: string, username: string) => {
-        if (!confirm(`Supprimer l'utilisateur "${username}" ?\nCette action est irréversible.`)) return;
+    /**
+     * Demande de suppression. N'exécute plus rien de destructif : on stocke
+     * la cible dans `pendingDelete` et l'UI ouvre un <ConfirmDialog>.
+     * La suppression effective se fait dans `confirmDeleteUser` après
+     * confirmation explicite. Remplace l'ancien `window.confirm()`.
+     */
+    const handleDeleteUser = useCallback((userId: string, username: string) => {
+        setPendingDelete({ id: userId, name: username });
+    }, []);
+
+    const confirmDeleteUser = useCallback(async () => {
+        if (!pendingDelete) return;
+        const { id, name } = pendingDelete;
+        setDeletingUser(true);
         try {
-            await apiClient.delete(`/admin/users/${userId}`);
-            notify('success', `Utilisateur "${username}" supprimé`);
+            await apiClient.delete(`/admin/users/${id}`);
+            notify('success', `Utilisateur "${name}" supprimé`);
+            setPendingDelete(null);
             await fetchUsers();
         } catch (err: unknown) {
             const msg = isAxiosError(err)
                 ? err.response?.data?.error
                 : 'Erreur';
             notify('error', msg || 'Erreur lors de la suppression');
+        } finally {
+            setDeletingUser(false);
         }
-    }, [apiClient, notify, fetchUsers]);
+    }, [pendingDelete, apiClient, notify, fetchUsers]);
+
+    const cancelDeleteUser = useCallback(() => {
+        if (deletingUser) return; // ignore pendant un delete en cours
+        setPendingDelete(null);
+    }, [deletingUser]);
 
     const handleRegionChange = useCallback(async (userId: string, newRegionId: string) => {
         const user = users.find((u) => u.id === userId);
@@ -155,5 +190,10 @@ export function useUsersTab(
         handleDeleteUser,
         handleRegionChange,
         exportUsersCSV,
+        // Confirmation de suppression (POC ConfirmDialog)
+        pendingDelete,
+        confirmDeleteUser,
+        cancelDeleteUser,
+        deletingUser,
     };
 }

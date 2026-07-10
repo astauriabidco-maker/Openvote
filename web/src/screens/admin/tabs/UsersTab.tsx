@@ -6,11 +6,16 @@
  *      dans `usersPagination`. Composant <Pagination> réutilisable.
  * M6 : pour un region_admin, le backend filtre déjà les résultats — on
  *      affiche un bandeau bleu d'avertissement pour transparence.
+ *
+ * POC ConfirmDialog : la suppression passe par une modale au lieu de
+ * `window.confirm()`. Le hook `useUsersTab` expose `pendingDelete` /
+ * `confirmDeleteUser` / `cancelDeleteUser` ; on rend la modale ici.
  */
 
 import Pagination from '../../../components/Pagination';
 import { formatDate } from '../../../utils/format';
 import { ROLES, ROLE_LABELS } from '../constants';
+import ConfirmDialog from '../components/ConfirmDialog';
 import type { AdminPanelState } from '../useAdminPanelState';
 
 export default function UsersTab({ state }: { state: AdminPanelState }) {
@@ -18,6 +23,7 @@ export default function UsersTab({ state }: { state: AdminPanelState }) {
         users, usersPagination, usersLoading, regions,
         fetchUsers, exportUsersCSV,
         handleRoleChange, handleDeleteUser, handleRegionChange,
+        pendingDelete, confirmDeleteUser, cancelDeleteUser, deletingUser,
         auth,
     } = state;
 
@@ -120,6 +126,21 @@ export default function UsersTab({ state }: { state: AdminPanelState }) {
                 totalPages={usersPagination.total_pages}
                 onPageChange={(p) => fetchUsers(p)}
                 isLoading={usersLoading}
+            />
+
+            {/* POC ConfirmDialog : confirme la suppression avant DELETE. */}
+            <ConfirmDialog
+                open={!!pendingDelete}
+                title="Supprimer l'utilisateur ?"
+                message={
+                    pendingDelete
+                        ? `Cette action est irréversible. Supprimer "${pendingDelete.name}" ?`
+                        : ''
+                }
+                confirmLabel={deletingUser ? 'Suppression…' : 'Supprimer'}
+                variant="danger"
+                onConfirm={confirmDeleteUser}
+                onCancel={cancelDeleteUser}
             />
         </div>
     );

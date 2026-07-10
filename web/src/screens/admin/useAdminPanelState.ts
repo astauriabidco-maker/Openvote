@@ -81,9 +81,14 @@ export interface AdminPanelState {
     usersLoading: boolean;
     fetchUsers: (page?: number) => Promise<void>;
     handleRoleChange: (userId: string, newRole: string) => Promise<void>;
-    handleDeleteUser: (userId: string, username: string) => Promise<void>;
+    handleDeleteUser: (userId: string, username: string) => void;
     handleRegionChange: (userId: string, newRegionId: string) => Promise<void>;
     exportUsersCSV: () => void;
+    // POC ConfirmDialog : state partagé pour la confirmation de suppression
+    pendingDelete: { id: string; name: string } | null;
+    confirmDeleteUser: () => Promise<void>;
+    cancelDeleteUser: () => void;
+    deletingUser: boolean;
 
     // ---- Audit logs (M5) ----
     auditLogs: AuditLog[];
@@ -227,6 +232,7 @@ export function useAdminPanelState(
     const {
         users, usersPage, usersPagination, usersLoading,
         fetchUsers, handleRoleChange, handleDeleteUser, handleRegionChange, exportUsersCSV,
+        pendingDelete, confirmDeleteUser, cancelDeleteUser, deletingUser,
     } = useUsersTab(apiClient, notify);
 
     // ---- Audit logs (M5) — délégué à useAuditLogsTab (refactor admin) ----
@@ -386,6 +392,7 @@ export function useAdminPanelState(
         // Users
         users, usersPage, usersPagination, usersLoading,
         fetchUsers, handleRoleChange, handleDeleteUser, handleRegionChange, exportUsersCSV,
+        pendingDelete, confirmDeleteUser, cancelDeleteUser, deletingUser,
         // Audit
         auditLogs, auditPage, auditPagination, auditLoading, fetchAuditLogs,
         // Régions
