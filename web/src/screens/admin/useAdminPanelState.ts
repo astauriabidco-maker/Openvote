@@ -132,6 +132,12 @@ export interface AdminPanelState {
     importingCSV: boolean;
     handleImportCSV: (e: React.FormEvent) => Promise<void>;
     handleDownloadTemplate: () => Promise<void>;
+    // Historique des imports CSV (modale avec DataTable)
+    importHistoryOpen: boolean;
+    setImportHistoryOpen: (b: boolean) => void;
+    importHistory: import('./hooks/useRegionsTab').DataImportRow[];
+    importHistoryLoading: boolean;
+    handleFetchImportHistory: () => Promise<void>;
 
     // ---- Élections ----
     elections: ElectionData[];
@@ -286,6 +292,8 @@ export function useAdminPanelState(
         importCSVYear, setImportCSVYear,
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
+        importHistoryOpen, setImportHistoryOpen,
+        importHistory, importHistoryLoading, handleFetchImportHistory,
     } = useRegionsTab(apiClient, notify);
 
     // ---- Élections — délégué à useElectionsTab (refactor admin) ----
@@ -454,6 +462,8 @@ export function useAdminPanelState(
         importCSVYear, setImportCSVYear,
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
+        importHistoryOpen, setImportHistoryOpen,
+        importHistory, importHistoryLoading, handleFetchImportHistory,
         // Élections
         elections, fetchElections,
         newElection, setNewElection,

@@ -258,4 +258,103 @@ describe('useRegionsTab — Import CSV démographie', () => {
         const { result } = renderHook(() => useRegionsTab(api, notify));
         expect(result.current.regions).toEqual<RegionWithDepts[]>([]);
     });
+
+    // ---- Historique des imports CSV ----
+    describe('handleFetchImportHistory', () => {
+        it('appelle GET /admin/regions/import-csv/history et stocke les imports', async () => {
+            const sampleImports = [
+                {
+                    id: 'i1',
+                    import_type: 'demographics',
+                    source_name: 'BUCREP 2023',
+                    file_name: 'demo.csv',
+                    records_updated: 12,
+                    records_failed: 2,
+                    imported_by: 'admin',
+                    notes: '12 maj, 2 échoués',
+                    created_at: '2026-07-10T14:00:00Z',
+                },
+                {
+                    id: 'i2',
+                    import_type: 'demographics',
+                    source_name: 'BUCREP 2024',
+                    file_name: 'demo2.csv',
+                    records_updated: 50,
+                    records_failed: 0,
+                    imported_by: 'admin',
+                    notes: '50 départements mis à jour',
+                    created_at: '2026-07-09T10:30:00Z',
+                },
+            ];
+            api.get.mockResolvedValueOnce({ data: { imports: sampleImports, total: 2 } });
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            expect(result.current.importHistory).toEqual([]);
+
+            await act(async () => {
+                await result.current.handleFetchImportHistory();
+            });
+
+            expect(api.get).toHaveBeenCalledTimes(1);
+            expect(api.get).toHaveBeenCalledWith('/admin/regions/import-csv/history');
+            expect(result.current.importHistory).toHaveLength(2);
+            expect(result.current.importHistory[0].source_name).toBe('BUCREP 2023');
+            expect(result.current.importHistory[0].records_updated).toBe(12);
+            expect(result.current.importHistoryLoading).toBe(false);
+        });
+
+        it('notifie une erreur et reset la liste si l\'appel échoue', async () => {
+            api.get.mockRejectedValueOnce(new Error('Network'));
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchImportHistory();
+            });
+
+            expect(notify).toHaveBeenCalledWith('error', expect.stringContaining('historique'));
+            expect(result.current.importHistory).toEqual([]);
+            expect(result.current.importHistoryLoading).toBe(false);
+        });
+
+        it('gère une réponse sans champ `imports` (defensive)', async () => {
+            api.get.mockResolvedValueOnce({ data: { total: 0 } });
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            await act(async () => {
+                await result.current.handleFetchImportHistory();
+            });
+
+            expect(result.current.importHistory).toEqual([]);
+        });
+
+        it('toggle le flag importHistoryLoading pendant le fetch', async () => {
+            // Mock qui résout seulement après qu'on ait lu loading=true
+            let resolveFn!: (v: unknown) => void;
+            api.get.mockReturnValueOnce(new Promise((resolve) => { resolveFn = resolve; }));
+
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+
+            // Lance le fetch sans await pour observer l'état intermédiaire
+            act(() => {
+                void result.current.handleFetchImportHistory();
+            });
+            // Synchronously, le flag doit être passé à true
+            expect(result.current.importHistoryLoading).toBe(true);
+
+            // Résout le mock → finally → loading doit revenir à false
+            await act(async () => {
+                resolveFn({ data: { imports: [] } });
+            });
+            expect(result.current.importHistoryLoading).toBe(false);
+        });
+
+        it('expose importHistoryOpen et son setter (modale)', () => {
+            const { result } = renderHook(() => useRegionsTab(api, notify));
+            expect(result.current.importHistoryOpen).toBe(false);
+            expect(typeof result.current.setImportHistoryOpen).toBe('function');
+
+            act(() => result.current.setImportHistoryOpen(true));
+            expect(result.current.importHistoryOpen).toBe(true);
+        });
+    });
 });

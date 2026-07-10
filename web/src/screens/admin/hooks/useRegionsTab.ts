@@ -72,6 +72,26 @@ export interface RegionsTabState {
     importingCSV: boolean;
     handleImportCSV: (e: React.FormEvent) => Promise<void>;
     handleDownloadTemplate: () => Promise<void>;
+
+    // Historique des imports (endpoint /admin/regions/import-csv/history)
+    importHistoryOpen: boolean;
+    setImportHistoryOpen: (b: boolean) => void;
+    importHistory: DataImportRow[];
+    importHistoryLoading: boolean;
+    handleFetchImportHistory: () => Promise<void>;
+}
+
+/** Shape d'une ligne d'historique (cf. entity.DataImport côté Go). */
+export interface DataImportRow {
+    id: string;
+    import_type: string;
+    source_name: string;
+    file_name: string;
+    records_updated: number;
+    records_failed: number;
+    imported_by: string;
+    notes: string;
+    created_at: string;
 }
 
 export function useRegionsTab(
@@ -271,6 +291,29 @@ export function useRegionsTab(
         }
     }, [apiClient, notify]);
 
+    // -------- Historique des imports CSV --------
+    // GET /admin/regions/import-csv/history → { imports: DataImportRow[], total }
+    // Le state importHistory est exposé pour que la modale <DataTable>
+    // affiche les lignes. L'appel est paresseux (à l'ouverture de la
+    // modale) pour éviter un fetch inutile au mount du tab.
+    const [importHistoryOpen, setImportHistoryOpen] = useState(false);
+    const [importHistory, setImportHistory] = useState<DataImportRow[]>([]);
+    const [importHistoryLoading, setImportHistoryLoading] = useState(false);
+
+    const handleFetchImportHistory = useCallback(async () => {
+        setImportHistoryLoading(true);
+        try {
+            const res = await apiClient.get('/admin/regions/import-csv/history');
+            const rows: DataImportRow[] = res.data?.imports ?? [];
+            setImportHistory(rows);
+        } catch {
+            notify('error', 'Erreur chargement de l\'historique');
+            setImportHistory([]);
+        } finally {
+            setImportHistoryLoading(false);
+        }
+    }, [apiClient, notify]);
+
     return {
         regions,
         expandedRegion, setExpandedRegion,
@@ -301,5 +344,10 @@ export function useRegionsTab(
         importingCSV,
         handleImportCSV,
         handleDownloadTemplate,
+        // Historique des imports
+        importHistoryOpen, setImportHistoryOpen,
+        importHistory,
+        importHistoryLoading,
+        handleFetchImportHistory,
     };
 }

@@ -12,11 +12,18 @@
  * démographique (colonnes code, population, registered_voters, data_source)
  * via POST /admin/regions/import-csv. Bouton "📥 Import CSV" + lien de
  * téléchargement du modèle pré-rempli.
+ *
+ * Historique des imports : une modale ad-hoc (pas de form, juste un
+ * <DataTable>) affiche les imports passés via GET /admin/regions/import-csv/history.
+ * Fetch paresseux à l'ouverture pour éviter un GET inutile au mount.
  */
 
+import { useEffect } from 'react';
 import type { AdminPanelState } from '../useAdminPanelState';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
+import DataTable, { type DataTableColumn } from '../components/DataTable';
+import type { DataImportRow } from '../hooks/useRegionsTab';
 
 export default function RegionsTab({ state }: { state: AdminPanelState }) {
     const {
@@ -32,13 +39,84 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         importCSVYear, setImportCSVYear,
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
+        importHistoryOpen, setImportHistoryOpen,
+        importHistory, importHistoryLoading, handleFetchImportHistory,
     } = state;
+
+    // Fetch paresseux : on ne charge l'historique qu'à l'ouverture de la modale.
+    // L'effet se déclenche aussi à l'ouverture d'un import réussi, pour
+    // voir la nouvelle ligne apparaître dans l'historique si l'admin le rouvre.
+    useEffect(() => {
+        if (importHistoryOpen) {
+            void handleFetchImportHistory();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [importHistoryOpen]);
+
+    // Colonnes du tableau d'historique. Tri client-side sur les colonnes
+    // 'date' (created_at), 'updated', 'failed'. Le rendu de 'updated' et
+    // 'failed' est custom (couleur rouge si > 0).
+    const historyColumns: DataTableColumn<DataImportRow>[] = [
+        {
+            key: 'created_at', label: 'Date', sortable: true,
+            render: (row) => {
+                const d = new Date(row.created_at);
+                return (
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+                        {d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                );
+            },
+        },
+        {
+            key: 'source_name', label: 'Source', sortable: true,
+            render: (row) => <strong>{row.source_name || '—'}</strong>,
+        },
+        {
+            key: 'file_name', label: 'Fichier', sortable: true,
+            render: (row) => (
+                <code style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    {row.file_name}
+                </code>
+            ),
+        },
+        {
+            key: 'records_updated', label: 'MàJ', sortable: true, align: 'right',
+            render: (row) => (
+                <span style={{ color: '#3fb950', fontWeight: 600 }}>{row.records_updated}</span>
+            ),
+        },
+        {
+            key: 'records_failed', label: 'Échecs', sortable: true, align: 'right',
+            render: (row) => (
+                <span style={{ color: row.records_failed > 0 ? '#f85149' : 'var(--text-secondary)', fontWeight: 600 }}>
+                    {row.records_failed}
+                </span>
+            ),
+        },
+        {
+            key: 'imported_by', label: 'Par', sortable: true,
+            render: (row) => <span style={{ color: 'var(--text-secondary)' }}>{row.imported_by}</span>,
+        },
+        {
+            key: 'notes', label: 'Notes', sortable: false,
+            render: (row) => (
+                <span
+                    style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}
+                    title={row.notes}
+                >
+                    {row.notes.length > 60 ? `${row.notes.slice(0, 57)}…` : row.notes}
+                </span>
+            ),
+        },
+    ];
 
     return (
         <div className="admin-section">
             <div className="admin-section-header">
                 <h2>🗺️ Régions & Départements ({regions.length} régions, {regions.reduce((a, r) => a + r.dept_count, 0)} départements)</h2>
                 <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="admin-refresh-btn" onClick={() => setImportHistoryOpen(true)}>📊 Historique</button>
                     <button className="admin-refresh-btn" onClick={() => setImportCSVMopen(true)}>📥 Import CSV</button>
                     <button className="admin-refresh-btn" onClick={fetchRegions}>🔄 Actualiser</button>
                 </div>
@@ -171,6 +249,86 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                 onConfirm={confirmDeleteDepartment}
                 onCancel={cancelDeleteDepartment}
             />
+
+            {/* Modale Historique des imports CSV (pas de form, juste DataTable). */}
+            {importHistoryOpen && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="import-history-title"
+                    onClick={() => setImportHistoryOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 10000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 20,
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(4px)',
+                        animation: 'confirm-fade-in 200ms ease',
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'linear-gradient(135deg, #161b22, #0d1117)',
+                            border: '1px solid rgba(48,54,61,0.8)',
+                            borderRadius: 14,
+                            padding: '24px 28px',
+                            maxWidth: 920,
+                            width: '100%',
+                            maxHeight: '90vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: 16,
+                            }}
+                        >
+                            <h2
+                                id="import-history-title"
+                                style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem' }}
+                            >
+                                📊 Historique des imports CSV
+                            </h2>
+                            <button
+                                type="button"
+                                aria-label="Fermer"
+                                onClick={() => setImportHistoryOpen(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '1.2rem',
+                                    cursor: 'pointer',
+                                    padding: '2px 8px',
+                                    borderRadius: 6,
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div style={{ overflow: 'auto', flex: 1 }}>
+                            <DataTable
+                                columns={historyColumns}
+                                rows={importHistory}
+                                keyExtractor={(r) => r.id}
+                                loading={importHistoryLoading}
+                                emptyMessage="Aucun import enregistré pour le moment"
+                                rowLabel="import"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* FormModal : import CSV démographique. */}
             <FormModal
