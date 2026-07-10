@@ -20,6 +20,12 @@ import type { NotifyFn } from './useUsersTab';
 // lisible sans scroller ; > 50 imports justifie la pagination.
 const HISTORY_PAGE_SIZE = 25;
 
+// Seuil de taille (en octets) au-dessus duquel on demande une
+// confirmation explicite avant d'uploader. 1 MiB = 1 048 576 octets.
+// Au-delà, le fichier commence à prendre du temps à parser côté
+// serveur et l'admin mérite un rappel que c'est un upload lourd.
+const LARGE_IMPORT_THRESHOLD_BYTES = 1_048_576;
+
 export interface RegionsTabState {
     // Données
     regions: RegionWithDepts[];
@@ -78,6 +84,10 @@ export interface RegionsTabState {
     importingCSV: boolean;
     handleImportCSV: (e: React.FormEvent) => Promise<void>;
     handleDownloadTemplate: () => Promise<void>;
+    // Confirmation de fichier volumineux (> 1 MiB) avant import
+    pendingLargeImport: boolean;
+    confirmLargeImport: () => Promise<void>;
+    cancelLargeImport: () => void;
 
     // Historique des imports (endpoint /admin/regions/import-csv/history)
     importHistoryOpen: boolean;
@@ -242,17 +252,25 @@ export function useRegionsTab(
     // Le backend (region_handler.ImportCSV) parse, met à jour les
     // départements par code et renvoie { updated, failed, errors, filename }.
     // On notifie le résultat avec un récapitulatif.
-    const handleImportCSV = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!importCSVFile) {
-            notify('error', 'Aucun fichier sélectionné');
-            return;
-        }
+    //
+    // Si le fichier dépasse LARGE_IMPORT_THRESHOLD_BYTES (1 MiB), on
+    // demande confirmation explicite via `pendingLargeImport` (rendue
+    // par <ConfirmDialog> dans RegionsTab). On évite ainsi qu'un clic
+    // maladroit déclenche un upload long sur des centaines de lignes.
+    const [pendingLargeImport, setPendingLargeImport] = useState(false);
+
+    /**
+     * Logique métier réelle d'upload (après confirmation éventuelle).
+     * Extraite pour pouvoir être appelée soit depuis handleImportCSV
+     * (chemin court, fichier < 1 MiB), soit depuis confirmLargeImport
+     * (chemin long, après validation de l'utilisateur).
+     */
+    const performImport = useCallback(async (file: File, year: number, source: string) => {
         setImportingCSV(true);
         const formData = new FormData();
-        formData.append('file', importCSVFile);
-        formData.append('data_year', String(importCSVYear));
-        formData.append('source_name', importCSVSource || 'Import CSV');
+        formData.append('file', file);
+        formData.append('data_year', String(year));
+        formData.append('source_name', source || 'Import CSV');
         try {
             const res = await apiClient.post('/admin/regions/import-csv', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -260,7 +278,7 @@ export function useRegionsTab(
             const updated: number = res.data?.updated ?? 0;
             const failed: number = res.data?.failed ?? 0;
             if (failed === 0) {
-                notify('success', `✅ ${updated} départements mis à jour depuis "${res.data?.filename || importCSVFile.name}"`);
+                notify('success', `✅ ${updated} départements mis à jour depuis "${res.data?.filename || file.name}"`);
             } else {
                 notify('info', `⚠️ ${updated} maj, ${failed} échoués (codes introuvables). Voir logs serveur.`);
             }
@@ -281,7 +299,33 @@ export function useRegionsTab(
         } finally {
             setImportingCSV(false);
         }
-    }, [importCSVFile, importCSVYear, importCSVSource, apiClient, notify, fetchRegions]);
+    }, [apiClient, notify, fetchRegions]);
+
+    const handleImportCSV = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!importCSVFile) {
+            notify('error', 'Aucun fichier sélectionné');
+            return;
+        }
+        // Si le fichier est volumineux, on demande confirmation AVANT
+        // de poster — évite un upload long sur un clic accidentel.
+        if (importCSVFile.size > LARGE_IMPORT_THRESHOLD_BYTES) {
+            setPendingLargeImport(true);
+            return;
+        }
+        await performImport(importCSVFile, importCSVYear, importCSVSource);
+    }, [importCSVFile, importCSVYear, importCSVSource, notify, performImport]);
+
+    const confirmLargeImport = useCallback(async () => {
+        if (!importCSVFile) return;
+        setPendingLargeImport(false);
+        await performImport(importCSVFile, importCSVYear, importCSVSource);
+    }, [importCSVFile, importCSVYear, importCSVSource, performImport]);
+
+    const cancelLargeImport = useCallback(() => {
+        if (importingCSV) return; // ignore pendant un upload en cours
+        setPendingLargeImport(false);
+    }, [importingCSV]);
 
     // Télécharge le CSV modèle (avec tous les codes départements pré-remplis).
     // Le backend renvoie text/csv avec Content-Disposition: attachment.
@@ -376,6 +420,9 @@ export function useRegionsTab(
         importingCSV,
         handleImportCSV,
         handleDownloadTemplate,
+        pendingLargeImport,
+        confirmLargeImport,
+        cancelLargeImport,
         // Historique des imports
         importHistoryOpen, setImportHistoryOpen,
         importHistory,

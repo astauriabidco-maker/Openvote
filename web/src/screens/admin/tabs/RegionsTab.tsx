@@ -39,6 +39,7 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         importCSVYear, setImportCSVYear,
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
+        pendingLargeImport, confirmLargeImport, cancelLargeImport,
         importHistoryOpen, setImportHistoryOpen,
         importHistory, importHistoryLoading,
         historyPage, historyPagination, handleFetchImportHistory,
@@ -444,6 +445,24 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                     </div>
                 </div>
             </FormModal>
+
+            {/* ConfirmDialog : si le fichier > 1 MiB, on demande confirmation
+                explicite avant l'upload. Évite un clic accidentel qui lance un
+                parse long sur des centaines de lignes. */}
+            <ConfirmDialog
+                open={pendingLargeImport}
+                title="Fichier volumineux détecté"
+                message={
+                    importCSVFile
+                        ? `Le fichier "${importCSVFile.name}" fait ${(importCSVFile.size / (1024 * 1024)).toFixed(2)} MiB (> 1 MiB). L'upload et le parsing peuvent prendre plusieurs secondes. Confirmer l'import ?`
+                        : ''
+                }
+                confirmLabel={importingCSV ? 'Import en cours…' : "Oui, importer l'ensemble"}
+                cancelLabel="Annuler"
+                variant="primary"
+                onConfirm={confirmLargeImport}
+                onCancel={cancelLargeImport}
+            />
         </div>
     );
 }

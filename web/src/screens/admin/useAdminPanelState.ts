@@ -132,6 +132,10 @@ export interface AdminPanelState {
     importingCSV: boolean;
     handleImportCSV: (e: React.FormEvent) => Promise<void>;
     handleDownloadTemplate: () => Promise<void>;
+    // Confirmation de fichier volumineux (> 1 MiB) avant import
+    pendingLargeImport: boolean;
+    confirmLargeImport: () => Promise<void>;
+    cancelLargeImport: () => void;
     // Historique des imports CSV (modale avec DataTable)
     importHistoryOpen: boolean;
     setImportHistoryOpen: (b: boolean) => void;
@@ -299,6 +303,7 @@ export function useAdminPanelState(
         importCSVYear, setImportCSVYear,
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
+        pendingLargeImport, confirmLargeImport, cancelLargeImport,
         importHistoryOpen, setImportHistoryOpen,
         importHistory, importHistoryLoading,
         historyPage, historyPagination, handleFetchImportHistory,
@@ -470,6 +475,7 @@ export function useAdminPanelState(
         importCSVYear, setImportCSVYear,
         importCSVSource, setImportCSVSource,
         importingCSV, handleImportCSV, handleDownloadTemplate,
+        pendingLargeImport, confirmLargeImport, cancelLargeImport,
         importHistoryOpen, setImportHistoryOpen,
         importHistory, importHistoryLoading,
         historyPage, historyPagination, handleFetchImportHistory,

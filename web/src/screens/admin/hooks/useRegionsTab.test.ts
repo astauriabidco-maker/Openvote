@@ -40,6 +40,15 @@ function makeCsvFile(name = 'demo.csv', content = 'code,population\nCE-MF,100000
     return new File([content], name, { type: 'text/csv' });
 }
 
+// Helper : génère un gros fichier (> 1 MiB) pour tester le seuil de
+// confirmation. On n'écrit pas 1 MiB de données en mémoire : on stub
+// directement la propriété .size du File.
+function makeLargeCsvFile(): File {
+    const file = makeCsvFile('big.csv', 'code,population\nCE-MF,1\n');
+    Object.defineProperty(file, 'size', { value: 2 * 1024 * 1024, writable: false });
+    return file;
+}
+
 describe('useRegionsTab — Import CSV démographie', () => {
     let api: ReturnType<typeof makeMockApi>;
     let notify: NotifyFn;
@@ -222,6 +231,76 @@ describe('useRegionsTab — Import CSV démographie', () => {
                 await result.current.handleImportCSV(fakeEvent);
             });
             expect(result.current.importingCSV).toBe(false);
+        });
+
+        // ---- Confirmation fichier volumineux (> 1 MiB) ----
+        describe('seuil 1 MiB', () => {
+            it('upload direct sans confirmation si fichier < 1 MiB', async () => {
+                api.post.mockResolvedValueOnce({
+                    data: { message: '5 départements mis à jour', updated: 5, failed: 0, errors: [], filename: 'small.csv' },
+                });
+                const { result } = renderHook(() => useRegionsTab(api, notify));
+                act(() => result.current.setImportCSVFile(makeCsvFile())); // < 1 MiB
+                const fakeEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+                await act(async () => {
+                    await result.current.handleImportCSV(fakeEvent);
+                });
+                expect(api.post).toHaveBeenCalledTimes(1);
+                expect(result.current.pendingLargeImport).toBe(false);
+            });
+
+            it('NE POSTE PAS si fichier > 1 MiB, ouvre la confirmation', async () => {
+                const { result } = renderHook(() => useRegionsTab(api, notify));
+                act(() => result.current.setImportCSVFile(makeLargeCsvFile())); // 2 MiB
+                const fakeEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+                await act(async () => {
+                    await result.current.handleImportCSV(fakeEvent);
+                });
+                expect(api.post).not.toHaveBeenCalled();
+                expect(result.current.pendingLargeImport).toBe(true);
+            });
+
+            it('confirmLargeImport déclenche l\'upload après validation', async () => {
+                api.post.mockResolvedValueOnce({
+                    data: { message: '5 départements mis à jour', updated: 5, failed: 0, errors: [], filename: 'big.csv' },
+                });
+                const { result } = renderHook(() => useRegionsTab(api, notify));
+                const big = makeLargeCsvFile();
+                act(() => result.current.setImportCSVFile(big));
+                // 1) Demande initiale → ouvre la modale
+                const fakeEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+                await act(async () => {
+                    await result.current.handleImportCSV(fakeEvent);
+                });
+                expect(result.current.pendingLargeImport).toBe(true);
+                expect(api.post).not.toHaveBeenCalled();
+                // 2) Confirmation → upload
+                await act(async () => {
+                    await result.current.confirmLargeImport();
+                });
+                expect(api.post).toHaveBeenCalledTimes(1);
+                expect(result.current.pendingLargeImport).toBe(false);
+            });
+
+            it('cancelLargeImport ferme la modale sans uploader', async () => {
+                const { result } = renderHook(() => useRegionsTab(api, notify));
+                act(() => result.current.setImportCSVFile(makeLargeCsvFile()));
+                const fakeEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+                await act(async () => {
+                    await result.current.handleImportCSV(fakeEvent);
+                });
+                expect(result.current.pendingLargeImport).toBe(true);
+                act(() => result.current.cancelLargeImport());
+                expect(result.current.pendingLargeImport).toBe(false);
+                expect(api.post).not.toHaveBeenCalled();
+            });
+
+            it('smoke : expose pendingLargeImport/confirm/cancel dans RegionsTabState', () => {
+                const { result } = renderHook(() => useRegionsTab(api, notify));
+                expect(result.current.pendingLargeImport).toBe(false);
+                expect(typeof result.current.confirmLargeImport).toBe('function');
+                expect(typeof result.current.cancelLargeImport).toBe('function');
+            });
         });
     });
 
