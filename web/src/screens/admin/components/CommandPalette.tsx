@@ -174,7 +174,7 @@ export default function CommandPalette({
                         ref={inputRef}
                         className="command-palette-input"
                         type="text"
-                        placeholder="Rechercher un onglet, un utilisateur, un scrutin…"
+                        placeholder="Rechercher un onglet, une action rapide, un utilisateur…"
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
                         autoComplete="off"
@@ -188,31 +188,25 @@ export default function CommandPalette({
                 <div className="command-palette-results" ref={listRef} role="listbox">
                     {results.length === 0 ? (
                         <div className="command-palette-empty" data-testid="command-palette-empty">
-                            <span>Aucun onglet trouvé pour </span>
+                            <span>Aucun onglet ni action trouvé pour </span>
                             <strong>"{query}"</strong>
                         </div>
                     ) : (
                         results.map((r, i) => {
                             const isSelected = i === selectedIndex;
+                            // Badge selon le type d'item.
+                            // - tab → "Onglet"
+                            // - action → action.tag (ex: "Export", "Thème")
+                            const kindBadge = r.kind === 'tab' ? 'Onglet' : r.tag;
                             return (
                                 <button
                                     key={r.id}
                                     type="button"
                                     data-result-index={i}
                                     data-selected={isSelected ? 'true' : 'false'}
+                                    data-result-kind={r.kind}
                                     className={`command-palette-result${isSelected ? ' selected' : ''}`}
                                     onClick={() => onSelect(r)}
-                                    onMouseEnter={() => {
-                                        // Highlight au survol souris
-                                        if (i !== selectedIndex) {
-                                            // Note : on ne set pas selectedIndex ici directement,
-                                            // le caller (AdminPanel) gère via une callback dédiée
-                                            // si on veut. Ici on laisse la souris mettre à jour
-                                            // via onSelectHighlighted, qui sera appelé au clic.
-                                            // Le hover visuel est OK (classe .selected via mouseenter
-                                            // peut être ajoutée par CSS si besoin).
-                                        }
-                                    }}
                                     role="option"
                                     aria-selected={isSelected}
                                     data-testid={`command-palette-result-${i}`}
@@ -225,6 +219,13 @@ export default function CommandPalette({
                                             <HighlightedLabel label={r.label} query={query} />
                                         </span>
                                         <span className="command-palette-result-group">{r.group}</span>
+                                    </span>
+                                    <span
+                                        className={`command-palette-result-kind kind-${r.kind}`}
+                                        data-result-kind={r.kind}
+                                        data-testid={`command-palette-kind-${i}`}
+                                    >
+                                        {kindBadge}
                                     </span>
                                     {isSelected && <ChevronIcon />}
                                 </button>

@@ -28,20 +28,38 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TabKey } from '../constants';
 import { NAV_GROUPS } from '../constants';
 
-export interface SearchResult {
-    /** Identifiant unique (utilisé comme key React). */
-    id: string;
-    /** Libellé affiché. */
-    label: string;
-    /** Section parente (ex: 'Opérations terrain'). */
-    group: string;
-    /** Icône emoji. */
-    icon: string;
-    /** Tab key cible (pour setActiveTab). */
-    tabKey: TabKey;
-    /** Score : plus haut = plus pertinent. Non exposé dans l'UI. */
-    score: number;
-}
+/**
+ * Type d'item de la palette de recherche. Permet de mixer dans
+ * un même résultat :
+ *  - `tab`     : navigation vers un onglet (13 onglets)
+ *  - `action`  : action rapide globale (exporter PDF, actualiser KPIs)
+ *
+ * Le discriminateur `kind` permet à l'UI d'afficher un badge
+ * (Tab / Action) et au consommateur (`<AdminPanel>`) de router
+ * vers setActiveTab OU d'invoquer le callback.
+ */
+export type SearchResult =
+    | {
+          kind: 'tab';
+          id: string;
+          label: string;
+          group: string;
+          icon: string;
+          tabKey: TabKey;
+          score: number;
+      }
+    | {
+          kind: 'action';
+          id: string;
+          label: string;
+          group: string;
+          icon: string;
+          /** Sous-titre optionnel (description). */
+          description?: string;
+          /** Tag court pour l'UI ('Action', 'Export', 'Thème'...). */
+          tag: string;
+          score: number;
+      };
 
 /**
  * Normalise une string pour la recherche : lowercase + retire les
@@ -59,28 +77,106 @@ function normalize(s: string): string {
 }
 
 /**
- * Construit l'index initial : 1 entrée par item de NAV_GROUPS. On
- * utilise NAV_GROUPS comme source unique de vérité (les onglets
- * ajoutés là apparaissent automatiquement dans la search).
+ * Escape les caractères spéciaux regex dans une string. Évite
+ * qu'une query comme "carte." plante le matcher word-boundary.
  */
-const BASE_INDEX: SearchResult[] = NAV_GROUPS.flatMap((group) =>
-    group.items.map((item) => ({
-        id: `tab-${item.id}`,
-        label: item.label,
-        group: group.title,
-        icon: item.icon,
-        tabKey: item.id,
-        // Score initial : tout est équivalent. Sera recalculé au search.
+function escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Teste si `q` est une sous-séquence de `s` : les caractères de q
+ * apparaissent dans s, dans le même ordre, mais pas nécessairement
+ * contigus. Coût O(|q| × |s|), acceptable pour nos ~13 items + 100
+ * résultats potentiels (users, etc.).
+ *
+ * Exemples :
+ *   isSubsequence("scrp", "scrutins")    → true (s-c-r-p dans l'ordre)
+ *   isSubsequence("scrp", "scruptin")   → true
+ *   isSubsequence("xyz", "scrutins")     → false
+ *   isSubsequence("", "anything")       → true (vide matche tout)
+ */
+function isSubsequence(q: string, s: string): boolean {
+    if (!q) return true;
+    let i = 0;
+    for (let j = 0; j < s.length && i < q.length; j++) {
+        if (s[j] === q[i]) i++;
+    }
+    return i === q.length;
+}
+
+/**
+ * Définition d'une action rapide exposable dans la palette. Le
+ * `run` est un callback qui sera invoqué quand l'utilisateur
+ * sélectionne le résultat. Permet d'ajouter à la search des
+ * raccourcis vers des actions globales (export PDF, toggle
+ * thème, refresh KPIs...) qui ne correspondent pas à un onglet.
+ */
+export interface QuickAction {
+    id: string;
+    label: string;
+    group: string;
+    icon: string;
+    /** Sous-titre optionnel (description courte). */
+    description?: string;
+    /** Tag court affiché en badge (ex: 'Export', 'Thème', 'API'). */
+    tag: string;
+    /** Callback invoqué à la sélection. */
+    run: () => void;
+}
+
+/**
+ * Construit l'index complet des résultats : tabs (NAV_GROUPS) +
+ * actions rapides fournies par le consommateur. NAV_GROUPS est la
+ * source unique de vérité pour les onglets ; les actions sont
+ * extensibles à chaud via la prop `actions` du hook.
+ */
+function buildIndex(actions: QuickAction[]): SearchResult[] {
+    const tabResults: SearchResult[] = NAV_GROUPS.flatMap((group) =>
+        group.items.map((item) => ({
+            kind: 'tab' as const,
+            id: `tab-${item.id}`,
+            label: item.label,
+            group: group.title,
+            icon: item.icon,
+            tabKey: item.id,
+            score: 0,
+        })),
+    );
+    const actionResults: SearchResult[] = actions.map((a) => ({
+        kind: 'action' as const,
+        id: `action-${a.id}`,
+        label: a.label,
+        group: a.group,
+        icon: a.icon,
+        description: a.description,
+        tag: a.tag,
         score: 0,
-    })),
-);
+    }));
+    return [...tabResults, ...actionResults];
+}
 
 export interface UseCommandPaletteOptions {
     /**
      * Callback quand l'utilisateur sélectionne un résultat (Enter ou clic).
-     * L'appelant dispatch typiquement vers setActiveTab(result.tabKey).
+     * Pour un tab : le caller dispatch vers setActiveTab(result.tabKey).
+     * Pour une action : le caller peut appeler result.run() ou laisser
+     * le hook l'invoquer automatiquement (cf. prop `autoRunActions`).
      */
     onSelect?: (result: SearchResult) => void;
+    /**
+     * Liste d'actions rapides exposées dans la palette. Si vide
+     * (ou non fournie), seules les tabs sont cherchables.
+     */
+    actions?: QuickAction[];
+    /**
+     * Si true (défaut), le hook invoque automatiquement
+     * `actions[i].run()` quand une action est sélectionnée, AVANT
+     * d'appeler `onSelect`. Le caller n'a donc rien à faire pour
+     * les actions ; il reçoit `onSelect` en notification (ex:
+     * fermer la palette, logger l'événement).
+     */
+    autoRunActions?: boolean;
 }
 
 export interface UseCommandPaletteReturn {
@@ -108,7 +204,11 @@ const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigat
 export function useCommandPalette(
     options: UseCommandPaletteOptions = {},
 ): UseCommandPaletteReturn {
-    const { onSelect } = options;
+    const { onSelect, actions = [], autoRunActions = true } = options;
+
+    // Index complet (tabs + actions rapides), reconstruit si la
+    // liste d'actions change.
+    const fullIndex = useMemo<SearchResult[]>(() => buildIndex(actions), [actions]);
 
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
@@ -148,36 +248,67 @@ export function useCommandPalette(
         return () => window.removeEventListener('keydown', onKey);
     }, [open, openPalette, closePalette]);
 
-    // Filtrage des résultats basé sur la query.
-    // Stratégie : substring match (normalisé) sur label + group.
-    // Score :
-    //   - match exact (label === normalized query) → 1000
-    //   - match au début du label → 100
-    //   - match dans le label → 50
-    //   - match dans le group → 10
-    //   - pas de match → exclu
+    // Filtrage des résultats basé sur la query (V2 : fuzzy match évolué).
+    // Stratégie : on combine 4 signaux pondérés.
+    //   - Match EXACT (label === q)               → 1000 (le plus fort)
+    //   - Match PREFIX (label commence par q)     → 100
+    //   - Match WORD BOUNDARY (q est au début
+    //     d'un mot du label)                       → 80
+    //   - Match SUBSTRING (q apparaît dans label)  → 40
+    //   - Match SUBSEQUENCE (q est sous-séquence
+    //     des caractères du label, ex: "scrp" match
+    //     "scrutins")                              → 20
+    //   - Match GROUP (q dans le group title)      → 5
+    //
+    // Bonus de mot entier : si tous les mots de q matchent
+    // (chacun par au moins un des mécanismes ci-dessus), on
+    // ajoute +30. Permet de gérer "carte obs" → "Carte
+    // observateurs".
     const results = useMemo<SearchResult[]>(() => {
         const q = normalize(query);
         if (!q) {
-            // Pas de query : on retourne les 13 onglets dans l'ordre
-            // de NAV_GROUPS, score 0.
-            return BASE_INDEX.map((r) => ({ ...r, score: 0 }));
+            return fullIndex.map((r) => ({ ...r, score: 0 }));
         }
-        const scored = BASE_INDEX
-            .map((r) => {
-                const lbl = normalize(r.label);
-                const grp = normalize(r.group);
-                let score = 0;
-                if (lbl === q) score = 1000;
-                else if (lbl.startsWith(q)) score = 100;
-                else if (lbl.includes(q)) score = 50;
-                else if (grp.includes(q)) score = 10;
-                return { ...r, score };
-            })
+        const qWords = q.split(/\s+/).filter(Boolean);
+
+        function scoreFor(label: string, group: string): number {
+            const lbl = normalize(label);
+            const grp = normalize(group);
+            if (!lbl) return 0;
+
+            let best = 0;
+            // 1. Exact match sur le label complet
+            if (lbl === q) best = Math.max(best, 1000);
+            // 2. Prefix
+            if (lbl.startsWith(q)) best = Math.max(best, 100);
+            // 3. Word boundary (q au début d'un mot)
+            if (new RegExp(`\\b${escapeRegex(q)}`).test(lbl)) {
+                best = Math.max(best, 80);
+            }
+            // 4. Substring
+            if (lbl.includes(q)) best = Math.max(best, 40);
+            // 5. Subsequence (caractères dans l'ordre mais pas contigus)
+            if (isSubsequence(q, lbl)) best = Math.max(best, 20);
+            // 6. Group match (toujours faible, fallback)
+            if (grp.includes(q)) best = Math.max(best, 5);
+
+            // Bonus mot-entier : si chaque mot de q matche au moins
+            // une fois dans le label (substring/prefix/word-boundary)
+            if (qWords.length > 1) {
+                const allWordsMatch = qWords.every((w) =>
+                    lbl.includes(w) || new RegExp(`\\b${escapeRegex(w)}`).test(lbl),
+                );
+                if (allWordsMatch) best += 30;
+            }
+            return best;
+        }
+
+        const scored = fullIndex
+            .map((r) => ({ ...r, score: scoreFor(r.label, r.group) }))
             .filter((r) => r.score > 0)
             .sort((a, b) => b.score - a.score);
         return scored;
-    }, [query]);
+    }, [query, fullIndex]);
 
     // Clamp selectedIndex sur la taille des résultats (peut changer
     // à mesure que la query change, ex: on supprime tout).
@@ -204,9 +335,26 @@ export function useCommandPalette(
     const selectHighlighted = useCallback(() => {
         const r = results[selectedIndex];
         if (!r) return;
+        // Pour une action, on l'invoque d'abord (si autoRun) puis on
+        // notifie onSelect (qui peut fermer la palette, logger...).
+        // Pour un tab, on ne fait que notifier — le caller dispatch
+        // vers setActiveTab.
+        if (r.kind === 'action' && autoRunActions) {
+            const action = actions.find((a) => `action-${a.id}` === r.id);
+            if (action) {
+                try {
+                    action.run();
+                } catch (err) {
+                    // Une action qui throw ne doit pas planter la palette ;
+                    // on logge et on continue (la palette se ferme quand même).
+                    // eslint-disable-next-line no-console
+                    console.error('[command-palette] action run failed:', err);
+                }
+            }
+        }
         if (onSelect) onSelect(r);
         closePalette();
-    }, [results, selectedIndex, onSelect, closePalette]);
+    }, [results, selectedIndex, onSelect, closePalette, actions, autoRunActions]);
 
     return {
         open,

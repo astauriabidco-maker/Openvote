@@ -18,7 +18,7 @@
  * (cf. NAV_GROUPS). Voir Sidebar.tsx.
  */
 
-import { memo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { AxiosInstance } from 'axios';
 import type { AuthState } from '../../types';
 import { useAdminPanelState, type AdminPanelState } from './useAdminPanelState';
@@ -26,7 +26,8 @@ import { type TabKey } from './constants';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import CommandPalette from './components/CommandPalette';
-import { useCommandPalette } from './hooks/useCommandPalette';
+import { useCommandPalette, type QuickAction } from './hooks/useCommandPalette';
+import { exportAdminReport } from '../../utils/adminReport';
 
 import DashboardTab from './tabs/DashboardTab';
 import UsersTab from './tabs/UsersTab';
@@ -56,15 +57,64 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
         notification,
         alertCount, isOnline, showInstallBanner, setShowInstallBanner,
         pendingReportsCount,
+        kpis, fetchKPIs,
+        users, regions, elections,
     } = state;
 
+    // ---- Actions rapides exposées dans la CommandPalette (V2) ----
+    // Le hook invoque automatiquement `run()` pour les actions, onSelect
+    // est juste notifié pour fermer / logger. Pour les tabs, onSelect
+    // dispatche setActiveTab comme avant.
+    const handleExportPDF = useCallback(() => {
+        exportAdminReport({ kpis, users, elections, regions });
+    }, [kpis, users, elections, regions]);
+
+    const handleRefreshKPIs = useCallback(() => {
+        fetchKPIs();
+    }, [fetchKPIs]);
+
+    const quickActions = useMemo<QuickAction[]>(() => [
+        {
+            id: 'export-pdf',
+            label: 'Exporter le rapport PDF',
+            group: 'Actions rapides',
+            icon: '📄',
+            description: 'Ouvre la fenêtre d\'impression du navigateur avec un rapport HTML formaté',
+            tag: 'Export',
+            run: handleExportPDF,
+        },
+        {
+            id: 'refresh-kpis',
+            label: 'Actualiser les KPIs',
+            group: 'Actions rapides',
+            icon: '🔄',
+            description: 'Recharge les indicateurs globaux depuis l\'API',
+            tag: 'Données',
+            run: handleRefreshKPIs,
+        },
+        {
+            id: 'toggle-theme',
+            label: theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre',
+            group: 'Apparence',
+            icon: theme === 'dark' ? '☀️' : '🌙',
+            description: 'Bascule entre le mode sombre et le mode clair',
+            tag: 'Thème',
+            run: toggleTheme,
+        },
+    ], [handleExportPDF, handleRefreshKPIs, toggleTheme, theme]);
+
     // ---- Command palette (search ⌘K) ----
-    // Le hook gère state + raccourci global. Le composant CommandPalette
-    // est dumb : il reçoit tout en props et dispatch via les callbacks.
-    // Le hook ferme automatiquement la palette après un onSelect (Enter),
-    // mais pour le clic souris on doit fermer nous-mêmes.
+    // Le hook gère state + raccourci global + dispatch des actions.
+    // Le composant CommandPalette est dumb : il reçoit tout en props et
+    // dispatch via les callbacks. Le hook ferme automatiquement la
+    // palette après un onSelect (Enter), mais pour le clic souris on
+    // doit fermer nous-mêmes.
     const palette = useCommandPalette({
-        onSelect: (result) => setActiveTab(result.tabKey),
+        actions: quickActions,
+        onSelect: (result) => {
+            if (result.kind === 'tab') setActiveTab(result.tabKey);
+            // Pour les actions : le hook a déjà invoqué run() (autoRunActions=true).
+        },
     });
     const handleResultClick = (tabKey: TabKey) => {
         setActiveTab(tabKey);

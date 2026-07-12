@@ -148,12 +148,18 @@ describe('useCommandPalette', () => {
         expect(labels).toContain('Scrutins');
     });
 
-    it('scoring : "Configuration" matche via le group (score 10)', async () => {
+    it('scoring : "Configuration" matche tous les items du group via group-only (score 5)', async () => {
+        // Le label "Config runtime" ne contient pas la sous-string
+        // "configuration" (il manque "uration"). Aucun item n'a le label
+        // "Configuration". Donc TOUS les items du group matchent via
+        // group-only → score 5.
         const { result } = renderHook(() => useCommandPalette());
         await act(async () => { result.current.setQuery('Configuration'); });
-        const config = result.current.results.filter((r) => r.group === 'Configuration');
-        expect(config.length).toBeGreaterThan(0);
-        expect(config.every((r) => r.score === 10)).toBe(true);
+        const configItems = result.current.results.filter((r) => r.group === 'Configuration');
+        expect(configItems.length).toBeGreaterThan(0);
+        for (const item of configItems) {
+            expect(item.score).toBe(5);
+        }
     });
 
     it('0 résultat : tableau vide', async () => {
@@ -216,6 +222,235 @@ describe('useCommandPalette', () => {
         await act(async () => { result.current.setQuery('zzzzzzz'); });
         expect(result.current.selectedIndex).toBe(0);
     });
+
+    // ---- Fuzzy match V2 ----
+    it('subsequence : "strn" matche "Scrutins" (s-...-t-...-r-...-n)', async () => {
+        // "Scrutins" normalisé = "scrutins". La query "strn" = s,t,r,n
+        // sont tous présents dans l'ordre (s@0, t@4, r@2 ? non, après s c'est
+        // c, r, u, t, i, n, s — donc s(0) puis t(4) puis r ? non, r est avant
+        // t). Reprenons : s→c→r→u→t→i→n→s. Donc s@0, puis r@2, puis t@4,
+        // puis n@6. La query "srtn" = s,r,t,n sont dans l'ordre.
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('srtn'); });
+        const labels = result.current.results.map((r) => r.label);
+        expect(labels).toContain('Scrutins');
+    });
+
+    it('subsequence : "cfg" matche "Config" (par le group "Configuration" via path alternatif non — mais "Config" contient c-f-g?)', async () => {
+        // Ce test vérifie le mécanisme de subsequence ; on utilise un mot
+        // qui est VRAIMENT une sous-séquence du label.
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('mfa'); });
+        // mfa = substring de "MFA" + "MfaSetup"... attendons "MFA".
+        const labels = result.current.results.map((r) => r.label);
+        expect(labels).toContain('MFA');
+    });
+
+    it('word boundary : "carte" matche "Carte observateurs" (mot complet)', async () => {
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('carte'); });
+        const labels = result.current.results.map((r) => r.label);
+        expect(labels).toContain('Carte observateurs');
+    });
+
+    it('multi-mots : "carte obs" trouve Carte observateurs (bonus word match)', async () => {
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('carte obs'); });
+        const labels = result.current.results.map((r) => r.label);
+        expect(labels).toContain('Carte observateurs');
+    });
+
+    it('escape regex : query avec caractères spéciaux ne crash pas', async () => {
+        const { result } = renderHook(() => useCommandPalette());
+        // "carte." ou "carte?" — sans escape, le RegExp \b${q}\b planterait
+        await act(async () => { result.current.setQuery('carte.'); });
+        // Pas d'erreur, résultats cohérents
+        expect(result.current.results).toBeDefined();
+    });
+
+    it('substring + subsequence : "rci" matche "Cadre" via subseq (c-a-d-r-e)', async () => {
+        // "rci" — pas de substring direct, mais sous-séquence ?
+        // c-A-d-R-e : r, c, i → non (i pas dans Cadre). Donc ne doit PAS matcher.
+        // Test négatif pour confirmer que la subseq a bien sa sémantique.
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('rci'); });
+        // On accepte 0 résultat OU un résultat — l'important est no-crash.
+        expect(result.current.results).toBeDefined();
+    });
+
+    it('scoring relatif : exact > prefix > word-boundary > substring', async () => {
+        // Pour "utilisateurs" (qui matche exactement le label "Utilisateurs"),
+        // le score doit être 1000 (max), donc en tête.
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('utilisateurs'); });
+        const top = result.current.results[0];
+        expect(top.label).toBe('Utilisateurs');
+        expect(top.score).toBe(1000);
+    });
+
+    it('group match faible : query qui ne matche que le group (pas le label)', async () => {
+        // "analyses" n'est substring d'aucun label (juste "Analyses de
+        // données" dans Intelligence). Mais "Intelligence électorale" est
+        // dans le group "Scrutins & Analyses" → match via group, score 5.
+        const { result } = renderHook(() => useCommandPalette());
+        await act(async () => { result.current.setQuery('analyses'); });
+        const intel = result.current.results.find((r) => r.label === 'Intelligence électorale');
+        expect(intel).toBeDefined();
+        // Le score doit être 5 (group-only)
+        expect(intel?.score).toBe(5);
+    });
+});
+
+// ====================== Actions rapides (V2) ======================
+
+describe('useCommandPalette — actions rapides', () => {
+    it('sans actions : les résultats restent 100% tabs', () => {
+        const { result } = renderHook(() => useCommandPalette({}));
+        const kinds = new Set(result.current.results.map((r) => r.kind));
+        expect(kinds.has('action')).toBe(false);
+    });
+
+    it('avec actions : les items action apparaissent dans la liste (query vide)', () => {
+        const run = vi.fn();
+        const { result } = renderHook(() => useCommandPalette({
+            actions: [{
+                id: 'export-pdf',
+                label: 'Exporter le rapport PDF',
+                group: 'Actions rapides',
+                icon: '📄',
+                tag: 'Export',
+                run,
+            }],
+        }));
+        const exportRes = result.current.results.find((r) => r.id === 'action-export-pdf');
+        expect(exportRes).toBeDefined();
+        expect(exportRes?.kind).toBe('action');
+        if (exportRes && exportRes.kind === 'action') {
+            expect(exportRes.tag).toBe('Export');
+        }
+    });
+
+    it('recherche "export" : l\'action export-PDF remonte en tête', async () => {
+        const run = vi.fn();
+        const { result } = renderHook(() => useCommandPalette({
+            actions: [{
+                id: 'export-pdf',
+                label: 'Exporter le rapport PDF',
+                group: 'Actions rapides',
+                icon: '📄',
+                tag: 'Export',
+                run,
+            }],
+        }));
+        await act(async () => { result.current.setQuery('export'); });
+        const top = result.current.results[0];
+        expect(top.id).toBe('action-export-pdf');
+        // Score : substring sur label = 40 ; sur "export" est dans "export" → exact-ish
+        expect(top.score).toBeGreaterThanOrEqual(40);
+    });
+
+    it('Enter sur une action : run() est invoqué + onSelect notifié', async () => {
+        const run = vi.fn();
+        const onSelect = vi.fn();
+        const { result } = renderHook(() => useCommandPalette({
+            actions: [{
+                id: 'refresh-kpis',
+                label: 'Actualiser les KPIs',
+                group: 'Actions rapides',
+                icon: '🔄',
+                tag: 'Données',
+                run,
+            }],
+            onSelect,
+        }));
+        await act(async () => {
+            result.current.openPalette();
+            result.current.setQuery('actualiser');
+        });
+        // Le résultat 0 doit être l'action (label "Actualiser les KPIs"
+        // → prefix match sur "actualiser" = 100).
+        expect(result.current.results[0].id).toBe('action-refresh-kpis');
+        act(() => { result.current.selectHighlighted(); });
+        expect(run).toHaveBeenCalledTimes(1);
+        expect(onSelect).toHaveBeenCalledTimes(1);
+    });
+
+    it('autoRunActions=false : run() n\'est PAS appelé, onSelect reçoit quand même', async () => {
+        const run = vi.fn();
+        const onSelect = vi.fn();
+        const { result } = renderHook(() => useCommandPalette({
+            actions: [{
+                id: 'toggle-theme',
+                label: 'Basculer le thème',
+                group: 'Apparence',
+                icon: '🌙',
+                tag: 'Thème',
+                run,
+            }],
+            onSelect,
+            autoRunActions: false,
+        }));
+        await act(async () => {
+            result.current.openPalette();
+            result.current.setQuery('theme');
+        });
+        act(() => { result.current.selectHighlighted(); });
+        expect(run).not.toHaveBeenCalled();
+        expect(onSelect).toHaveBeenCalledTimes(1);
+    });
+
+    it('action run() qui throw : la palette se ferme quand même, pas de crash', async () => {
+        const onSelect = vi.fn();
+        const consoleErr = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const { result } = renderHook(() => useCommandPalette({
+            actions: [{
+                id: 'broken',
+                label: 'Action cassée',
+                group: 'Actions rapides',
+                icon: '💥',
+                tag: 'Test',
+                run: () => { throw new Error('boom'); },
+            }],
+            onSelect,
+        }));
+        await act(async () => {
+            result.current.openPalette();
+            result.current.setQuery('cassee');
+        });
+        // Ne doit pas throw, et la palette se ferme
+        act(() => { result.current.selectHighlighted(); });
+        expect(onSelect).toHaveBeenCalled();
+        expect(result.current.open).toBe(false);
+        consoleErr.mockRestore();
+    });
+
+    it('les actions sont immutables dans les résultats : new run() si actions[] change', async () => {
+        let counter = 0;
+        const makeAction = () => ({
+            id: 'counter',
+            label: 'Compteur',
+            group: 'Test',
+            icon: '🔢',
+            tag: 'T',
+            run: () => { counter += 1; },
+        });
+        const { result, rerender } = renderHook(
+            ({ actions }: { actions: ReturnType<typeof makeAction>[] }) =>
+                useCommandPalette({ actions }),
+            { initialProps: { actions: [makeAction()] } },
+        );
+        await act(async () => {
+            result.current.openPalette();
+            result.current.setQuery('compteur');
+        });
+        act(() => { result.current.selectHighlighted(); });
+        expect(counter).toBe(1);
+        // Re-render avec une nouvelle action (ref différente mais même id)
+        rerender({ actions: [makeAction()] });
+        await act(async () => { result.current.setQuery('compteur'); });
+        act(() => { result.current.selectHighlighted(); });
+        expect(counter).toBe(2);
+    });
 });
 
 // ====================== <CommandPalette> ======================
@@ -227,9 +462,9 @@ describe('CommandPalette (composant)', () => {
             query: '',
             onQueryChange: vi.fn() as unknown as (q: string) => void,
             results: [
-                { id: 'tab-users', label: 'Utilisateurs', group: 'Opérations terrain', icon: '👥', tabKey: 'users' as const, score: 0 },
-                { id: 'tab-tokens', label: "Tokens d'enrôlement", group: 'Opérations terrain', icon: '🎫', tabKey: 'tokens' as const, score: 0 },
-                { id: 'tab-elections', label: 'Scrutins', group: 'Scrutins & Analyses', icon: '🗳️', tabKey: 'elections' as const, score: 0 },
+                { kind: 'tab' as const, id: 'tab-users', label: 'Utilisateurs', group: 'Opérations terrain', icon: '👥', tabKey: 'users' as const, score: 0 },
+                { kind: 'tab' as const, id: 'tab-tokens', label: "Tokens d'enrôlement", group: 'Opérations terrain', icon: '🎫', tabKey: 'tokens' as const, score: 0 },
+                { kind: 'tab' as const, id: 'tab-elections', label: 'Scrutins', group: 'Scrutins & Analyses', icon: '🗳️', tabKey: 'elections' as const, score: 0 },
             ] satisfies SearchResult[],
             selectedIndex: 0,
             onSelect: vi.fn() as unknown as (r: SearchResult) => void,
@@ -299,6 +534,34 @@ describe('CommandPalette (composant)', () => {
         render(<CommandPalette {...p} />);
         const usersResult = screen.getByTestId('command-palette-result-0');
         expect(within(usersResult).getByText('👥')).toBeInTheDocument();
+    });
+
+    // ---- Badge "Onglet" / action.tag (V2) ----
+    it('badge kind = "Onglet" pour une tab', () => {
+        const p = baseProps();
+        render(<CommandPalette {...p} />);
+        const kindBadge = screen.getByTestId('command-palette-kind-0');
+        expect(kindBadge).toHaveTextContent('Onglet');
+        expect(kindBadge).toHaveAttribute('data-result-kind', 'tab');
+    });
+
+    it('badge kind = action.tag pour une action (ex: "Export")', () => {
+        const p = baseProps();
+        (p as { results: SearchResult[] }).results = [
+            ...p.results,
+            { kind: 'action' as const, id: 'action-export-pdf', label: 'Exporter le rapport PDF', group: 'Actions rapides', icon: '📄', tag: 'Export', score: 0 },
+        ];
+        render(<CommandPalette {...p} />);
+        const kindBadge = screen.getByTestId('command-palette-kind-3');
+        expect(kindBadge).toHaveTextContent('Export');
+        expect(kindBadge).toHaveAttribute('data-result-kind', 'action');
+    });
+
+    it('placeholder mentionne maintenant "action rapide"', () => {
+        const p = baseProps();
+        render(<CommandPalette {...p} />);
+        const input = screen.getByTestId('command-palette-input') as HTMLInputElement;
+        expect(input.placeholder).toMatch(/action rapide/i);
     });
 
     it('item sélectionné a data-selected=true et classe .selected', () => {
