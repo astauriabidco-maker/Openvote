@@ -52,6 +52,7 @@ var allMigrations = []migration{
 	{"migration/015_mfa_and_lockout.sql", "MFA TOTP + lockout par tentatives (H3 audit)"},
 	{"migration/016_department_demographics_history.sql", "Historique démographique département (time series)"},
 	{"migration/017_schema_migrations_tracking.sql", "Table schema_migrations (self-tracking)"},
+	{"migration/018_region_demographics.sql", "Démographie BUCREP par région (2016-2025, 19 indicateurs × 3 sexes × 13 zones)"},
 }
 
 // schemaMigrationsDDL est dupliqué ici (vs lu depuis 017.sql) pour

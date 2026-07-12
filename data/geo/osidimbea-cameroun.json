@@ -1,0 +1,1321 @@
+[
+  {
+    "name": "ADAMAOUA",
+    "slug": "adamaoua",
+    "departments_count": 5,
+    "departments": [
+      {
+        "name": "DJEREM",
+        "slug": "djerem",
+        "chef_lieu": "TIBATI",
+        "arrondissements": [
+          "NGAOUNDAL",
+          "TIBATI"
+        ],
+        "communes": [
+          "NGAOUNDAL",
+          "TIBATI"
+        ],
+        "arrondissements_count": 2,
+        "communes_count": 2
+      },
+      {
+        "name": "FARO ET DEO",
+        "slug": "faro-et-deo",
+        "chef_lieu": "TIGNERE",
+        "arrondissements": [
+          "TIGNERE",
+          "MAYO-BALEO",
+          "KONTCHA",
+          "GALIM-TIGNERE"
+        ],
+        "communes": [
+          "TIGNERE",
+          "MAYO-BALEO",
+          "KONTCHA",
+          "GALIM-TIGNERE"
+        ],
+        "arrondissements_count": 4,
+        "communes_count": 4
+      },
+      {
+        "name": "MAYO BANYO",
+        "slug": "mayo-banyo",
+        "chef_lieu": "BANYO",
+        "arrondissements": [
+          "BANKIM",
+          "BANYO",
+          "MAYO-DARLE"
+        ],
+        "communes": [
+          "BANKIM",
+          "BANYO",
+          "MAYO-DARLE"
+        ],
+        "arrondissements_count": 3,
+        "communes_count": 3
+      },
+      {
+        "name": "MBERE",
+        "slug": "mbere",
+        "chef_lieu": "MEIGANGA",
+        "arrondissements": [
+          "DJOHONG",
+          "DIR",
+          "NGAOUI",
+          "MEIGANGA"
+        ],
+        "communes": [
+          "DJOHONG",
+          "DIR",
+          "NGAOUI",
+          "MEIGANGA"
+        ],
+        "arrondissements_count": 4,
+        "communes_count": 4
+      },
+      {
+        "name": "VINA",
+        "slug": "vina",
+        "chef_lieu": "NGAOUNDERE",
+        "arrondissements": [
+          "MBE",
+          "NYAMBAKA",
+          "NGAOUNDERE 3e",
+          "NGAOUNDERE 2e",
+          "NGAOUNDERE 1er",
+          "BELEL",
+          "NGANHA",
+          "MARTAP"
+        ],
+        "communes": [
+          "MBE",
+          "NYAMBAKA",
+          "NGAOUNDERE 3e",
+          "NGAOUNDERE 2e",
+          "NGAOUNDERE 1er",
+          "BELEL",
+          "NGANHA",
+          "MARTAP"
+        ],
+        "arrondissements_count": 8,
+        "communes_count": 8
+      }
+    ]
+  },
+  {
+    "name": "EST",
+    "slug": "est",
+    "departments_count": 4,
+    "departments": [
+      {
+        "name": "BOUMBA ET NGOKO",
+        "slug": "boumba-et-ngoko",
+        "chef_lieu": "YOKADOUMA",
+        "arrondissements": [
+          "MOLOUNDOU",
+          "GARI-GOMBO",
+          "SALAPOUMBE",
+          "YOKADOUMA"
+        ],
+        "communes": [
+          "MOLOUNDOU",
+          "GARI-GOMBO",
+          "SALAPOUMBE",
+          "YOKADOUMA"
+        ],
+        "arrondissements_count": 4,
+        "communes_count": 4
+      },
+      {
+        "name": "HAUT NYONG",
+        "slug": "haut-nyong",
+        "chef_lieu": "ABONG-MBANG",
+        "arrondissements": [
+          "LOMIE",
+          "DIMAKO",
+          "NGOYLA",
+          "BEBEND",
+          "MBOUANZ",
+          "MESSOK",
+          "DJA",
+          "MESSAMENA",
+          "ABONG-MBANG",
+          "DOUMAINTANG",
+          "MBOMA",
+          "SAMALOMO",
+          "DOUME",
+          "NGUELEMENDOUKA"
+        ],
+        "communes": [
+          "LOMIE",
+          "DIMAKO",
+          "NGOYLA",
+          "MESSOK",
+          "ANGOSSAS",
+          "DJA",
+          "MESSAMENA",
+          "ABONG-MBANG",
+          "DOUMAINTANG",
+          "MBOMA",
+          "SAMALOMO",
+          "ATOK",
+          "DOUME",
+          "NGUELEMENDOUKA"
+        ],
+        "arrondissements_count": 14,
+        "communes_count": 14
+      },
+      {
+        "name": "KADEY",
+        "slug": "kadey",
+        "chef_lieu": "BATOURI",
+        "arrondissements": [
+          "BATOURI",
+          "BOMBE",
+          "MBOTORO",
+          "MBANG",
+          "NDELELE",
+          "KETTE",
+          "NDEM-NAM"
+        ],
+        "communes": [
+          "BATOURI",
+          "BOMBE",
+          "MBOTORO",
+          "MBANG",
+          "NDELELE",
+          "KETTE",
+          "NDEM-NAM"
+        ],
+        "arrondissements_count": 7,
+        "communes_count": 7
+      },
+      {
+        "name": "LOM ET DJEREM",
+        "slug": "lom-et-djerem",
+        "chef_lieu": "BERTOUA",
+        "arrondissements": [
+          "NGOURA",
+          "BETARE-OYA",
+          "BERTOUA 2e",
+          "DIANG",
+          "GAROUA-BOULAÏ",
+          "MANDJOU",
+          "BELABO",
+          "BERTOUA 1er"
+        ],
+        "communes": [
+          "NGOURA",
+          "BETARE-OYA",
+          "BERTOUA 2e",
+          "DIANG",
+          "GAROUA-BOULAÏ",
+          "MANDJOU",
+          "BELABO",
+          "BERTOUA 1er"
+        ],
+        "arrondissements_count": 8,
+        "communes_count": 8
+      }
+    ]
+  },
+  {
+    "name": "LITTORAL",
+    "slug": "littoral",
+    "departments_count": 4,
+    "departments": [
+      {
+        "name": "MOUNGO",
+        "slug": "moungo",
+        "chef_lieu": "NKONGSAMBA",
+        "arrondissements": [
+          "MELONG",
+          "FIKO",
+          "LOUM",
+          "BARE-BAKEM",
+          "DIBOMBARI",
+          "NKONGSAMBA 3e",
+          "MANJO",
+          "NKONGSAMBA 1er",
+          "NKONGSAMBA 2e",
+          "NJOMBE-PENJA",
+          "MOMBO",
+          "MBANGA",
+          "NLONAKO"
+        ],
+        "communes": [
+          "MELONG",
+          "LOUM",
+          "BARE-BAKEM",
+          "DIBOMBARI",
+          "NKONGSAMBA 3e",
+          "MANJO",
+          "NKONGSAMBA 1er",
+          "NKONGSAMBA 2e",
+          "EBONE",
+          "PENJA",
+          "BONALEA",
+          "MOMBO",
+          "MBANGA"
+        ],
+        "arrondissements_count": 13,
+        "communes_count": 13
+      },
+      {
+        "name": "NKAM",
+        "slug": "nkam",
+        "chef_lieu": "YABASSI",
+        "arrondissements": [
+          "NKONDJOCK",
+          "NORD-MAKOMBE",
+          "YABASSI",
+          "YINGUI"
+        ],
+        "communes": [
+          "NKONDJOCK",
+          "NORD-MAKOMBE",
+          "YABASSI",
+          "YINGUI"
+        ],
+        "arrondissements_count": 4,
+        "communes_count": 4
+      },
+      {
+        "name": "SANAGA MARITIME",
+        "slug": "sanaga-maritime",
+        "chef_lieu": "EDEA",
+        "arrondissements": [
+          "NYANON",
+          "POUMA",
+          "NDOM",
+          "EDEA 2e",
+          "NGAMBE",
+          "EDEA 1er",
+          "MOUANKO",
+          "DIZANGUE",
+          "NGWEI",
+          "MASSOCK-SONGLOULOU",
+          "DIBAMBA"
+        ],
+        "communes": [
+          "NYANON",
+          "POUMA",
+          "NDOM",
+          "NGAMBE",
+          "MOUANKO",
+          "EDEA 1er",
+          "DIZANGUE",
+          "NGWEI",
+          "EDEA 2ème",
+          "MASSOCK-SONGLOULOU",
+          "DIBAMBA"
+        ],
+        "arrondissements_count": 11,
+        "communes_count": 11
+      },
+      {
+        "name": "WOURI",
+        "slug": "wouri",
+        "chef_lieu": "DOUALA",
+        "arrondissements": [
+          "DOUALA 6",
+          "DOUALA 3e",
+          "DOUALA 4e",
+          "DOUALA 1er",
+          "DOUALA 2e",
+          "DOUALA 5e"
+        ],
+        "communes": [
+          "DOUALA 3e",
+          "DOUALA 4e",
+          "MANOKA",
+          "DOUALA 1er",
+          "DOUALA 2e",
+          "DOUALA 5e"
+        ],
+        "arrondissements_count": 6,
+        "communes_count": 6
+      }
+    ]
+  },
+  {
+    "name": "NORD",
+    "slug": "nord",
+    "departments_count": 4,
+    "departments": [
+      {
+        "name": "BENOUE",
+        "slug": "benoue",
+        "chef_lieu": "GAROUA",
+        "arrondissements": [
+          "BIBEMI",
+          "DEMSA",
+          "DEMBO",
+          "TOUROUA",
+          "GAROUA 3e",
+          "GAROUA 2e",
+          "BASCHEO",
+          "LAGDO",
+          "GAROUA 1er",
+          "PITOA",
+          "TCHEBOA",
+          "MAYO HOURNA"
+        ],
+        "communes": [
+          "BIBEMI",
+          "DEMSA",
+          "DEMBO",
+          "TOUROUA",
+          "GAROUA 3e",
+          "NGONG",
+          "GAROUA 2e",
+          "BASCHEO",
+          "LAGDO",
+          "GAROUA 1er",
+          "PITOA",
+          "BARDANKE"
+        ],
+        "arrondissements_count": 12,
+        "communes_count": 12
+      },
+      {
+        "name": "FARO",
+        "slug": "faro",
+        "chef_lieu": "POLI",
+        "arrondissements": [
+          "BEKA",
+          "POLI"
+        ],
+        "communes": [
+          "BEKA",
+          "POLI"
+        ],
+        "arrondissements_count": 2,
+        "communes_count": 2
+      },
+      {
+        "name": "MAYO LOUTI",
+        "slug": "mayo-louti",
+        "chef_lieu": "GUIDER",
+        "arrondissements": [
+          "MAYO-OULO",
+          "FIGUIL",
+          "GUIDER"
+        ],
+        "communes": [
+          "MAYO-OULO",
+          "FIGUIL",
+          "GUIDER"
+        ],
+        "arrondissements_count": 3,
+        "communes_count": 3
+      },
+      {
+        "name": "MAYO REY",
+        "slug": "mayo-rey",
+        "chef_lieu": "TCHOLLIRE",
+        "arrondissements": [
+          "TOUBORO",
+          "REY-BOUBA",
+          "MADINGRING",
+          "TCHOLLIRE"
+        ],
+        "communes": [
+          "TOUBORO",
+          "REY-BOUBA",
+          "MADINGRING",
+          "TCHOLLIRE"
+        ],
+        "arrondissements_count": 4,
+        "communes_count": 4
+      }
+    ]
+  },
+  {
+    "name": "SUD",
+    "slug": "sud",
+    "departments_count": 4,
+    "departments": [
+      {
+        "name": "DJA ET LOBO",
+        "slug": "dja-et-lobo",
+        "chef_lieu": "SANGMELIMA",
+        "arrondissements": [
+          "BENGBIS"
+        ],
+        "communes": [
+          "SANGMELIMA",
+          "MEYOMESSALA",
+          "ZOETELE",
+          "BENGBIS",
+          "MINTOM",
+          "DJOUM",
+          "OVENG",
+          "MEYOMESSI"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 8
+      },
+      {
+        "name": "VALLEE DU NTEM",
+        "slug": "vallee-du-ntem",
+        "chef_lieu": "AMBAM",
+        "arrondissements": [
+          "AMBAM"
+        ],
+        "communes": [
+          "MA'AN",
+          "AMBAM",
+          "KYE OSSI",
+          "OLAMZE"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "MVILA",
+        "slug": "mvila",
+        "chef_lieu": "EBOLOWA",
+        "arrondissements": [
+          "EBOLOWA 1er"
+        ],
+        "communes": [
+          "EBOLOWA 1er",
+          "MVANGAN",
+          "NGOULEMAKONG",
+          "BIWONG BULU",
+          "EFOULAN",
+          "BIWONG-BANE",
+          "EBOLOWA 2e",
+          "MENGONG"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 8
+      },
+      {
+        "name": "OCEAN",
+        "slug": "ocean",
+        "chef_lieu": "KRIBI",
+        "arrondissements": [
+          "AKOM II"
+        ],
+        "communes": [
+          "CAMPO",
+          "NIETE",
+          "KRIBI 2e",
+          "AKOM II",
+          "MVENGUE",
+          "BIPINDI",
+          "LOLODORF",
+          "LOKOUNDJE",
+          "KRIBI 1er"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 9
+      }
+    ]
+  },
+  {
+    "name": "SUD-OUEST",
+    "slug": "sud-ouest",
+    "departments_count": 6,
+    "departments": [
+      {
+        "name": "FAKO",
+        "slug": "fako",
+        "chef_lieu": "LIMBE",
+        "arrondissements": [
+          "MUYUKA"
+        ],
+        "communes": [
+          "TIKO",
+          "LIMBE 1er",
+          "LIMBE 3e",
+          "BUEA",
+          "WEST-COAST",
+          "MUYUKA",
+          "LIMBE 2e"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 7
+      },
+      {
+        "name": "KUPE MANENGUBA",
+        "slug": "kupe-manenguba",
+        "chef_lieu": "BANGEM",
+        "arrondissements": [
+          "BANGEM"
+        ],
+        "communes": [
+          "TOMBEL",
+          "NGUTI",
+          "BANGEM"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 3
+      },
+      {
+        "name": "LEBIALEM",
+        "slug": "lebialem",
+        "chef_lieu": "MENJI",
+        "arrondissements": [
+          "FONTEM"
+        ],
+        "communes": [
+          "WABANE",
+          "ALOU",
+          "MENJI"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 3
+      },
+      {
+        "name": "MANYU",
+        "slug": "manyu",
+        "chef_lieu": "MAMFE",
+        "arrondissements": [
+          "AKWAYA"
+        ],
+        "communes": [
+          "EYUMODJOCK",
+          "MAMFE",
+          "UPPER-BAYANG",
+          "AKWAYA"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "MEME",
+        "slug": "meme",
+        "chef_lieu": "KUMBA",
+        "arrondissements": [
+          "KUMBA 1er"
+        ],
+        "communes": [
+          "BONGE",
+          "KUMBA 3e",
+          "KONYE",
+          "KUMBA 1er",
+          "KUMBA 2e"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 5
+      },
+      {
+        "name": "NDIAN",
+        "slug": "ndian",
+        "chef_lieu": "MUNDEMBA",
+        "arrondissements": [
+          "BAMUSSO"
+        ],
+        "communes": [
+          "ISANGUELE",
+          "BAMUSSO",
+          "KOMBO ABEDIMO",
+          "MUNDEMBA",
+          "KOMBO IDINTI",
+          "DIKOME-BALUE",
+          "IDABATO",
+          "EKONDO-TITI",
+          "TOKO"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 9
+      }
+    ]
+  },
+  {
+    "name": "CENTRE",
+    "slug": "centre",
+    "departments_count": 10,
+    "departments": [
+      {
+        "name": "HAUTE-SANAGA",
+        "slug": "haute-sanaga",
+        "chef_lieu": "NANGA EBOKO",
+        "arrondissements": [
+          "NKOTENG",
+          "MBANDJOCK",
+          "LEMBE-YEZOUM",
+          "NSEM",
+          "BIBEY",
+          "NANGA-EBOKO",
+          "MINTA"
+        ],
+        "communes": [
+          "NKOTENG",
+          "MBANDJOCK",
+          "LEMBE-YEZOUM",
+          "NSEM",
+          "BIBEY",
+          "NANGA-EBOKO",
+          "MINTA"
+        ],
+        "arrondissements_count": 7,
+        "communes_count": 7
+      },
+      {
+        "name": "LEKIE",
+        "slug": "lekie",
+        "chef_lieu": "MONATELE",
+        "arrondissements": [
+          "SA'A",
+          "OKOLA",
+          "EBEBDA",
+          "MONATELE",
+          "LOBO",
+          "OBALA",
+          "BATSCHENGA",
+          "ELIG-MFOMO",
+          "EVODOULA"
+        ],
+        "communes": [
+          "SA'A",
+          "OKOLA",
+          "EBEBDA",
+          "MONATELE",
+          "LOBO",
+          "OBALA",
+          "BATSCHENGA",
+          "ELIG-MFOMO",
+          "EVODOULA"
+        ],
+        "arrondissements_count": 9,
+        "communes_count": 9
+      },
+      {
+        "name": "MBAM &INOUBOU",
+        "slug": "mbam-inoubou",
+        "chef_lieu": "BAFIA",
+        "arrondissements": [
+          "KON-YAMBETTA",
+          "DEUK",
+          "MAKENENE",
+          "NITOUKOU",
+          "BAFIA",
+          "NDIKINIMEKI",
+          "BOKITO",
+          "OMBESSA",
+          "KIIKI"
+        ],
+        "communes": [
+          "KON-YAMBETTA",
+          "DEUK",
+          "MAKENENE",
+          "NITOUKOU",
+          "BAFIA",
+          "NDIKINIMEKI",
+          "BOKITO",
+          "OMBESSA",
+          "KIIKI"
+        ],
+        "arrondissements_count": 9,
+        "communes_count": 9
+      },
+      {
+        "name": "MBAM & KIM",
+        "slug": "mbam-kim",
+        "chef_lieu": "NTUI",
+        "arrondissements": [
+          "NTUI",
+          "MBANGASSINA",
+          "YOKO",
+          "NGORO",
+          "NGAMBE-TIKAR"
+        ],
+        "communes": [
+          "NTUI",
+          "MBANGASSINA",
+          "YOKO",
+          "NGORO",
+          "NGAMBE-TIKAR"
+        ],
+        "arrondissements_count": 5,
+        "communes_count": 5
+      },
+      {
+        "name": "MEFOU &AFAMBA",
+        "slug": "mefou-afamba",
+        "chef_lieu": "MFOU",
+        "arrondissements": [
+          "MFOU",
+          "ASSAMBA",
+          "NKOLAFAMBA",
+          "AWAE",
+          "AFANLOUM",
+          "EDZENDOUAN",
+          "SOA",
+          "ESSE"
+        ],
+        "communes": [
+          "MFOU",
+          "NKOLAFAMBA",
+          "AWAE",
+          "AFANLOUM",
+          "EDZENDOUAN",
+          "SOA",
+          "OLANGUINA",
+          "ESSE"
+        ],
+        "arrondissements_count": 8,
+        "communes_count": 8
+      },
+      {
+        "name": "MEFOU ET AKONO",
+        "slug": "mefou-et-akono",
+        "chef_lieu": "NGOUMOU",
+        "arrondissements": [
+          "AKONO",
+          "BIKOK",
+          "NGOUMOU",
+          "MBANKOMO"
+        ],
+        "communes": [
+          "AKONO",
+          "BIKOK",
+          "NGOUMOU",
+          "MBANKOMO"
+        ],
+        "arrondissements_count": 4,
+        "communes_count": 4
+      },
+      {
+        "name": "MFOUNDI",
+        "slug": "mfoundi",
+        "chef_lieu": "YAOUNDE",
+        "arrondissements": [
+          "YAOUNDE II",
+          "YAOUNDE VII",
+          "YAOUNDE III",
+          "YAOUNDE IV",
+          "YAOUNDE VI",
+          "YAOUNDE I",
+          "YAOUNDE V"
+        ],
+        "communes": [
+          "YAOUNDE II",
+          "YAOUNDE VII",
+          "YAOUNDE III",
+          "YAOUNDE IV",
+          "YAOUNDE VI",
+          "YAOUNDE I",
+          "YAOUNDE V"
+        ],
+        "arrondissements_count": 7,
+        "communes_count": 7
+      },
+      {
+        "name": "NYONG ET KELLE",
+        "slug": "nyong-et-kelle",
+        "chef_lieu": "ESEKA",
+        "arrondissements": [
+          "BIYOUHA",
+          "BOT-MAKAK",
+          "BONDJOCK",
+          "MAKAK",
+          "NGUIBASSAL",
+          "DIBANG",
+          "NGOG-MAPUBI",
+          "MESSONDO",
+          "MATOMB",
+          "ESEKA"
+        ],
+        "communes": [
+          "BIYOUHA",
+          "BOT-MAKAK",
+          "BONDJOCK",
+          "MAKAK",
+          "NGUIBASSAL",
+          "DIBANG",
+          "NGOG-MAPUBI",
+          "MESSONDO",
+          "MATOMB",
+          "ESEKA"
+        ],
+        "arrondissements_count": 10,
+        "communes_count": 10
+      },
+      {
+        "name": "NYONG & MFOUMOU",
+        "slug": "nyong-mfoumou",
+        "chef_lieu": "AKONOLINGA",
+        "arrondissements": [
+          "AYOS",
+          "YAKOKOMBO",
+          "ENDOM",
+          "MENGANG",
+          "AKONOLINGA"
+        ],
+        "communes": [
+          "AYOS",
+          "ENDOM",
+          "KOBDOMBO",
+          "MENGANG",
+          "AKONOLINGA"
+        ],
+        "arrondissements_count": 5,
+        "communes_count": 5
+      },
+      {
+        "name": "NYONG ET SO'O",
+        "slug": "nyong-et-so-o",
+        "chef_lieu": "MBALMAYO",
+        "arrondissements": [
+          "AKOEMAN",
+          "NGOMEDZAP",
+          "MBALMAYO",
+          "MENGUEME",
+          "NKOL-METET",
+          "DZENG"
+        ],
+        "communes": [
+          "AKOEMAN",
+          "NGOMEDZAP",
+          "MBALMAYO",
+          "MENGUEME",
+          "NKOL-METET",
+          "DZENG"
+        ],
+        "arrondissements_count": 6,
+        "communes_count": 6
+      }
+    ]
+  },
+  {
+    "name": "EXTREME NORD",
+    "slug": "extreme-nord",
+    "departments_count": 6,
+    "departments": [
+      {
+        "name": "DIAMARE",
+        "slug": "diamare",
+        "chef_lieu": "MAROUA",
+        "arrondissements": [
+          "PETTE",
+          "BOGO",
+          "GAZAWA",
+          "MAROUA 1er",
+          "DARGALA",
+          "MAROUA 2e",
+          "MAROUA 3e",
+          "MERI",
+          "NDOUKOULA"
+        ],
+        "communes": [
+          "PETTE",
+          "BOGO",
+          "GAZAWA",
+          "MAROUA 2ème",
+          "MAROUA 3ème",
+          "MAROUA 1er",
+          "DARGALA",
+          "MERI",
+          "NDOUKOULA"
+        ],
+        "arrondissements_count": 9,
+        "communes_count": 9
+      },
+      {
+        "name": "LOGONE ET CHARI",
+        "slug": "logone-et-chari",
+        "chef_lieu": "KOUSSERI",
+        "arrondissements": [
+          "BLANGOUA",
+          "GOULFEY",
+          "WAZA",
+          "HILE-HALIFA",
+          "DARAK",
+          "LOGONE-BIRNI",
+          "ZINA",
+          "MAKARY",
+          "KOUSSERI",
+          "FOTOKOL"
+        ],
+        "communes": [
+          "BLANGOUA",
+          "GOULFEY",
+          "WAZA",
+          "HILE-HALIFA",
+          "DARAK",
+          "LOGONE-BIRNI",
+          "ZINA",
+          "MAKARY",
+          "KOUSSERI",
+          "FOTOKOL"
+        ],
+        "arrondissements_count": 10,
+        "communes_count": 10
+      },
+      {
+        "name": "MAYO DANAY",
+        "slug": "mayo-danay",
+        "chef_lieu": "YAGOUA",
+        "arrondissements": [
+          "YAGOUA",
+          "GUERE",
+          "KALFOU",
+          "GOBO",
+          "WINA",
+          "DATCHEKA",
+          "KAÏ-KAÏ",
+          "KAR-HAY",
+          "VELE",
+          "TCHATIBALI",
+          "MAGA"
+        ],
+        "communes": [
+          "YAGOUA",
+          "GUERE",
+          "KALFOU",
+          "GOBO",
+          "WINA",
+          "DATCHEKA",
+          "KAR-HAY",
+          "GUEME",
+          "KAI-KAI",
+          "TCHATIBALI",
+          "MAGA"
+        ],
+        "arrondissements_count": 11,
+        "communes_count": 11
+      },
+      {
+        "name": "MAYO KANI",
+        "slug": "mayo-kani",
+        "chef_lieu": "KAELE",
+        "arrondissements": [
+          "MINDIF",
+          "PORHI",
+          "TAIBONG",
+          "MOULVOUDAYE",
+          "MOUTOURWA",
+          "KAELE",
+          "GUIDIGUIS"
+        ],
+        "communes": [
+          "MINDIF",
+          "PORHI",
+          "TAIBONG",
+          "MOULVOUDAYE",
+          "MOUTOURWA",
+          "KAELE",
+          "GUIDIGUIS"
+        ],
+        "arrondissements_count": 7,
+        "communes_count": 7
+      },
+      {
+        "name": "MAYO SAVA",
+        "slug": "mayo-sava",
+        "chef_lieu": "MORA",
+        "arrondissements": [
+          "MORA",
+          "KOLOFATA",
+          "TOKOMBERE"
+        ],
+        "communes": [
+          "MORA",
+          "KOLOFATA",
+          "TOKOMBERE"
+        ],
+        "arrondissements_count": 3,
+        "communes_count": 3
+      },
+      {
+        "name": "MAYO TSANAGA",
+        "slug": "mayo-tsanaga",
+        "chef_lieu": "MOKOLO",
+        "arrondissements": [
+          "BOURRHA",
+          "HINA",
+          "MOKOLO",
+          "KOZA",
+          "MAYO-MASKOTA",
+          "SOULEDE-ROUA",
+          "MOGODE"
+        ],
+        "communes": [
+          "BOURRHA",
+          "HINA",
+          "MOKOLO",
+          "MAYO-MOSKOTA",
+          "KOZA",
+          "SOULEDE-ROUA",
+          "MOGODE"
+        ],
+        "arrondissements_count": 7,
+        "communes_count": 7
+      }
+    ]
+  },
+  {
+    "name": "NORD OUEST",
+    "slug": "nord-ouest",
+    "departments_count": 7,
+    "departments": [
+      {
+        "name": "BUI",
+        "slug": "bui",
+        "chef_lieu": "KUMBO",
+        "arrondissements": [
+          "JAKIRI"
+        ],
+        "communes": [
+          "OKU",
+          "JAKIRI",
+          "KUMBO",
+          "NONI",
+          "NKUM",
+          "MBVEN"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 6
+      },
+      {
+        "name": "BOYO",
+        "slug": "boyo",
+        "chef_lieu": "FUNDONG",
+        "arrondissements": [
+          "FUNDONG"
+        ],
+        "communes": [
+          "BELO",
+          "BUM",
+          "FUNDONG",
+          "NJINIKOM"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "DONGA-MANTUNG",
+        "slug": "donga-mantung",
+        "chef_lieu": "NKAMBE",
+        "arrondissements": [
+          "NKAMBE"
+        ],
+        "communes": [
+          "NWA",
+          "MISAJE",
+          "NKAMBE",
+          "AKO",
+          "NDU"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 5
+      },
+      {
+        "name": "MENCHUM",
+        "slug": "menchum",
+        "chef_lieu": "WUM",
+        "arrondissements": [
+          "WUM"
+        ],
+        "communes": [
+          "MENCHUM VALLEY",
+          "FURU-AWA",
+          "FUNGOM",
+          "WUM"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "MEZAM",
+        "slug": "mezam",
+        "chef_lieu": "BAMENDA",
+        "arrondissements": [
+          "BAMENDA 1er"
+        ],
+        "communes": [
+          "BALI",
+          "BAMENDA 3e",
+          "BAFUT",
+          "BAMENDA1er",
+          "TUBAH",
+          "BAMENDA 2e",
+          "SANTA"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 7
+      },
+      {
+        "name": "MOMO",
+        "slug": "momo",
+        "chef_lieu": "MBENGWI",
+        "arrondissements": [
+          "BATIBO"
+        ],
+        "communes": [
+          "NGIE",
+          "BATIBO",
+          "WIDIKUM-MENKA",
+          "MBENGWI",
+          "NJIKWA"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 5
+      },
+      {
+        "name": "NGO-KENTUNJIA",
+        "slug": "ngo-kentunjia",
+        "chef_lieu": "NDOP",
+        "arrondissements": [
+          "NDOP"
+        ],
+        "communes": [
+          "BABESSI",
+          "NDOP",
+          "BALIKUMBAT"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 3
+      }
+    ]
+  },
+  {
+    "name": "OUEST",
+    "slug": "ouest",
+    "departments_count": 8,
+    "departments": [
+      {
+        "name": "BAMBOUTOS",
+        "slug": "bamboutos",
+        "chef_lieu": "MBOUDA",
+        "arrondissements": [
+          "MBOUDA"
+        ],
+        "communes": [
+          "BABADJOU",
+          "MBOUDA",
+          "BATCHAM",
+          "GALIM"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "HAUT NKAM",
+        "slug": "haut-nkam",
+        "chef_lieu": "BAFANG",
+        "arrondissements": [
+          "BAFANG"
+        ],
+        "communes": [
+          "BANKA",
+          "BAFANG",
+          "BAKOU",
+          "BANWA",
+          "BANDJA",
+          "KEKEM",
+          "BANA"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 7
+      },
+      {
+        "name": "HAUTS PLATEAUX",
+        "slug": "hauts-plateaux",
+        "chef_lieu": "BAHAM",
+        "arrondissements": [
+          "BAHAM"
+        ],
+        "communes": [
+          "BAHAM",
+          "BANGOU",
+          "BATIE",
+          "BAMENDJOU"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "KOUNG KHI",
+        "slug": "koung-khi",
+        "chef_lieu": "BANDJOUN",
+        "arrondissements": [
+          "POUMOUGNE"
+        ],
+        "communes": [
+          "PETTE-BANDJOUN",
+          "BAYANGAM",
+          "DJEBEM"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 3
+      },
+      {
+        "name": "MENOUA",
+        "slug": "menoua",
+        "chef_lieu": "DSCHANG",
+        "arrondissements": [
+          "DSCHANG"
+        ],
+        "communes": [
+          "DSCHANG",
+          "FOKOUE",
+          "FONGO TONGO",
+          "SANTCHOU",
+          "NKONG-NI",
+          "PENKA-MICHEl"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 6
+      },
+      {
+        "name": "MIFI",
+        "slug": "mifi",
+        "chef_lieu": "BAFOUSSAM",
+        "arrondissements": [
+          "BAFOUSSAM 1er"
+        ],
+        "communes": [
+          "BAFOUSSAM 2e",
+          "BAFOUSSAM 3e",
+          "BAFOUSSAM 1er"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 3
+      },
+      {
+        "name": "NDE",
+        "slug": "nde",
+        "chef_lieu": "BANGANGTE",
+        "arrondissements": [
+          "BANGANGTE"
+        ],
+        "communes": [
+          "TONGA",
+          "BASSAMBA",
+          "BAZOU",
+          "BANGANGTE"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 4
+      },
+      {
+        "name": "NOUN",
+        "slug": "noun",
+        "chef_lieu": "FOUMBAN",
+        "arrondissements": [
+          "FOUMBAN"
+        ],
+        "communes": [
+          "KOUTABA",
+          "MASSANGAM",
+          "FOUMBOT",
+          "BANGOURAIN",
+          "NJIMON",
+          "KOUOPTAMO",
+          "MAGBA",
+          "MALENTOUEN",
+          "FOUMBAN"
+        ],
+        "arrondissements_count": 1,
+        "communes_count": 9
+      }
+    ]
+  }
+]
