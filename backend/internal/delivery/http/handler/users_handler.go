@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/openvote/backend/internal/delivery/http/middleware"
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
 	"github.com/openvote/backend/internal/service"
@@ -92,8 +93,12 @@ func (h *UsersHandler) GenerateToken(c *gin.Context) {
 
 // ListUsers retourne les utilisateurs, paginés. Les region_admin ne voient
 // que les utilisateurs de leur région ; les super_admin voient tout.
+//
+// La pagination est validée par la middleware RequirePagination()
+// sur la route (cf. cmd/api/main.go). On récupère les valeurs
+// validées via middleware.GetPagination(c) — pas de re-parsing.
 func (h *UsersHandler) ListUsers(c *gin.Context) {
-	p := ParsePagination(c)
+	page, limit := middleware.GetPagination(c)
 
 	all, err := h.userRepo.GetAll(c.Request.Context())
 	if err != nil {
@@ -116,15 +121,15 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 	// Pagination in-memory (M5). Volumes faibles (<10k users attendus),
 	// acceptable. Si volume >100k, pousser LIMIT/OFFSET à la base.
 	total := len(all)
-	start := p.Offset()
+	start := (page - 1) * limit
 	if start > total {
 		start = total
 	}
-	end := start + p.Limit
+	end := start + limit
 	if end > total {
 		end = total
 	}
-	page := all[start:end]
+	pageItems := all[start:end]
 
 	type UserResponse struct {
 		ID          string     `json:"id"`
@@ -136,8 +141,8 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		LastLoginAt *time.Time `json:"last_login_at,omitempty"`
 	}
 
-	items := make([]UserResponse, 0, len(page))
-	for _, u := range page {
+	items := make([]UserResponse, 0, len(pageItems))
+	for _, u := range pageItems {
 		items = append(items, UserResponse{
 			ID:          u.ID,
 			Username:    u.Username,
@@ -149,7 +154,7 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, PaginatedResponse(items, p, total))
+	c.JSON(http.StatusOK, PaginatedResponse(items, Pagination{Page: page, Limit: limit}, total))
 }
 
 // UpdateUser modifie le rôle et la région d'un utilisateur.

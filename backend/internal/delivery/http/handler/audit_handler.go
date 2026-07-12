@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/openvote/backend/internal/delivery/http/middleware"
 	"github.com/openvote/backend/internal/domain/repository"
 )
 
@@ -22,13 +23,17 @@ func NewAuditHandler(auditRepo repository.AuditLogRepository) *AuditHandler {
 // GetAuditLogs retourne les entrées du journal d'audit paginées.
 // Note : l'implémentation actuelle charge tout en mémoire puis slice.
 // Volumes attendus < 100k entrées ; au-delà, pousser LIMIT/OFFSET au repo.
+//
+// La pagination est validée par la middleware RequirePagination()
+// sur la route (cf. cmd/api/main.go). On récupère les valeurs
+// validées via middleware.GetPagination(c) — pas de re-parsing.
 func (h *AuditHandler) GetAuditLogs(c *gin.Context) {
-	p := ParsePagination(c)
+	page, limit := middleware.GetPagination(c)
 
 	const hardCap = 1000 // garde-fou : un admin ne peut pas dumper > 1000 lignes
 	effectiveLimit := hardCap
-	if effectiveLimit > p.Limit {
-		effectiveLimit = p.Limit
+	if effectiveLimit > limit {
+		effectiveLimit = limit
 	}
 
 	all, err := h.auditRepo.GetAll(c.Request.Context(), hardCap)
@@ -38,7 +43,7 @@ func (h *AuditHandler) GetAuditLogs(c *gin.Context) {
 	}
 
 	total := len(all)
-	start := p.Offset()
+	start := (page - 1) * limit
 	if start > total {
 		start = total
 	}
@@ -46,7 +51,7 @@ func (h *AuditHandler) GetAuditLogs(c *gin.Context) {
 	if end > total {
 		end = total
 	}
-	page := all[start:end]
+	pageItems := all[start:end]
 
-	c.JSON(http.StatusOK, PaginatedResponse(page, p, total))
+	c.JSON(http.StatusOK, PaginatedResponse(pageItems, Pagination{Page: page, Limit: limit}, total))
 }

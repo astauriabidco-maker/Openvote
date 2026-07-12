@@ -246,10 +246,14 @@ func main() {
 
 	// Middleware
 	authMiddleware := middleware.AuthMiddleware(authService, userRepo)
-	rateLimiter := middleware.RateLimitMiddleware(100, time.Minute)              // 100 req/min global
-	authRateLimiter := middleware.RateLimitMiddleware(10, time.Minute)           // 10 req/min auth (anti brute-force)
-	tokenGenRateLimiter := middleware.RateLimitMiddleware(5, time.Minute)        // H6 : 5 génération tokens/min
-	userMgmtRateLimiter := middleware.RateLimitMiddleware(30, time.Minute)       // 30 ops CRUD users/min
+	rateLimiter := middleware.RateLimitMiddleware(100, time.Minute)              // 100 req/min global (par IP)
+	authRateLimiter := middleware.RateLimitMiddleware(10, time.Minute)           // 10 req/min auth (par IP, anti brute-force)
+	tokenGenRateLimiter := middleware.RateLimitMiddleware(5, time.Minute)        // H6 : 5 génération tokens/min (par IP)
+	// userMgmtRateLimiter (IP) remplacé par userMgmtUserRateLimiter (userID) sur
+	// les routes /admin/users — un userID est plus stable qu'une IP (NAT, VPN)
+	// et bloque un attaquant précis, pas tout un sous-réseau.
+	userMgmtUserRateLimiter := middleware.UserRateLimitMiddleware(30, time.Minute) // 30 ops CRUD users/min PAR USER
+	adminWriteUserRateLimiter := middleware.UserRateLimitMiddleware(60, time.Minute) // 60 admin writes/min/user (régions, élections, etc.)
 
 	// Routes API Versioning
 	api := r.Group("/api/v1")
@@ -284,7 +288,7 @@ func main() {
 		reports.Use(authMiddleware)
 		{
 			reports.POST("", reportHandler.Create)
-			reports.GET("", reportHandler.List)
+			reports.GET("", middleware.RequirePagination(), reportHandler.List)
 			reports.GET("/upload-url", reportHandler.GetUploadURL)
 			// UUID middleware : refuse les IDs non-UUID (ex: "1", "abc")
 			// avec un 400 propre avant d'atteindre le handler. Sans
@@ -302,13 +306,15 @@ func main() {
 		admin.Use(authMiddleware, middleware.AdminOnly())
 		{
 			// Utilisateurs & enrôlement — rate-limits dédiés (H6 audit).
+			// userMgmtUserRateLimiter = par userID (cf. bloc middlewares
+			// plus haut) : un user précis est rate-limité, pas toute une IP.
 			admin.POST("/generate-token", tokenGenRateLimiter, usersHandler.GenerateToken)
-			admin.GET("/users", userMgmtRateLimiter, usersHandler.ListUsers)
-			admin.PATCH("/users/:id", userMgmtRateLimiter, middleware.RequireUUIDParam("id"), usersHandler.UpdateUser)
-			admin.DELETE("/users/:id", userMgmtRateLimiter, middleware.RequireUUIDParam("id"), usersHandler.DeleteUser)
+			admin.GET("/users", userMgmtUserRateLimiter, middleware.RequirePagination(), usersHandler.ListUsers)
+			admin.PATCH("/users/:id", userMgmtUserRateLimiter, middleware.RequireUUIDParam("id"), usersHandler.UpdateUser)
+			admin.DELETE("/users/:id", userMgmtUserRateLimiter, middleware.RequireUUIDParam("id"), usersHandler.DeleteUser)
 
-			// Audit
-			admin.GET("/audit-logs", auditHandler.GetAuditLogs)
+			// Audit — paginé
+			admin.GET("/audit-logs", middleware.RequirePagination(), auditHandler.GetAuditLogs)
 
 			// Configuration runtime
 			admin.GET("/config", configHandler.GetConfig)
@@ -335,37 +341,37 @@ func main() {
 			admin.GET("/reports/:id/legal-matches", middleware.RequireUUIDParam("id"), ragHandler.GetReportMatches)
 			admin.GET("/reports/:id/analysis", middleware.RequireUUIDParam("id"), ragHandler.GetReportAnalysis)
 
-			// Régions & Départements (admin CRUD)
-			admin.POST("/regions", regionHandler.CreateRegion)
-			admin.PATCH("/regions/:id", middleware.RequireUUIDParam("id"), regionHandler.UpdateRegion)
-			admin.DELETE("/regions/:id", middleware.RequireUUIDParam("id"), regionHandler.DeleteRegion)
-			admin.POST("/departments", regionHandler.CreateDepartment)
-			admin.PATCH("/departments/:id", middleware.RequireUUIDParam("id"), regionHandler.UpdateDepartment)
-			admin.DELETE("/departments/:id", middleware.RequireUUIDParam("id"), regionHandler.DeleteDepartment)
-
 			// Import CSV démographie (admin) — handlers existants depuis
 			// backend/internal/delivery/http/handler/region_handler.go
-			admin.POST("/regions/import-csv", regionHandler.ImportCSV)
+			admin.POST("/regions/import-csv", adminWriteUserRateLimiter, regionHandler.ImportCSV)
 			admin.GET("/regions/import-csv/template", regionHandler.DownloadCSVTemplate)
-			admin.GET("/regions/import-csv/history", regionHandler.GetDataImports)
+			admin.GET("/regions/import-csv/history", middleware.RequirePagination(), regionHandler.GetDataImports)
 			// Évolution démographique d'un département (time series pour graphique)
 			admin.GET("/departments/:id/demographics-history", middleware.RequireUUIDParam("id"), regionHandler.GetDepartmentDemographicsHistory)
 
-			// Arrondissements (admin CRUD)
-			admin.POST("/arrondissements", regionHandler.CreateArrondissement)
-			admin.PATCH("/arrondissements/:id", middleware.RequireUUIDParam("id"), regionHandler.UpdateArrondissement)
-			admin.DELETE("/arrondissements/:id", middleware.RequireUUIDParam("id"), regionHandler.DeleteArrondissement)
+			// Régions & Départements (admin CRUD) — rate-limit par user
+			admin.POST("/regions", adminWriteUserRateLimiter, regionHandler.CreateRegion)
+			admin.PATCH("/regions/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.UpdateRegion)
+			admin.DELETE("/regions/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.DeleteRegion)
+			admin.POST("/departments", adminWriteUserRateLimiter, regionHandler.CreateDepartment)
+			admin.PATCH("/departments/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.UpdateDepartment)
+			admin.DELETE("/departments/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.DeleteDepartment)
 
-			// Élections (admin CRUD)
+			// Arrondissements (admin CRUD) — rate-limit par user
+			admin.POST("/arrondissements", adminWriteUserRateLimiter, regionHandler.CreateArrondissement)
+			admin.PATCH("/arrondissements/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.UpdateArrondissement)
+			admin.DELETE("/arrondissements/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.DeleteArrondissement)
+
+			// Élections (admin CRUD) — rate-limit par user sur les writes
 			admin.GET("/elections", electionHandler.List)
-			admin.POST("/elections", electionHandler.Create)
-			admin.PATCH("/elections/:id", middleware.RequireUUIDParam("id"), electionHandler.Update)
-			admin.PATCH("/elections/:id/status", middleware.RequireUUIDParam("id"), electionHandler.UpdateStatus)
-			admin.DELETE("/elections/:id", middleware.RequireUUIDParam("id"), electionHandler.Delete)
+			admin.POST("/elections", adminWriteUserRateLimiter, electionHandler.Create)
+			admin.PATCH("/elections/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), electionHandler.Update)
+			admin.PATCH("/elections/:id/status", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), electionHandler.UpdateStatus)
+			admin.DELETE("/elections/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), electionHandler.Delete)
 
 			// Types d'incidents (admin CRUD)
-			admin.POST("/incident-types", incidentTypeHandler.Create)
-			admin.DELETE("/incident-types/:id", middleware.RequireUUIDParam("id"), incidentTypeHandler.Delete)
+			admin.POST("/incident-types", adminWriteUserRateLimiter, incidentTypeHandler.Create)
+			admin.DELETE("/incident-types/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), incidentTypeHandler.Delete)
 		}
 	}
 

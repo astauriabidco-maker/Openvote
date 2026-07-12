@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/openvote/backend/internal/delivery/http/middleware"
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
 )
@@ -441,19 +442,13 @@ func (h *RegionHandler) ImportCSV(c *gin.Context) {
 // GetDataImports retourne l'historique des importations, paginé
 // server-side (?page=N&limit=M). Renvoie aussi `total` (count global)
 // pour permettre la pagination côté client.
+//
+// La pagination est validée par la middleware RequirePagination()
+// sur la route (cf. cmd/api/main.go) — valeurs récupérées ici.
+// On conserve le format JSON inline (imports/total/page/limit/
+// total_pages) pour rétro-compat avec l'UI qui le consomme déjà.
 func (h *RegionHandler) GetDataImports(c *gin.Context) {
-	page := 1
-	limit := 20
-	if p := c.Query("page"); p != "" {
-		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
-			page = parsed
-		}
-	}
-	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
+	page, limit := middleware.GetPagination(c)
 	imports, total, err := h.regionRepo.GetDataImports(c.Request.Context(), page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

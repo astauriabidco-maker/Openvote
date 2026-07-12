@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/openvote/backend/internal/delivery/http/middleware"
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/service"
 )
@@ -94,22 +95,25 @@ func (h *ReportHandler) List(c *gin.Context) {
 	// M5 : pagination. Volumes attendus > 50k pendant les élections,
 	// donc clamp à MaxLimit et pagination in-memory acceptable pour
 	// la v1 ; à terme, pousser LIMIT/OFFSET au repo.
-	p := ParsePagination(c)
+	//
+	// La pagination est validée par la middleware RequirePagination()
+	// sur la route (cf. cmd/api/main.go) — valeurs récupérées ici.
+	page, limit := middleware.GetPagination(c)
 	total := len(reports)
-	start := p.Offset()
+	start := (page - 1) * limit
 	if start > total {
 		start = total
 	}
-	end := start + p.Limit
+	end := start + limit
 	if end > total {
 		end = total
 	}
-	page := reports[start:end]
-	if page == nil {
-		page = []entity.Report{}
+	pageItems := reports[start:end]
+	if pageItems == nil {
+		pageItems = []entity.Report{}
 	}
 
-	c.JSON(http.StatusOK, PaginatedResponse(page, p, total))
+	c.JSON(http.StatusOK, PaginatedResponse(pageItems, Pagination{Page: page, Limit: limit}, total))
 }
 
 func (h *ReportHandler) GetDetails(c *gin.Context) {
