@@ -3,14 +3,20 @@
  *
  * Pas de state propre ni de fetch : tout vient du constant RBAC_MATRIX.
  * Affichage purement présentationnel.
+ *
+ * TabHeader (refonte 2026-07) : utilise le composant partagé.
  */
 
 import { RBAC_MATRIX, ROLE_LABELS } from '../constants';
+import TabHeader from '../components/TabHeader';
 
 export default function RbacTab() {
     return (
         <div className="admin-section">
-            <h2>🛡️ Matrice des permissions (RBAC)</h2>
+            <TabHeader
+                title="🔐 RBAC"
+                subtitle="Matrice des permissions par rôle — source de vérité pour la sécurité de l'app."
+            />
             <div className="admin-table-wrapper">
                 <table className="admin-table rbac-table">
                     <thead>

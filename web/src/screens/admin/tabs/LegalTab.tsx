@@ -12,6 +12,7 @@
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 export default function LegalTab({ state }: { state: AdminPanelState }) {
     const {
@@ -175,24 +176,24 @@ export default function LegalTab({ state }: { state: AdminPanelState }) {
             <div className="legal-content">
                 {selectedDocId ? (
                     <>
-                        <div className="admin-section-header" style={{ marginBottom: '24px' }}>
-                            <div>
-                                <h2 style={{ marginBottom: '4px' }}>{selectedDoc?.title}</h2>
-                                <small style={{ color: 'var(--text-secondary)' }}>Version : {selectedDoc?.version || 'N/A'}</small>
-                            </div>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <button className="admin-btn" onClick={() => setShowImportAssistant(!showImportAssistant)}>
-                                    {showImportAssistant ? "❌ Fermer l'Assistant" : "✨ Assistant d'Importation"}
-                                </button>
-                                <input
-                                    className="admin-input"
-                                    placeholder="🔍 Rechercher un article..."
-                                    style={{ maxWidth: '250px' }}
-                                    value={legalSearch}
-                                    onChange={(e) => setLegalSearch(e.target.value)}
-                                />
-                            </div>
-                        </div>
+                        <TabHeader
+                            title={selectedDoc?.title || '⚖️ Cadre légal'}
+                            subtitle={`Version : ${selectedDoc?.version || 'N/A'}`}
+                            actions={
+                                <>
+                                    <button className="admin-btn" onClick={() => setShowImportAssistant(!showImportAssistant)}>
+                                        {showImportAssistant ? "❌ Fermer l'Assistant" : "✨ Assistant d'Importation"}
+                                    </button>
+                                    <input
+                                        className="admin-input"
+                                        placeholder="🔍 Rechercher un article..."
+                                        style={{ maxWidth: '250px' }}
+                                        value={legalSearch}
+                                        onChange={(e) => setLegalSearch(e.target.value)}
+                                    />
+                                </>
+                            }
+                        />
 
                         {/* Assistant d'importation (PDF + parsing texte) */}
                         {showImportAssistant && (

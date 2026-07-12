@@ -8,6 +8,7 @@
 
 import type { AdminPanelState } from '../useAdminPanelState';
 import { ELECTION_TYPES, STATUS_LABELS, STATUS_COLORS } from '../constants';
+import TabHeader from '../components/TabHeader';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function ElectionsTab({ state }: { state: AdminPanelState }) {
@@ -19,10 +20,13 @@ export default function ElectionsTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>🗳️ Gestion des Scrutins ({elections.length})</h2>
-                <button className="admin-refresh-btn" onClick={fetchElections}>🔄 Actualiser</button>
-            </div>
+            <TabHeader
+                title="🗳️ Scrutins"
+                subtitle={`${elections.length} scrutin${elections.length > 1 ? 's' : ''} enregistré${elections.length > 1 ? 's' : ''}`}
+                actions={
+                    <button className="admin-refresh-btn" onClick={fetchElections}>🔄 Actualiser</button>
+                }
+            />
 
             {/* Formulaire de création */}
             <div className="region-add-form">

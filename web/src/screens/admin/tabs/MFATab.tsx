@@ -19,6 +19,7 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 // ============================================================
 // Types de réponse backend
@@ -163,7 +164,7 @@ export default function MFATab({ state }: { state: AdminPanelState }) {
     if (loading) {
         return (
             <div className="admin-section">
-                <h2>🔐 Authentification à deux facteurs (MFA)</h2>
+                <TabHeader title="🛡️ Authentification à deux facteurs (MFA)" />
                 <div style={{ padding: 20, color: '#8b949e' }}>⏳ Chargement…</div>
             </div>
         );
@@ -172,7 +173,7 @@ export default function MFATab({ state }: { state: AdminPanelState }) {
     if (!status) {
         return (
             <div className="admin-section">
-                <h2>🔐 Authentification à deux facteurs (MFA)</h2>
+                <TabHeader title="🛡️ Authentification à deux facteurs (MFA)" />
                 <div style={{ padding: 20, color: '#f85149' }}>{error || 'Erreur de chargement'}</div>
                 <button className="admin-refresh-btn" onClick={loadStatus}>🔄 Réessayer</button>
             </div>
@@ -183,7 +184,7 @@ export default function MFATab({ state }: { state: AdminPanelState }) {
     if (!status.is_super_admin) {
         return (
             <div className="admin-section">
-                <h2>🔐 Authentification à deux facteurs (MFA)</h2>
+                <TabHeader title="🛡️ Authentification à deux facteurs (MFA)" />
                 <div className="mfa-info-card">
                     <div className="mfa-info-icon">ℹ️</div>
                     <h3>Réservé aux super_administrateurs</h3>
@@ -202,7 +203,7 @@ export default function MFATab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <h2>🔐 Authentification à deux facteurs (MFA)</h2>
+            <TabHeader title="🛡️ Authentification à deux facteurs (MFA)" />
 
             {successMessage && (
                 <div className="mfa-success-banner">

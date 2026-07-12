@@ -6,6 +6,7 @@
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 export default function ConfigTab({ state }: { state: AdminPanelState }) {
     const {
@@ -15,29 +16,32 @@ export default function ConfigTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>{t('config')}</h2>
-                {!editingConfig ? (
-                    <button
-                        className="admin-primary-btn"
-                        onClick={() => {
-                            setConfigDraft(JSON.stringify(config, null, 2));
-                            setEditingConfig(true);
-                        }}
-                    >
-                        {t('edit_config')}
-                    </button>
-                ) : (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="admin-refresh-btn" onClick={() => setEditingConfig(false)}>
-                            {t('cancel')}
+            <TabHeader
+                title="⚙️ Configuration runtime"
+                subtitle="Édition du JSON de config système. ⚠️ changes are immediate, no rollback."
+                actions={
+                    !editingConfig ? (
+                        <button
+                            className="admin-primary-btn"
+                            onClick={() => {
+                                setConfigDraft(JSON.stringify(config, null, 2));
+                                setEditingConfig(true);
+                            }}
+                        >
+                            {t('edit_config')}
                         </button>
-                        <button className="admin-primary-btn" onClick={handleSaveConfig}>
-                            {t('save_config')}
-                        </button>
-                    </div>
-                )}
-            </div>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="admin-refresh-btn" onClick={() => setEditingConfig(false)}>
+                                {t('cancel')}
+                            </button>
+                            <button className="admin-primary-btn" onClick={handleSaveConfig}>
+                                {t('save_config')}
+                            </button>
+                        </div>
+                    )
+                }
+            />
 
             {editingConfig ? (
                 <textarea

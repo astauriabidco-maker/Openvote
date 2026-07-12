@@ -14,6 +14,7 @@
 import { lazy, Suspense } from 'react';
 import { API_URL } from '../../../constants';
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 const CameroonInteractiveMap = lazy(() => import('../../../CameroonInteractiveMap'));
 
@@ -34,12 +35,15 @@ export default function IntelligenceTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>🌍 Intelligence Électorale & Analyse de Données</h2>
-                <button className="admin-refresh-btn" onClick={() => { fetchRegions(); fetchElections(); }}>
-                    🔄 Recalculer les Ratios
-                </button>
-            </div>
+            <TabHeader
+                title="📈 Intelligence électorale"
+                subtitle="Données démographiques et projections par région/département"
+                actions={
+                    <button className="admin-refresh-btn" onClick={() => { fetchRegions(); fetchElections(); }}>
+                        🔄 Recalculer les ratios
+                    </button>
+                }
+            />
 
             {/* 1. SYNTHÈSE NATIONALE */}
             <div className="analytics-summary" style={{

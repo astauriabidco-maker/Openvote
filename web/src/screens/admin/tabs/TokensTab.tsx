@@ -4,9 +4,12 @@
  * Affiche un formulaire (rôle + région), génère un token JWT + QR code.
  * M6 : le scope régional est vérifié côté backend (region_admin ne peut
  * générer que pour sa région et des rôles inférieurs).
+ *
+ * TabHeader (refonte 2026-07) : utilise le composant partagé.
  */
 
 import { ROLES, ROLE_LABELS } from '../constants';
+import TabHeader from '../components/TabHeader';
 import type { AdminPanelState } from '../useAdminPanelState';
 
 export default function TokensTab({ state }: { state: AdminPanelState }) {
@@ -18,8 +21,11 @@ export default function TokensTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <h2>🔑 Génération de Token d'Enrôlement</h2>
-            <p className="admin-desc">Générez un token d'activation pour permettre à un nouvel observateur de s'enrôler via l'app mobile.</p>
+            <TabHeader
+                title="🎫 Tokens d'enrôlement"
+                subtitle="Générez un token d'activation pour permettre à un nouvel observateur de s'enrôler via l'app mobile."
+            />
+
             <div className="token-form">
                 <div className="form-group">
                     <label>Rôle attribué</label>

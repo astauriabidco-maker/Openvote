@@ -24,6 +24,7 @@
 
 import { useEffect } from 'react';
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import DataTable, { type DataTableColumn } from '../components/DataTable';
@@ -122,14 +123,17 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>🗺️ Régions & Départements ({regions.length} régions, {regions.reduce((a, r) => a + r.dept_count, 0)} départements)</h2>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="admin-refresh-btn" onClick={() => setImportHistoryOpen(true)}>📊 Historique</button>
-                    <button className="admin-refresh-btn" onClick={() => setImportCSVMopen(true)}>📥 Import CSV</button>
-                    <button className="admin-refresh-btn" onClick={fetchRegions}>🔄 Actualiser</button>
-                </div>
-            </div>
+            <TabHeader
+                title="🌍 Régions & Départements"
+                subtitle={`${regions.length} régions · ${regions.reduce((a, r) => a + r.dept_count, 0)} départements`}
+                actions={
+                    <>
+                        <button className="admin-refresh-btn" onClick={() => setImportHistoryOpen(true)}>📊 Historique</button>
+                        <button className="admin-refresh-btn" onClick={() => setImportCSVMopen(true)}>📥 Import CSV</button>
+                        <button className="admin-refresh-btn" onClick={fetchRegions}>🔄 Actualiser</button>
+                    </>
+                }
+            />
 
             {/* Ajouter une région */}
             <div className="region-add-form">

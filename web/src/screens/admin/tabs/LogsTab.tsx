@@ -5,18 +5,22 @@
 import Pagination from '../../../components/Pagination';
 import { formatDate } from '../../../utils/format';
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 export default function LogsTab({ state }: { state: AdminPanelState }) {
     const { auditLogs, auditPagination, auditLoading, fetchAuditLogs } = state;
 
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>📜 Journal d'Audit</h2>
-                <button className="admin-refresh-btn" onClick={() => fetchAuditLogs()} disabled={auditLoading}>
-                    {auditLoading ? '⏳' : '🔄'} Actualiser
-                </button>
-            </div>
+            <TabHeader
+                title="📋 Logs d'audit"
+                subtitle={`${auditPagination.total} action${auditPagination.total > 1 ? 's' : ''} enregistrée${auditPagination.total > 1 ? 's' : ''} dans le journal`}
+                actions={
+                    <button className="admin-refresh-btn" onClick={() => fetchAuditLogs()} disabled={auditLoading}>
+                        {auditLoading ? '⏳' : '🔄'} Actualiser
+                    </button>
+                }
+            />
             {auditLogs.length === 0 && !auditLoading ? (
                 <div className="admin-empty">Aucune action enregistrée pour le moment.</div>
             ) : (

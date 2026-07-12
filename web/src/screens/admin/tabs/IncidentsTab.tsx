@@ -7,6 +7,7 @@
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function IncidentsTab({ state }: { state: AdminPanelState }) {
@@ -18,9 +19,10 @@ export default function IncidentsTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>⚠️ Types d'Incidents ({incidentTypes.length})</h2>
-            </div>
+            <TabHeader
+                title="⚠️ Types d'incidents"
+                subtitle={`${incidentTypes.length} type${incidentTypes.length > 1 ? 's' : ''} enregistré${incidentTypes.length > 1 ? 's' : ''}`}
+            />
 
             <div className="region-add-form">
                 <h3>➕ Ajouter un Type d'Incident</h3>

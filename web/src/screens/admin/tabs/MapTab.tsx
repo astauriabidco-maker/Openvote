@@ -7,13 +7,17 @@
 
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 export default function MapTab({ state }: { state: AdminPanelState }) {
     const { observersByRegion } = state;
 
     return (
         <div className="admin-section">
-            <h2>🗺️ Carte des Observateurs</h2>
+            <TabHeader
+                title="🗺️ Carte des observateurs"
+                subtitle={`${observersByRegion.length} régions représentées`}
+            />
             <div style={{
                 height: '500px', width: '100%',
                 borderRadius: '12px', overflow: 'hidden',

@@ -6,6 +6,7 @@
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
+import TabHeader from '../components/TabHeader';
 
 export default function DashboardTab({ state }: { state: AdminPanelState }) {
     const { kpis, regions } = state;
@@ -16,7 +17,10 @@ export default function DashboardTab({ state }: { state: AdminPanelState }) {
 
     return (
         <div className="admin-section">
-            <h2>📊 Tableau de Bord</h2>
+            <TabHeader
+                title="📊 Tableau de bord"
+                subtitle="Vue d'ensemble des indicateurs clés du système."
+            />
             <div className="kpi-grid">
                 <div className="kpi-card kpi-blue">
                     <div className="kpi-value">{kpis.users.total}</div>
