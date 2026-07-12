@@ -88,6 +88,91 @@ export const TAB_KEYS = [
 export type TabKey = (typeof TAB_KEYS)[number];
 
 /**
+ * Groupes d'onglets pour la sidebar refondue.
+ *
+ * Avant : barre horizontale plate de 13 onglets → illisible dès qu'on
+ * dépasse 6-7 items. Maintenant : 5 sections collapsibles (Accueil +
+ * 4 domaines), chaque item avec icône + label + badge optionnel.
+ *
+ * Le composant <Sidebar> consomme ce tableau. Le routing vers le bon
+ * onglet se fait via le `setActiveTab` du god-hook (toujours via la
+ * même clé `id` que TAB_KEYS, pour zéro breaking change côté tabs).
+ *
+ * Si tu ajoutes un onglet : ajoute son `id` à TAB_KEYS, puis ajoute-le
+ * au bon groupe ici. C'est le seul endroit qui connaît le découpage
+ * logique des onglets.
+ */
+export interface NavItem {
+    id: TabKey;
+    label: string;
+    icon: string;
+    /** Badge inline optionnel (compteur / alerte). */
+    badge?: { text: string; variant?: 'red' | 'green' | 'muted' };
+}
+
+export interface NavGroup {
+    /** Identifiant unique (utilisé pour la persistance d'état collapse). */
+    key: string;
+    title: string;
+    items: NavItem[];
+}
+
+export const NAV_GROUPS: NavGroup[] = [
+    {
+        key: 'home',
+        title: 'Accueil',
+        items: [
+            { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
+        ],
+    },
+    {
+        key: 'field-ops',
+        title: 'Opérations terrain',
+        items: [
+            { id: 'map', label: 'Carte observateurs', icon: '🗺️' },
+            { id: 'tokens', label: "Tokens d'enrôlement", icon: '🎫' },
+            { id: 'users', label: 'Utilisateurs', icon: '👥' },
+        ],
+    },
+    {
+        key: 'elections',
+        title: 'Scrutins & Analyses',
+        items: [
+            { id: 'elections', label: 'Scrutins', icon: '🗳️' },
+            { id: 'incidents', label: "Types d'incidents", icon: '⚠️' },
+            { id: 'intelligence', label: 'Intelligence électorale', icon: '📈' },
+        ],
+    },
+    {
+        key: 'content',
+        title: 'Contenu & Données',
+        items: [
+            { id: 'regions', label: 'Régions & Départements', icon: '🌍' },
+            { id: 'legal', label: 'Cadre légal', icon: '⚖️' },
+        ],
+    },
+    {
+        key: 'config',
+        title: 'Configuration',
+        items: [
+            { id: 'config', label: 'Config runtime', icon: '⚙️' },
+            { id: 'rbac', label: 'RBAC', icon: '🔐' },
+            { id: 'mfa', label: 'MFA', icon: '🛡️' },
+            { id: 'logs', label: "Logs d'audit", icon: '📋' },
+        ],
+    },
+];
+
+/** Map id → group, pour retrouver rapidement le group parent d'un onglet. */
+export const TAB_TO_GROUP: Record<TabKey, string> = NAV_GROUPS.reduce(
+    (acc, group) => {
+        for (const item of group.items) acc[item.id] = group.key;
+        return acc;
+    },
+    {} as Record<TabKey, string>,
+);
+
+/**
  * Traductions FR/EN du chrome (libellés d'onglets, actions globales, etc.).
  * Centralisé ici plutôt que dans useAdminUI pour faciliter la migration
  * future vers un système i18n complet (react-i18next).

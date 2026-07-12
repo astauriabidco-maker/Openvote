@@ -4,21 +4,26 @@
  * Responsabilités :
  *   1. Initialiser le state partagé via useAdminPanelState().
  *   2. Afficher le chrome global : toast notifications, bandeau PWA offline,
- *      bandeau install PWA, header d'actions, navigation entre onglets.
+ *      bandeau install PWA, sidebar de navigation, header d'actions.
  *   3. Dispatcher vers le bon composant d'onglet selon activeTab.
  *
  * Le contenu de chaque onglet est dans `tabs/<Name>Tab.tsx` — chaque tab
  * reçoit `state` (le retour du hook) en props.
  *
  * Avant le refactor (cf. M2 + sprint onglets) : ce fichier faisait
- * 2073 LOC avec 12 onglets inlinés. Maintenant : ~250 LOC de shell.
+ * 2073 LOC avec 12 onglets inlinés. Maintenant : shell + sidebar refondue.
+ *
+ * Note : à partir de 2026-07-12, la nav horizontale de 13 onglets est
+ * remplacée par une <Sidebar> latérale organisée en 5 sections collapsibles
+ * (cf. NAV_GROUPS). Voir Sidebar.tsx.
  */
 
 import { memo } from 'react';
 import type { AxiosInstance } from 'axios';
 import type { AuthState } from '../../types';
 import { useAdminPanelState, type AdminPanelState } from './useAdminPanelState';
-import { TAB_KEYS, type TabKey } from './constants';
+import { type TabKey } from './constants';
+import Sidebar from './components/Sidebar';
 
 import DashboardTab from './tabs/DashboardTab';
 import UsersTab from './tabs/UsersTab';
@@ -43,6 +48,7 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
     const state = useAdminPanelState(apiClient, auth);
     const {
         activeTab, setActiveTab,
+        openSections, toggleSection,
         theme, toggleTheme, lang, toggleLang, t,
         notification,
         alertCount, isOnline, showInstallBanner, setShowInstallBanner,
@@ -53,7 +59,8 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
     /**
      * exportPDF ouvre une nouvelle fenêtre avec un rapport HTML imprimable
      * (synthèse KPIs + tables users/elections/regions). Conservé dans le shell
-     * car il agrège des données de plusieurs onglets.
+     * car il agrège des données de plusieurs onglets. Sera migré dans le
+     * futur <TopBar> pour l'accessibilité.
      */
     const exportPDF = () => {
         const printWindow = window.open('', '_blank');
@@ -152,34 +159,35 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
                 </div>
             )}
 
-            {/* Action header */}
-            <div className="admin-header-actions" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <button className="admin-primary-btn" onClick={() => setActiveTab('map')}>🗺️ {t('observers_map')}</button>
-                <button className="admin-primary-btn" onClick={exportPDF}>📄 {t('export_pdf')}</button>
-                <button className="toggle-btn" onClick={toggleTheme}>{theme === 'dark' ? '☀️' : '🌙'}</button>
-                <button className="toggle-btn" onClick={toggleLang}>{lang.toUpperCase()}</button>
-                {alertCount > 0 && (
-                    <div className="admin-toast error" style={{ position: 'static', margin: 0, padding: '6px 12px' }}>
-                        ⚠️ {alertCount} {t('alerts')}
+            {/* Layout principal : sidebar gauche + contenu à droite */}
+            <div className="admin-shell-layout">
+                {/* Sidebar refondue (remplace la barre horizontale de 13 onglets) */}
+                <Sidebar
+                    activeTab={activeTab}
+                    openSections={openSections}
+                    onSelectTab={setActiveTab}
+                    onToggleSection={toggleSection}
+                />
+
+                {/* Contenu principal */}
+                <div className="admin-shell-main">
+                    {/* Action header (legacy, à migrer dans <TopBar> étape 2) */}
+                    <div className="admin-header-actions" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button className="admin-primary-btn" onClick={() => setActiveTab('map')}>🗺️ {t('observers_map')}</button>
+                        <button className="admin-primary-btn" onClick={exportPDF}>📄 {t('export_pdf')}</button>
+                        <button className="toggle-btn" onClick={toggleTheme}>{theme === 'dark' ? '☀️' : '🌙'}</button>
+                        <button className="toggle-btn" onClick={toggleLang}>{lang.toUpperCase()}</button>
+                        {alertCount > 0 && (
+                            <div className="admin-toast error" style={{ position: 'static', margin: 0, padding: '6px 12px' }}>
+                                ⚠️ {alertCount} {t('alerts')}
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
 
-            {/* Tabs nav */}
-            <div className="admin-tabs">
-                {TAB_KEYS.map((key) => (
-                    <button
-                        key={key}
-                        className={activeTab === key ? 'active' : ''}
-                        onClick={() => setActiveTab(key)}
-                    >
-                        {t(key)}
-                    </button>
-                ))}
+                    {/* Active tab dispatch */}
+                    <ActiveTabContent activeTab={activeTab} state={state} />
+                </div>
             </div>
-
-            {/* Active tab dispatch */}
-            <ActiveTabContent activeTab={activeTab} state={state} />
         </div>
     );
 }

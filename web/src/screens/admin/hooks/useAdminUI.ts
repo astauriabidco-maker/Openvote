@@ -18,7 +18,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { TabKey } from '../constants';
-import { TRANSLATIONS } from '../constants';
+import { TRANSLATIONS, TAB_TO_GROUP } from '../constants';
 
 // ============================================================
 // Types
@@ -33,6 +33,14 @@ export interface AdminUIState {
     // Navigation
     activeTab: TabKey;
     setActiveTab: (tab: TabKey) => void;
+    /**
+     * Sections de la sidebar actuellement dépliées. La section contenant
+     * l'onglet actif est TOUJOURS dépliée (auto-open). L'utilisateur peut
+     * collapse/expand manuellement via `toggleSection`.
+     */
+    openSections: string[];
+    toggleSection: (key: string) => void;
+    setOpenSections: (keys: string[]) => void;
 
     // Thème + i18n
     theme: Theme;
@@ -60,8 +68,29 @@ const NOTIFICATION_TIMEOUT_MS = 4000;
 const PENDING_REPORTS_POLL_MS = 30_000;
 
 export function useAdminUI(): AdminUIState {
-    // ---- Navigation ----
+    // ---- Navigation + sidebar sections collapsibles ----
     const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+    // Toutes les sections dépliées par défaut — l'utilisateur peut collapse.
+    // On seed avec TOUTES les clés de NAV_GROUPS pour que la 1re ouverture
+    // montre la sidebar complète. L'utilisateur collapse ensuite à sa guise.
+    const ALL_SECTION_KEYS = ['home', 'field-ops', 'elections', 'content', 'config'];
+    const [openSections, setOpenSections] = useState<string[]>(ALL_SECTION_KEYS);
+
+    const toggleSection = useCallback((key: string) => {
+        setOpenSections((prev) =>
+            prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+        );
+    }, []);
+
+    // Auto-open : quand l'onglet actif change, on s'assure que sa section
+    // parente est dépliée (sinon l'utilisateur ne voit pas le marker "active"
+    // dans la sidebar — il a cliqué ailleurs et le trouve pas).
+    useEffect(() => {
+        const parent = TAB_TO_GROUP[activeTab];
+        if (parent && !openSections.includes(parent)) {
+            setOpenSections((prev) => [...prev, parent]);
+        }
+    }, [activeTab, openSections]);
 
     // ---- Theme (persisté en localStorage) ----
     const [theme, setTheme] = useState<Theme>(() => {
@@ -160,6 +189,7 @@ export function useAdminUI(): AdminUIState {
 
     return {
         activeTab, setActiveTab,
+        openSections, toggleSection, setOpenSections,
         theme, toggleTheme,
         lang, toggleLang,
         t,

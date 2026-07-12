@@ -57,6 +57,9 @@ export interface AdminPanelState {
     // ---- Navigation & UI globale ----
     activeTab: TabKey;
     setActiveTab: (tab: TabKey) => void;
+    openSections: string[];
+    toggleSection: (key: string) => void;
+    setOpenSections: (keys: string[]) => void;
     theme: 'dark' | 'light';
     toggleTheme: () => void;
     lang: 'fr' | 'en';
@@ -275,6 +278,7 @@ export function useAdminPanelState(
     // `notify` est passé aux hooks de domaine qui en ont besoin.
     const {
         activeTab, setActiveTab,
+        openSections, toggleSection, setOpenSections,
         theme, toggleTheme,
         lang, toggleLang, t,
         notification, notify,
@@ -455,6 +459,7 @@ export function useAdminPanelState(
     return {
         // Navigation & UI
         activeTab, setActiveTab,
+        openSections, toggleSection, setOpenSections,
         theme, toggleTheme,
         lang, toggleLang,
         t,
