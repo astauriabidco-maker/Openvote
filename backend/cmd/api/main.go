@@ -238,16 +238,27 @@ func main() {
 	// ============================================================
 	// Configuration du routeur (inchangé)
 	// ============================================================
-	r := gin.Default()
+	// Router + middlewares globaux (ORDRE STRICTEMENT IMPORTANT)
+	// ============================================================
+	// Note : on utilise gin.New() (PAS gin.Default()) pour ne PAS
+	// avoir le Recovery par défaut de Gin. Notre RecoveryMiddleware
+	// custom est meilleur (JSON propre + request_id dans le body)
+	// et on le contrôle explicitement dans la chaîne.
+	r := gin.New()
 
-	// CORS strict (H1 audit) : defense in depth avec 2 middlewares.
-	// Ordre important : OriginCheck AVANT Preflight, pour qu'un preflight
-	// avec Origin refusée soit rejeté avant qu'on valide la méthode.
+	// 1. RequestID EN PREMIER — doit être là AVANT tout le reste
+	// pour que TOUS les middlewares downstream et handlers
+	// puissent utiliser le request ID dans leurs logs. Et
+	// surtout, pour qu'un panic catché par Recovery ait un
+	// X-Request-ID à mettre dans le body de la 500.
+	r.Use(middleware.RequestIDMiddleware())
+
+	// 2. CORS strict (H1 audit) — OriginCheck AVANT Preflight
 	middleware.InitCORS()
 	r.Use(middleware.OriginCheckMiddleware())
 	r.Use(middleware.PreflightMiddleware())
 
-	// Middleware
+	// Middlewares business
 	authMiddleware := middleware.AuthMiddleware(authService, userRepo)
 	rateLimiter := middleware.RateLimitMiddleware(100, time.Minute)              // 100 req/min global (par IP)
 	authRateLimiter := middleware.RateLimitMiddleware(10, time.Minute)           // 10 req/min auth (par IP, anti brute-force)
@@ -260,6 +271,11 @@ func main() {
 
 	// Routes API Versioning
 	api := r.Group("/api/v1")
+	// Recovery EN DERNIER (avant le group /api/v1) — catch tous les
+	// panics des middlewares précédents ET des handlers. Le request
+	// ID est garanti posé par RequestIDMiddleware (1er de la chaîne).
+	// Un panic dans un handler retourne 500 + JSON avec request_id.
+	r.Use(middleware.RecoveryMiddleware())
 	api.Use(rateLimiter) // Rate limiting global
 	{
 		// Auth (rate limiting strict anti brute-force)
