@@ -230,6 +230,15 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
 
   return (
     <div className="dashboard-container">
+      {/* Vue Admin Backoffice (refonte 2026-07) : on rend
+          directement <StableAdminPanel> à la racine, sans le header
+          observer ni le <main className="map-wrapper"> qui brisait
+          la mise en page (sidebar/topbar empilés verticalement
+          au lieu d'être un rail horizontal à gauche). */}
+      {activeView === 'admin' && isAdmin ? (
+        <StableAdminPanel auth={auth} apiClient={apiClient} />
+      ) : (
+      <>
       <header className="header">
         <div className="header-left">
           <h1>🗳️ Openvote | Tactical Dashboard</h1>
@@ -298,6 +307,12 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
       </header>
 
       <div className="main-content">
+        {/* L'ancien sidebar observateur (filtres Tous/Vérifiés/etc.) n'a
+            de sens qu'en mode "map" (vue observateur). En mode admin
+            (activeView === 'admin'), on cache ce sidebar pour
+            éviter le layout hybride observé (cf. capture 2026-07-12
+            où sidebar et AdminPanel étaient superposés). */}
+        {activeView !== 'admin' && (
         <aside className="sidebar">
           <div className="filter-bar">
             <button className={`filter-btn ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>
@@ -380,11 +395,12 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
                 <p>Aucun signalement trouvé.</p>
                 <small>Les rapports des observateurs apparaîtront ici en temps réel.</small>
               </div>
-            )}
-          </div>
-        </aside>
+             )}
+           </div>
+         </aside>
+        )}
 
-        <main className="map-wrapper">
+         <main className="map-wrapper">
           {/* Panneau de détail du rapport sélectionné */}
           {selectedReport && (
             <div className="report-detail-panel">
@@ -706,12 +722,13 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
               </div>
             </div>
           )}
-          {/* Vue Admin Backoffice - Memoized to prevent countdown flashes */}
-          {activeView === 'admin' && isAdmin && (
-            <StableAdminPanel auth={auth} apiClient={apiClient} />
-          )}
+          {/* L'ancienne instance StableAdminPanel a été déplacée à la
+              racine du composant (cf. commentaire ligne ~232) pour
+              éviter le layout hybride observer/admin. */}
         </main>
       </div>
+      </>
+      )}
     </div>
   );
 }
