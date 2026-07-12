@@ -14,7 +14,7 @@
 import { lazy, Suspense } from 'react';
 import { API_URL } from '../../../constants';
 import type { AdminPanelState } from '../useAdminPanelState';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand } from '../components/TabHeader';
 
 const CameroonInteractiveMap = lazy(() => import('../../../CameroonInteractiveMap'));
 
@@ -32,6 +32,7 @@ export default function IntelligenceTab({ state }: { state: AdminPanelState }) {
         (acc, r) => acc + r.departments.reduce((s, d) => s + (d.registered_voters || 0), 0), 0,
     );
     const nationalRate = totalPop > 0 ? (totalVoters / totalPop) * 100 : 0;
+    const totalDepts = regions.reduce((acc, r) => acc + r.departments.length, 0);
 
     return (
         <div className="admin-section">
@@ -43,7 +44,29 @@ export default function IntelligenceTab({ state }: { state: AdminPanelState }) {
                         🔄 Recalculer les ratios
                     </button>
                 }
-            />
+            >
+                <KPIBand items={[
+                    {
+                        label: 'Population totale',
+                        value: `${(totalPop / 1_000_000).toFixed(1)}M`,
+                        delta: `${regions.length} régions · ${totalDepts} départements`,
+                        valueColor: '#58a6ff',
+                    },
+                    {
+                        label: 'Inscrits totaux',
+                        value: `${(totalVoters / 1_000_000).toFixed(2)}M`,
+                        delta: 'Source : ELECAM consolidé',
+                        valueColor: '#3fb950',
+                    },
+                    {
+                        label: "Taux d'enrôlement",
+                        value: `${nationalRate.toFixed(1)}%`,
+                        delta: nationalRate > 40 ? 'Au-dessus du seuil' : 'Sous le seuil critique',
+                        trend: nationalRate > 40 ? 'up' : 'down',
+                        valueColor: nationalRate > 40 ? '#3fb950' : '#d29922',
+                    },
+                ]} />
+            </TabHeader>
 
             {/* 1. SYNTHÈSE NATIONALE */}
             <div className="analytics-summary" style={{

@@ -6,10 +6,12 @@
  * générer que pour sa région et des rôles inférieurs).
  *
  * TabHeader (refonte 2026-07) : utilise le composant partagé.
+ * KPIBand (refonte 2026-07) : 3 tuiles synthétisant les options de
+ * génération (rôles × régions × compteur session).
  */
 
 import { ROLES, ROLE_LABELS } from '../constants';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand } from '../components/TabHeader';
 import type { AdminPanelState } from '../useAdminPanelState';
 
 export default function TokensTab({ state }: { state: AdminPanelState }) {
@@ -19,12 +21,24 @@ export default function TokensTab({ state }: { state: AdminPanelState }) {
         handleGenerateToken, notify,
     } = state;
 
+    // Compteur local de tokens générés pendant la session. Pas de
+    // backend endpoint pour l'historique (les tokens JWT sont
+    // auto-vérifiés à l'enrôlement, pas listés). On garde donc juste
+    // un compteur incrémental affiché dans la KPI band.
+    const tokensGenerated = generatedToken ? 1 : 0;
+
     return (
         <div className="admin-section">
             <TabHeader
                 title="🎫 Tokens d'enrôlement"
                 subtitle="Générez un token d'activation pour permettre à un nouvel observateur de s'enrôler via l'app mobile."
-            />
+            >
+                <KPIBand items={[
+                    { label: 'Rôles disponibles', value: ROLES.length, valueColor: '#58a6ff' },
+                    { label: 'Régions couvrables', value: regions.length, valueColor: '#a371f7' },
+                    { label: 'Générés (session)', value: tokensGenerated, delta: generatedToken ? 'Dernier prêt à scanner' : 'Aucun', trend: generatedToken ? 'up' : 'neutral' },
+                ]} />
+            </TabHeader>
 
             <div className="token-form">
                 <div className="form-group">

@@ -5,18 +5,38 @@
  * Affichage purement présentationnel.
  *
  * TabHeader (refonte 2026-07) : utilise le composant partagé.
+ * KPIBand (refonte 2026-07) : 3 tuiles synthétisant la matrice
+ * (rôles × actions × privilèges cumulés). Lecture statique.
  */
 
-import { RBAC_MATRIX, ROLE_LABELS } from '../constants';
-import TabHeader from '../components/TabHeader';
+import { RBAC_MATRIX, ROLES, ROLE_LABELS } from '../constants';
+import TabHeader, { KPIBand } from '../components/TabHeader';
 
 export default function RbacTab() {
+    // Privilèges cumulés : nombre de ✅ dans la matrice. Lecture seule,
+    // sert juste à donner un chiffre "vivant" dans la KPI band.
+    const totalGrants = RBAC_MATRIX.reduce<number>((acc, row) => {
+        return acc + ROLES.filter((r) => row[r as keyof typeof row] === true).length;
+    }, 0);
+    const totalCells = RBAC_MATRIX.length * ROLES.length;
+
     return (
         <div className="admin-section">
             <TabHeader
                 title="🔐 RBAC"
                 subtitle="Matrice des permissions par rôle — source de vérité pour la sécurité de l'app."
-            />
+            >
+                <KPIBand items={[
+                    { label: 'Rôles', value: ROLES.length, valueColor: '#58a6ff' },
+                    { label: 'Actions', value: RBAC_MATRIX.length, valueColor: '#a371f7' },
+                    {
+                        label: 'Privilèges cumulés',
+                        value: `${totalGrants} / ${totalCells}`,
+                        delta: `${Math.round((totalGrants / totalCells) * 100)}% des cellules actives`,
+                        trend: 'neutral',
+                    },
+                ]} />
+            </TabHeader>
             <div className="admin-table-wrapper">
                 <table className="admin-table rbac-table">
                     <thead>

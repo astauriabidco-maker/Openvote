@@ -3,16 +3,33 @@
  *
  * Affiche la config en mode lecture (JSON pretty-printé par section)
  * ou en mode édition (textarea avec JSON brut). Sauvegarde via PATCH.
+ *
+ * TabHeader (refonte 2026-07) : utilise le composant partagé.
+ * KPIBand (refonte 2026-07) : 3 tuiles synthétisant la volumétrie de
+ * la config (sections, clés totales, mode édition/lecture).
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand } from '../components/TabHeader';
 
 export default function ConfigTab({ state }: { state: AdminPanelState }) {
     const {
         config, editingConfig, setEditingConfig,
         configDraft, setConfigDraft, handleSaveConfig, t,
     } = state;
+
+    // Volumétrie de la config : nombre de sections et total des clés.
+    // Calculé à la volée (pas de state dérivé nécessaire) pour rester
+    // robuste aux modifs runtime côté backend.
+    const sections = config ? Object.keys(config).length : 0;
+    const totalKeys = config
+        ? Object.values(config).reduce<number>((acc, v) => {
+            if (v && typeof v === 'object' && !Array.isArray(v)) {
+                return acc + Object.keys(v as Record<string, unknown>).length;
+            }
+            return acc + 1;
+        }, 0)
+        : 0;
 
     return (
         <div className="admin-section">
@@ -41,7 +58,18 @@ export default function ConfigTab({ state }: { state: AdminPanelState }) {
                         </div>
                     )
                 }
-            />
+            >
+                <KPIBand items={[
+                    { label: 'Sections', value: sections, valueColor: '#58a6ff' },
+                    { label: 'Clés totales', value: totalKeys, valueColor: '#a371f7' },
+                    {
+                        label: 'Mode',
+                        value: editingConfig ? 'Édition' : 'Lecture',
+                        delta: editingConfig ? 'Brouillon en mémoire' : 'Sauvegardé sur disque',
+                        trend: editingConfig ? 'neutral' : 'up',
+                    },
+                ]} />
+            </TabHeader>
 
             {editingConfig ? (
                 <textarea
