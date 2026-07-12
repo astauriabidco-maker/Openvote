@@ -2105,3 +2105,205 @@
   padding: 16px 24px 48px;
   background: var(--color-bg-base, #0d1117);
 }
+
+/* ============================================================ */
+/* TOPBAR — barre supérieure unifiée (refonte 2026-07)           */
+/* Brand + breadcrumb + search + actions (theme, lang, alertes). */
+/* Remplace l'ancien admin-header-actions qui était plus horizontal*/
+/* ============================================================ */
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 56px;
+  flex-shrink: 0;
+  padding: 0 20px;
+  background: var(--color-bg-surface, #161b22);
+  border-bottom: 1px solid var(--color-border, #30363d);
+  font-size: 13px;
+}
+
+/* Brand */
+.admin-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  text-decoration: none;
+  color: var(--color-text-primary, #e6edf3);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 120ms;
+}
+.admin-topbar-brand:hover { background: rgba(255,255,255,0.04); }
+.admin-topbar-brand-mark {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--color-accent-blue, #58a6ff), var(--color-accent-purple, #a371f7));
+  display: grid; place-items: center;
+  font-size: 16px;
+}
+
+/* Breadcrumb */
+.admin-topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary, #7d8590);
+  flex: 1;
+  min-width: 0;
+}
+.admin-topbar-breadcrumb a {
+  color: var(--color-text-secondary, #7d8590);
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.admin-topbar-breadcrumb a:hover { color: var(--color-text-primary, #e6edf3); background: rgba(255,255,255,0.04); }
+.admin-topbar-breadcrumb-sep { color: var(--color-text-muted, #545d68); }
+.admin-topbar-breadcrumb-current {
+  color: var(--color-text-primary, #e6edf3);
+  font-weight: 600;
+  padding: 2px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Search trigger */
+.admin-topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 280px;
+  padding: 6px 10px 6px 12px;
+  background: var(--color-bg-elevated, #1c2129);
+  border: 1px solid var(--color-border, #30363d);
+  border-radius: 8px;
+  color: var(--color-text-secondary, #7d8590);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms;
+}
+.admin-topbar-search:hover {
+  border-color: var(--color-accent-blue, #58a6ff);
+  color: var(--color-text-primary, #e6edf3);
+}
+.admin-topbar-search-label {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-topbar-search-kbd {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  background: var(--color-bg-base, #0d1117);
+  border: 1px solid var(--color-border, #30363d);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: var(--color-text-secondary, #7d8590);
+  flex-shrink: 0;
+}
+
+/* Actions */
+.admin-topbar-actions { display: flex; gap: 4px; align-items: center; }
+.admin-topbar-icon-btn {
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-secondary, #7d8590);
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.admin-topbar-icon-btn:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--color-text-primary, #e6edf3);
+  border-color: rgba(255,255,255,0.06);
+}
+.admin-topbar-icon-indicator {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  background: var(--color-accent-red, #f85149);
+  color: white;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid; place-items: center;
+  line-height: 1;
+}
+
+.admin-topbar-offline-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent-red, #f85149);
+  box-shadow: 0 0 0 2px var(--color-bg-surface, #161b22);
+  animation: pulse 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.admin-topbar-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent-blue, #58a6ff), var(--color-accent-purple, #a371f7));
+  display: grid; place-items: center;
+  font-weight: 600;
+  color: white;
+  font-size: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.admin-topbar-avatar:hover { border-color: var(--color-accent-blue, #58a6ff); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Mobile : la topbar cache le label search + breadcrumb */
+@media (max-width: 768px) {
+  .admin-topbar-search { min-width: 0; padding: 6px 8px; }
+  .admin-topbar-search-label { display: none; }
+  .admin-topbar-breadcrumb { display: none; }
+  .admin-topbar-brand-text { display: none; }
+}
+
+/* ============================================================ */
+/* SHELL LAYOUT v2 — TopBar au-dessus, sidebar+main en dessous   */
+/* (refonte 2026-07-12)                                          */
+/* ============================================================ */
+.admin-shell-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 600px;
+}
+.admin-shell-body {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  position: relative;
+}
+.admin-shell-body > .admin-sidebar { height: 100%; }
+.admin-shell-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 16px 24px 48px;
+  background: var(--color-bg-base, #0d1117);
+}

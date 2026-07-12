@@ -24,6 +24,7 @@ import type { AuthState } from '../../types';
 import { useAdminPanelState, type AdminPanelState } from './useAdminPanelState';
 import { type TabKey } from './constants';
 import Sidebar from './components/Sidebar';
+import TopBar from './components/TopBar';
 
 import DashboardTab from './tabs/DashboardTab';
 import UsersTab from './tabs/UsersTab';
@@ -159,33 +160,42 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
                 </div>
             )}
 
-            {/* Layout principal : sidebar gauche + contenu à droite */}
+            {/* Layout principal : topbar + sidebar gauche + contenu à droite */}
             <div className="admin-shell-layout">
-                {/* Sidebar refondue (remplace la barre horizontale de 13 onglets) */}
-                <Sidebar
+                {/* TopBar unifiée (refonte 2026-07) : brand, breadcrumb,
+                    search ⌘K, actions (thème, lang, alertes, avatar). */}
+                <TopBar
                     activeTab={activeTab}
-                    openSections={openSections}
-                    onSelectTab={setActiveTab}
-                    onToggleSection={toggleSection}
+                    userName={auth.username}
+                    alertCount={alertCount}
+                    theme={theme}
+                    onToggleTheme={toggleTheme}
+                    lang={lang}
+                    onToggleLang={toggleLang}
+                    isOnline={isOnline}
                 />
 
-                {/* Contenu principal */}
-                <div className="admin-shell-main">
-                    {/* Action header (legacy, à migrer dans <TopBar> étape 2) */}
-                    <div className="admin-header-actions" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <button className="admin-primary-btn" onClick={() => setActiveTab('map')}>🗺️ {t('observers_map')}</button>
-                        <button className="admin-primary-btn" onClick={exportPDF}>📄 {t('export_pdf')}</button>
-                        <button className="toggle-btn" onClick={toggleTheme}>{theme === 'dark' ? '☀️' : '🌙'}</button>
-                        <button className="toggle-btn" onClick={toggleLang}>{lang.toUpperCase()}</button>
-                        {alertCount > 0 && (
-                            <div className="admin-toast error" style={{ position: 'static', margin: 0, padding: '6px 12px' }}>
-                                ⚠️ {alertCount} {t('alerts')}
-                            </div>
-                        )}
-                    </div>
+                {/* Body : sidebar à gauche, contenu scrollable à droite */}
+                <div className="admin-shell-body">
+                    <Sidebar
+                        activeTab={activeTab}
+                        openSections={openSections}
+                        onSelectTab={setActiveTab}
+                        onToggleSection={toggleSection}
+                    />
 
-                    {/* Active tab dispatch */}
-                    <ActiveTabContent activeTab={activeTab} state={state} />
+                    <div className="admin-shell-main">
+                        {/* Boutons legacy (Observers map, Export PDF) conservés
+                            pour l'instant en haut du contenu — seront migrés
+                            en <TabHeader> par onglet dans une prochaine étape. */}
+                        <div className="admin-header-actions" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <button className="admin-primary-btn" onClick={() => setActiveTab('map')}>🗺️ {t('observers_map')}</button>
+                            <button className="admin-primary-btn" onClick={exportPDF}>📄 {t('export_pdf')}</button>
+                        </div>
+
+                        {/* Active tab dispatch */}
+                        <ActiveTabContent activeTab={activeTab} state={state} />
+                    </div>
                 </div>
             </div>
         </div>
