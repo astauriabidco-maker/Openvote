@@ -246,17 +246,28 @@ func main() {
 	// et on le contrôle explicitement dans la chaîne.
 	r := gin.New()
 
-	// 1. RequestID EN PREMIER — doit être là AVANT tout le reste
-	// pour que TOUS les middlewares downstream et handlers
-	// puissent utiliser le request ID dans leurs logs. Et
-	// surtout, pour qu'un panic catché par Recovery ait un
-	// X-Request-ID à mettre dans le body de la 500.
+	// 1. AccessLog EN PREMIER — record le start time, defer le
+	// log à la fin. Pourquoi outermost : son defer doit fire
+	// EN DERNIER (après Recovery, RequestID, tout), pour avoir
+	// la durée complète + le request_id déjà posé + le status
+	// code final (même celui écrit par Recovery).
+	r.Use(middleware.AccessLogMiddleware())
+
+	// 2. RequestID — set X-Request-ID + contexte. AccessLog va
+	// le lire dans son defer (à la fin de la chaîne).
 	r.Use(middleware.RequestIDMiddleware())
 
-	// 2. CORS strict (H1 audit) — OriginCheck AVANT Preflight
+	// 3. CORS strict (H1 audit) — OriginCheck AVANT Preflight
 	middleware.InitCORS()
 	r.Use(middleware.OriginCheckMiddleware())
 	r.Use(middleware.PreflightMiddleware())
+
+	// 4. Body size limit — protection OOM. Rejette les uploads
+	// > 10 MB (DefaultMaxBodyBytes) AVANT qu'ils saturent la
+	// mémoire. Doit tourner APRÈS RequestID (pour avoir l'ID
+	// dans la réponse 413) et AVANT les middlewares qui lisent
+	// le body (auth, etc.).
+	r.Use(middleware.MaxBodyBytes(0)) // 0 = default 10 MB
 
 	// Middlewares business
 	authMiddleware := middleware.AuthMiddleware(authService, userRepo)
