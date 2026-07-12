@@ -2307,3 +2307,82 @@
   padding: 16px 24px 48px;
   background: var(--color-bg-base, #0d1117);
 }
+
+/* ============================================================ */
+/* TAB HEADER + KPI BAND — header réutilisable des onglets        */
+/* (refonte 2026-07) — appliqué à UsersTab en premier adoptant   */
+/* ============================================================ */
+.admin-tab-header-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-tab-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.admin-tab-header-text { min-width: 0; flex: 1; }
+.admin-tab-header-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary, #e6edf3);
+}
+.admin-tab-header-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary, #7d8590);
+}
+.admin-tab-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.admin-kpi-band {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.admin-kpi {
+  background: var(--color-bg-surface, #161b22);
+  border: 1px solid var(--color-border, #30363d);
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.admin-kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #545d68);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-primary, #e6edf3);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.admin-kpi-delta {
+  font-size: 12px;
+  margin-top: 4px;
+  color: var(--color-accent-green, #3fb950);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-kpi-delta.down { color: var(--color-accent-red, #f85149); }
+.admin-kpi-delta.neutral { color: var(--color-text-muted, #545d68); }

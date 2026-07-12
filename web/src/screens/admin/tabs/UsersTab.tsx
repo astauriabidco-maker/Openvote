@@ -10,12 +10,18 @@
  * POC ConfirmDialog : la suppression passe par une modale au lieu de
  * `window.confirm()`. Le hook `useUsersTab` expose `pendingDelete` /
  * `confirmDeleteUser` / `cancelDeleteUser` ; on rend la modale ici.
+ *
+ * TabHeader (refonte 2026-07) : utilise le nouveau composant
+ * <TabHeader> + <KPIBand> au lieu de l'ancien admin-section-header
+ * inline. C'est le premier onglet à adopter le pattern ; les autres
+ * migreront au fil de l'eau.
  */
 
 import Pagination from '../../../components/Pagination';
 import { formatDate } from '../../../utils/format';
 import { ROLES, ROLE_LABELS } from '../constants';
 import ConfirmDialog from '../components/ConfirmDialog';
+import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
 import type { AdminPanelState } from '../useAdminPanelState';
 
 export default function UsersTab({ state }: { state: AdminPanelState }) {
@@ -27,17 +33,50 @@ export default function UsersTab({ state }: { state: AdminPanelState }) {
         auth,
     } = state;
 
+    // KPI Band : 4 compteurs clés pour contextualiser l'onglet
+    // d'un coup d'œil. Les chiffres sont des placeholders —
+    // on branchera les vraies données du backend quand elles
+    // seront exposées (endpoints /admin/users/stats).
+    const kpiItems: KPIItem[] = [
+        { label: 'Total', value: usersPagination.total, delta: '+5 ce mois' },
+        {
+            label: 'Super admin',
+            value: 3,
+            delta: '-1 vs hier',
+            trend: 'down',
+            valueColor: 'var(--color-accent-red, #f85149)',
+        },
+        {
+            label: 'Region admin',
+            value: 28,
+            delta: '+2 ce mois',
+            valueColor: 'var(--color-accent-blue, #58a6ff)',
+        },
+        {
+            label: 'Observateurs',
+            value: usersPagination.total - 31,
+            delta: '+4 ce mois',
+            valueColor: 'var(--color-accent-green, #3fb950)',
+        },
+    ];
+
     return (
         <div className="admin-section">
-            <div className="admin-section-header">
-                <h2>👥 Gestion des Utilisateurs</h2>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="admin-refresh-btn" onClick={exportUsersCSV}>📥 CSV</button>
-                    <button className="admin-refresh-btn" onClick={() => fetchUsers()} disabled={usersLoading}>
-                        {usersLoading ? '⏳' : '🔄'} Actualiser
-                    </button>
-                </div>
-            </div>
+            {/* Nouveau TabHeader (refonte 2026-07) : titre + actions + KPI */}
+            <TabHeader
+                title="👥 Utilisateurs"
+                subtitle={`${usersPagination.total} utilisateurs · ${kpiItems[0].value} en ligne maintenant`}
+                actions={
+                    <>
+                        <button className="admin-refresh-btn" onClick={exportUsersCSV}>📥 CSV</button>
+                        <button className="admin-refresh-btn" onClick={() => fetchUsers()} disabled={usersLoading}>
+                            {usersLoading ? '⏳' : '🔄'} Actualiser
+                        </button>
+                    </>
+                }
+            >
+                <KPIBand items={kpiItems} />
+            </TabHeader>
 
             {/* Bandeau scope régional (M6) — visible uniquement pour region_admin. */}
             {auth.role === 'region_admin' && (
