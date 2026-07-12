@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
 )
@@ -480,26 +479,13 @@ func (h *RegionHandler) GetDataImports(c *gin.Context) {
 // d'évolution démographique d'un département pour le graphique
 // d'évolution dans l'UI admin. Triée par date ASC.
 // ?limit=N plafonne le nombre de points (défaut 100, max 500).
+//
+// Validation UUID : la validation est faite en amont par la middleware
+// RequireUUIDParam("id") sur la route (cf. cmd/api/main.go). On ne
+// re-valide pas ici — c'est le boulot de la middleware, factorisé
+// pour toutes les routes :id du backend.
 func (h *RegionHandler) GetDepartmentDemographicsHistory(c *gin.Context) {
 	deptID := c.Param("id")
-	if deptID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID département requis"})
-		return
-	}
-	// Validation UUID avant le repo : sans ça, un ID comme "1" ou
-	// "abc" passait la regexp de la route, atterrissait dans la
-	// query SQL, et le driver postgres renvoyait une erreur
-	// "invalid input syntax for type uuid" → 500. Avec la
-	// validation ici, on retourne 400 BadRequest avec un message
-	// explicite, ce qui est plus correct (l'input est mauvais, pas
-	// le serveur).
-	if _, err := uuid.Parse(deptID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ID département invalide (UUID attendu)",
-			"id":    deptID,
-		})
-		return
-	}
 	limit := 100
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {

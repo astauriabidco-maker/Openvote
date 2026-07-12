@@ -1,18 +1,18 @@
-// Tests pour GetDepartmentDemographicsHistory — focus sur la
-// validation UUID en entrée.
+// Tests pour GetDepartmentDemographicsHistory — focus sur le
+// contrat handler + interaction avec la middleware RequireUUIDParam.
 //
-// Avant ce fix : un ID non-UUID (ex: "1", "abc", "12345") passait
-// la regexp Gin, arrivait dans la query SQL, et le driver
-// postgres renvoyait "invalid input syntax for type uuid" → 500.
-// Avec la validation uuid.Parse() en début de handler, on retourne
-// 400 BadRequest avec un message explicite, ce qui est plus correct
-// (l'input est mauvais, pas le serveur).
+// Note : la validation UUID a été extraite du handler vers la
+// middleware (cf. middleware/uuid_param.go) qui est appliquée sur
+// la route dans cmd/api/main.go. Les tests handler ne testent
+// plus la validation UUID directement (c'est dans uuid_param_test.go)
+// — ici on vérifie que le handler fait confiance à la middleware
+// et :
+//   - pour un UUID valide, appelle le repo avec le bon ID/limit
+//   - propage les erreurs repo en 500 (ne masque pas)
+//   - parse correctement le query param ?limit=N
 //
-// Les tests couvrent :
-//   - UUID vide (route :id manquant) → 400
-//   - UUID invalide (string non-UUID) → 400, repo JAMAIS appelé
-//   - UUID valide → 200, repo appelé avec le bon ID
-//   - repo erreur → 500 (le handler ne masque pas les erreurs DB)
+// La cohabitation handler + middleware est testée dans
+// uuid_param_test.go (qui monte la route avec RequireUUIDParam).
 package handler
 
 import (
@@ -21,7 +21,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -61,57 +60,15 @@ func (m *mockRegionRepo) GetDepartmentDemographicsHistory(
 	return m.historyOut, nil
 }
 
-// setupRouterRegion monte uniquement la route demographics-history.
-// On évite de tirer tout le router (auth middleware, etc.) — on
-// veut tester le handler en isolation.
+// setupRouterRegion monte uniquement la route demographics-history,
+// SANS la middleware RequireUUIDParam — les tests handler ne
+// testent pas la validation UUID (c'est dans uuid_param_test.go).
+// On assume donc que l'ID passé aux tests est un UUID valide.
 func setupRouterRegion(h *RegionHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.GET("/admin/departments/:id/demographics-history", h.GetDepartmentDemographicsHistory)
 	return r
-}
-
-// TestDemographicsHistory_UUIDInvalide_400 : on vérifie qu'un ID
-// non-UUID retourne 400 SANS appeler le repo (sinon on aurait un
-// 500 sur le query SQL).
-func TestDemographicsHistory_UUIDInvalide_400(t *testing.T) {
-	repo := &mockRegionRepo{}
-	h := NewRegionHandler(repo)
-	r := setupRouterRegion(h)
-
-	cases := []struct {
-		name string
-		id   string
-	}{
-		{"id numérique", "1"},
-		{"id alphabétique", "abc"},
-		{"id avec caractères spéciaux URL-encodés", "abc%21%40%23"},
-		{"UUID tronqué", "78c278a1-8ca1-4a37-bed4"},
-		{"UUID avec caractères hors plage", "ZZZZZZZZ-8ca1-4a37-bed4-62300d7145ba"},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/admin/departments/"+tc.id+"/demographics-history", nil)
-			rec := httptest.NewRecorder()
-			r.ServeHTTP(rec, req)
-
-			if rec.Code != http.StatusBadRequest {
-				t.Errorf("attendu 400, obtenu %d (body: %s)", rec.Code, rec.Body.String())
-			}
-			if repo.historyCalls != 0 {
-				t.Errorf("le repo ne devrait PAS être appelé pour un UUID invalide, mais il a été appelé %d fois", repo.historyCalls)
-			}
-			// Le body doit contenir un message d'erreur clair
-			var body map[string]any
-			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-				t.Fatalf("JSON invalide : %v", err)
-			}
-			if msg, _ := body["error"].(string); !strings.Contains(msg, "UUID") {
-				t.Errorf("message attendu contenant 'UUID', obtenu : %v", body["error"])
-			}
-		})
-	}
 }
 
 // TestDemographicsHistory_UUIDValide_200 : un vrai UUID doit
@@ -183,8 +140,7 @@ func TestDemographicsHistory_RepoError_500(t *testing.T) {
 }
 
 // TestDemographicsHistory_LimitQueryParam : vérifie que le param
-// ?limit=N est bien parsé et passé au repo. C'est accessoire par
-// rapport au fix UUID, mais ça documente le comportement.
+// ?limit=N est bien parsé et passé au repo.
 func TestDemographicsHistory_LimitQueryParam(t *testing.T) {
 	repo := &mockRegionRepo{}
 	h := NewRegionHandler(repo)

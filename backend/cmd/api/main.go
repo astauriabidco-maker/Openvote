@@ -286,8 +286,12 @@ func main() {
 			reports.POST("", reportHandler.Create)
 			reports.GET("", reportHandler.List)
 			reports.GET("/upload-url", reportHandler.GetUploadURL)
-			reports.GET("/:id", reportHandler.GetDetails)
-			reports.PATCH("/:id", reportHandler.UpdateStatus) // Vérification RBAC dans le handler
+			// UUID middleware : refuse les IDs non-UUID (ex: "1", "abc")
+			// avec un 400 propre avant d'atteindre le handler. Sans
+			// ça, le driver postgres renverrait "invalid input syntax
+			// for type uuid" → 500.
+			reports.GET("/:id", middleware.RequireUUIDParam("id"), reportHandler.GetDetails)
+			reports.PATCH("/:id", middleware.RequireUUIDParam("id"), reportHandler.UpdateStatus) // RBAC dans le handler
 		}
 
 		// Statistiques agrégées
@@ -300,8 +304,8 @@ func main() {
 			// Utilisateurs & enrôlement — rate-limits dédiés (H6 audit).
 			admin.POST("/generate-token", tokenGenRateLimiter, usersHandler.GenerateToken)
 			admin.GET("/users", userMgmtRateLimiter, usersHandler.ListUsers)
-			admin.PATCH("/users/:id", userMgmtRateLimiter, usersHandler.UpdateUser)
-			admin.DELETE("/users/:id", userMgmtRateLimiter, usersHandler.DeleteUser)
+			admin.PATCH("/users/:id", userMgmtRateLimiter, middleware.RequireUUIDParam("id"), usersHandler.UpdateUser)
+			admin.DELETE("/users/:id", userMgmtRateLimiter, middleware.RequireUUIDParam("id"), usersHandler.DeleteUser)
 
 			// Audit
 			admin.GET("/audit-logs", auditHandler.GetAuditLogs)
@@ -318,26 +322,26 @@ func main() {
 			admin.POST("/legal", legalHandler.CreateLegalArticle)
 			admin.POST("/legal/batch", legalHandler.BatchCreateLegalArticles)
 			admin.POST("/legal/extract-pdf", legalHandler.ExtractTextFromPDF)
-			admin.DELETE("/legal/:id", legalHandler.DeleteLegalArticle)
+			admin.DELETE("/legal/:id", middleware.RequireUUIDParam("id"), legalHandler.DeleteLegalArticle)
 			admin.GET("/legal-documents", legalHandler.GetLegalDocuments)
 			admin.POST("/legal-documents", legalHandler.CreateLegalDocument)
-			admin.DELETE("/legal-documents/:id", legalHandler.DeleteLegalDocument)
+			admin.DELETE("/legal-documents/:id", middleware.RequireUUIDParam("id"), legalHandler.DeleteLegalDocument)
 
 			// Base de Connaissance Juridique (RAG) — split rag_handler (M1)
 			admin.POST("/legal/search", ragHandler.SemanticSearchArticles)
 			admin.POST("/legal/embeddings", ragHandler.GenerateEmbeddings)
-			admin.POST("/reports/:id/qualify", ragHandler.QualifyReport)
-			admin.POST("/reports/:id/analyze", ragHandler.AnalyzeReport)
-			admin.GET("/reports/:id/legal-matches", ragHandler.GetReportMatches)
-			admin.GET("/reports/:id/analysis", ragHandler.GetReportAnalysis)
+			admin.POST("/reports/:id/qualify", middleware.RequireUUIDParam("id"), ragHandler.QualifyReport)
+			admin.POST("/reports/:id/analyze", middleware.RequireUUIDParam("id"), ragHandler.AnalyzeReport)
+			admin.GET("/reports/:id/legal-matches", middleware.RequireUUIDParam("id"), ragHandler.GetReportMatches)
+			admin.GET("/reports/:id/analysis", middleware.RequireUUIDParam("id"), ragHandler.GetReportAnalysis)
 
 			// Régions & Départements (admin CRUD)
 			admin.POST("/regions", regionHandler.CreateRegion)
-			admin.PATCH("/regions/:id", regionHandler.UpdateRegion)
-			admin.DELETE("/regions/:id", regionHandler.DeleteRegion)
+			admin.PATCH("/regions/:id", middleware.RequireUUIDParam("id"), regionHandler.UpdateRegion)
+			admin.DELETE("/regions/:id", middleware.RequireUUIDParam("id"), regionHandler.DeleteRegion)
 			admin.POST("/departments", regionHandler.CreateDepartment)
-			admin.PATCH("/departments/:id", regionHandler.UpdateDepartment)
-			admin.DELETE("/departments/:id", regionHandler.DeleteDepartment)
+			admin.PATCH("/departments/:id", middleware.RequireUUIDParam("id"), regionHandler.UpdateDepartment)
+			admin.DELETE("/departments/:id", middleware.RequireUUIDParam("id"), regionHandler.DeleteDepartment)
 
 			// Import CSV démographie (admin) — handlers existants depuis
 			// backend/internal/delivery/http/handler/region_handler.go
@@ -345,23 +349,23 @@ func main() {
 			admin.GET("/regions/import-csv/template", regionHandler.DownloadCSVTemplate)
 			admin.GET("/regions/import-csv/history", regionHandler.GetDataImports)
 			// Évolution démographique d'un département (time series pour graphique)
-			admin.GET("/departments/:id/demographics-history", regionHandler.GetDepartmentDemographicsHistory)
+			admin.GET("/departments/:id/demographics-history", middleware.RequireUUIDParam("id"), regionHandler.GetDepartmentDemographicsHistory)
 
 			// Arrondissements (admin CRUD)
 			admin.POST("/arrondissements", regionHandler.CreateArrondissement)
-			admin.PATCH("/arrondissements/:id", regionHandler.UpdateArrondissement)
-			admin.DELETE("/arrondissements/:id", regionHandler.DeleteArrondissement)
+			admin.PATCH("/arrondissements/:id", middleware.RequireUUIDParam("id"), regionHandler.UpdateArrondissement)
+			admin.DELETE("/arrondissements/:id", middleware.RequireUUIDParam("id"), regionHandler.DeleteArrondissement)
 
 			// Élections (admin CRUD)
 			admin.GET("/elections", electionHandler.List)
 			admin.POST("/elections", electionHandler.Create)
-			admin.PATCH("/elections/:id", electionHandler.Update)
-			admin.PATCH("/elections/:id/status", electionHandler.UpdateStatus)
-			admin.DELETE("/elections/:id", electionHandler.Delete)
+			admin.PATCH("/elections/:id", middleware.RequireUUIDParam("id"), electionHandler.Update)
+			admin.PATCH("/elections/:id/status", middleware.RequireUUIDParam("id"), electionHandler.UpdateStatus)
+			admin.DELETE("/elections/:id", middleware.RequireUUIDParam("id"), electionHandler.Delete)
 
 			// Types d'incidents (admin CRUD)
 			admin.POST("/incident-types", incidentTypeHandler.Create)
-			admin.DELETE("/incident-types/:id", incidentTypeHandler.Delete)
+			admin.DELETE("/incident-types/:id", middleware.RequireUUIDParam("id"), incidentTypeHandler.Delete)
 		}
 	}
 
