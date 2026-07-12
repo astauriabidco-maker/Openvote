@@ -15,6 +15,7 @@ import { lazy, Suspense } from 'react';
 import { API_URL } from '../../../constants';
 import type { AdminPanelState } from '../useAdminPanelState';
 import TabHeader, { KPIBand } from '../components/TabHeader';
+import BUCREPDemographics from './BUCREPDemographics';
 
 const CameroonInteractiveMap = lazy(() => import('../../../CameroonInteractiveMap'));
 
@@ -100,6 +101,9 @@ export default function IntelligenceTab({ state }: { state: AdminPanelState }) {
                     <div style={{ fontSize: '0.7rem', color: 'var(--accent-red)' }}>⚠️ 12 alertes critiques actives</div>
                 </div>
             </div>
+
+            {/* 1b. DÉMOGRAPHIE BUCREP (refonte 2026-07) — pyramide + tableau */}
+            <BUCREPDemographics state={state} />
 
             {/* 2. CARTE ÉLECTORALE INTERACTIVE */}
             <div className="config-card" style={{ padding: '0', marginBottom: '40px', overflow: 'hidden' }}>

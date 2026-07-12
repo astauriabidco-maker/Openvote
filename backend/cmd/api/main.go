@@ -379,6 +379,16 @@ func main() {
 			// Évolution démographique d'un département (time series pour graphique)
 			admin.GET("/departments/:id/demographics-history", middleware.RequireUUIDParam("id"), regionHandler.GetDepartmentDemographicsHistory)
 
+			// Géographie + démographie BUCREP (refonte 2026-07) :
+			// regions enrichies avec pop2025, liste d'indicateurs, années,
+			// et endpoint principal /admin/geo/demographics qui alimente la
+			// pyramide des âges + tableau de cohortes dans l'IntelligenceTab.
+			geoHandler := handler.NewGeoHandler(db)
+			admin.GET("/geo/regions", geoHandler.ListRegions)
+			admin.GET("/geo/indicators", geoHandler.ListIndicators)
+			admin.GET("/geo/years", geoHandler.ListYears)
+			admin.GET("/geo/demographics", geoHandler.GetDemographics)
+
 			// Régions & Départements (admin CRUD) — rate-limit par user
 			admin.POST("/regions", adminWriteUserRateLimiter, regionHandler.CreateRegion)
 			admin.PATCH("/regions/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), regionHandler.UpdateRegion)
