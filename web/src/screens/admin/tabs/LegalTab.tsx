@@ -12,7 +12,7 @@
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
 
 export default function LegalTab({ state }: { state: AdminPanelState }) {
     const {
@@ -32,6 +32,33 @@ export default function LegalTab({ state }: { state: AdminPanelState }) {
     } = state;
 
     const selectedDoc = legalDocuments.find((d) => d.id === selectedDocId);
+
+    // KPI Band : compte par type de document + articles du doc sélectionné.
+    // Les autres tabs utilisent kpis.* ; ici on calcule depuis
+    // legalDocuments (déjà chargé via /admin/legal/documents) — pas
+    // besoin d'un nouvel endpoint /stats dédié.
+    const docCount = legalDocuments.length;
+    const constitutionCount = legalDocuments.filter((d) => d.doc_type === 'constitution').length;
+    const lawCount = legalDocuments.filter((d) => d.doc_type === 'law').length;
+    const decreeCount = legalDocuments.filter((d) => d.doc_type === 'decree').length;
+    const legalKpiItems: KPIItem[] = [
+        { label: 'Documents', value: docCount },
+        {
+            label: 'Lois',
+            value: lawCount,
+            valueColor: 'var(--color-accent-blue, #58a6ff)',
+        },
+        {
+            label: 'Constitutions',
+            value: constitutionCount,
+            valueColor: 'var(--color-accent-purple, #a855f7)',
+        },
+        {
+            label: 'Décrets',
+            value: decreeCount,
+            valueColor: 'var(--color-accent-green, #3fb950)',
+        },
+    ];
 
     return (
         <div className="admin-section" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '20px' }}>
@@ -174,26 +201,38 @@ export default function LegalTab({ state }: { state: AdminPanelState }) {
 
             {/* MAIN — Articles du document sélectionné */}
             <div className="legal-content">
+                {/* Header library (toujours visible) — vue d'ensemble
+                    de la base juridique + per-doc subheader quand un
+                    document est sélectionné. */}
+                <TabHeader
+                    title="⚖️ Cadre légal"
+                    subtitle={
+                        selectedDoc
+                            ? `Document sélectionné : ${selectedDoc.title} (v${selectedDoc.version || 'N/A'}) · ${legalArticles.length} article${legalArticles.length > 1 ? 's' : ''}`
+                            : `${docCount} document${docCount > 1 ? 's' : ''} · ${constitutionCount} constitution${constitutionCount > 1 ? 's' : ''}, ${lawCount} loi${lawCount > 1 ? 's' : ''}, ${decreeCount} décret${decreeCount > 1 ? 's' : ''}`
+                    }
+                    actions={
+                        selectedDocId ? (
+                            <>
+                                <button className="admin-btn" onClick={() => setShowImportAssistant(!showImportAssistant)}>
+                                    {showImportAssistant ? "❌ Fermer l'Assistant" : "✨ Assistant d'Importation"}
+                                </button>
+                                <input
+                                    className="admin-input"
+                                    placeholder="🔍 Rechercher un article..."
+                                    style={{ maxWidth: '250px' }}
+                                    value={legalSearch}
+                                    onChange={(e) => setLegalSearch(e.target.value)}
+                                />
+                            </>
+                        ) : null
+                    }
+                >
+                    <KPIBand items={legalKpiItems} />
+                </TabHeader>
+
                 {selectedDocId ? (
                     <>
-                        <TabHeader
-                            title={selectedDoc?.title || '⚖️ Cadre légal'}
-                            subtitle={`Version : ${selectedDoc?.version || 'N/A'}`}
-                            actions={
-                                <>
-                                    <button className="admin-btn" onClick={() => setShowImportAssistant(!showImportAssistant)}>
-                                        {showImportAssistant ? "❌ Fermer l'Assistant" : "✨ Assistant d'Importation"}
-                                    </button>
-                                    <input
-                                        className="admin-input"
-                                        placeholder="🔍 Rechercher un article..."
-                                        style={{ maxWidth: '250px' }}
-                                        value={legalSearch}
-                                        onChange={(e) => setLegalSearch(e.target.value)}
-                                    />
-                                </>
-                            }
-                        />
 
                         {/* Assistant d'importation (PDF + parsing texte) */}
                         {showImportAssistant && (
