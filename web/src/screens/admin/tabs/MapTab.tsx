@@ -7,8 +7,21 @@
  * KPI Band : compte par agrégat (régions, observateurs, départements,
  * régions sans coordonnée GPS). Le "sans lat" est utile pour détecter
  * des trous dans le référentiel régions.
+ *
+ * IMPORTANT (fix 2026-07-12) : on importe explicitement
+ * `leaflet/dist/leaflet.css` ici. Sans ce CSS, les tuiles sont
+ * chargées mais Leaflet ne peut pas les positionner (pas de
+ * `left/top` inline) — la carte apparaît comme un gros bloc
+ * noir/clair sans tuiles. CameroonInteractiveMap.tsx importe le
+ * même CSS, mais MapTab utilise react-leaflet directement et
+ * doit donc le réimporter.
+ *
+ * Tiles : CartoDB Dark Matter (`dark_all`) pour matcher le thème
+ * sombre de l'admin. Voyager (couleurs claires) reste dispo en
+ * backup si le endpoint dark est en panne.
  */
 
+import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import type { AdminPanelState } from '../useAdminPanelState';
 import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
@@ -62,7 +75,12 @@ export default function MapTab({ state }: { state: AdminPanelState }) {
                 border: '1px solid var(--border-color)',
             }}>
                 <MapContainer center={[5.3697, 12.2343]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                    <TileLayer
+                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        subdomains="abcd"
+                        maxZoom={19}
+                    />
                     {observersByRegion.map((reg) =>
                         reg.lat ? (
                             <Marker key={reg.id} position={[reg.lat, reg.lon ?? 0]}>
