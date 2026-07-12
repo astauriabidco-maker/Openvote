@@ -25,6 +25,8 @@ import { useAdminPanelState, type AdminPanelState } from './useAdminPanelState';
 import { type TabKey } from './constants';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import CommandPalette from './components/CommandPalette';
+import { useCommandPalette } from './hooks/useCommandPalette';
 
 import DashboardTab from './tabs/DashboardTab';
 import UsersTab from './tabs/UsersTab';
@@ -94,6 +96,19 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
         printWindow.print();
     };
 
+    // ---- Command palette (search ⌘K) ----
+    // Le hook gère state + raccourci global. Le composant CommandPalette
+    // est dumb : il reçoit tout en props et dispatch via les callbacks.
+    // Le hook ferme automatiquement la palette après un onSelect (Enter),
+    // mais pour le clic souris on doit fermer nous-mêmes.
+    const palette = useCommandPalette({
+        onSelect: (result) => setActiveTab(result.tabKey),
+    });
+    const handleResultClick = (tabKey: TabKey) => {
+        setActiveTab(tabKey);
+        palette.closePalette();
+    };
+
     return (
         <div className="admin-panel">
             {/* Toast notifications */}
@@ -120,6 +135,22 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
                     )}
                 </div>
             )}
+
+            {/* Command palette ⌘K (doit être en dehors de admin-shell-layout
+                pour avoir un z-index au-dessus de tout, y compris la sidebar). */}
+            <CommandPalette
+                open={palette.open}
+                query={palette.query}
+                onQueryChange={palette.setQuery}
+                results={palette.results}
+                selectedIndex={palette.selectedIndex}
+                onSelect={(r) => handleResultClick(r.tabKey)}
+                onHighlightPrev={palette.highlightPrev}
+                onHighlightNext={palette.highlightNext}
+                onSelectHighlighted={palette.selectHighlighted}
+                onClose={palette.closePalette}
+                shortcutHint={palette.shortcutHint}
+            />
 
             {/* PWA install banner */}
             {showInstallBanner && (
@@ -173,6 +204,7 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
                     lang={lang}
                     onToggleLang={toggleLang}
                     isOnline={isOnline}
+                    onSearchClick={palette.openPalette}
                 />
 
                 {/* Body : sidebar à gauche, contenu scrollable à droite */}
