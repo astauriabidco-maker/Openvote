@@ -6,7 +6,13 @@ import App from './App.tsx'
 // ========================================
 // Service Worker Registration (PWA)
 // ========================================
-if ('serviceWorker' in navigator) {
+// On désactive le SW en dev : le bundle Vite change à chaque HMR et
+// le SW cache l'ancien admin.css (cf. incident 2026-07-12 où les
+// nouvelles classes .admin-shell-layout/.admin-sidebar/.kpi-band
+// étaient invisibles tant que le SW servait l'ancien bundle). En
+// dev on veut toujours la dernière version à chaque rechargement.
+const isDev = import.meta.env.DEV;
+if (!isDev && 'serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
