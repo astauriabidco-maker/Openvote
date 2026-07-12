@@ -8,7 +8,7 @@
 
 import type { AdminPanelState } from '../useAdminPanelState';
 import { ELECTION_TYPES, STATUS_LABELS, STATUS_COLORS } from '../constants';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function ElectionsTab({ state }: { state: AdminPanelState }) {
@@ -16,17 +16,45 @@ export default function ElectionsTab({ state }: { state: AdminPanelState }) {
         elections, regions, newElection, setNewElection,
         handleCreateElection, handleElectionStatus, handleDeleteElection, fetchElections,
         pendingDeleteElection, confirmDeleteElection, cancelDeleteElection, deletingElection,
+        kpis,
     } = state;
+
+    // KPI Band : compteurs par statut. Calculés depuis elections[] de la
+    // page courante + kpis.elections pour le total global.
+    const byStatus = elections.reduce<Record<string, number>>((acc, e) => {
+        acc[e.status] = (acc[e.status] ?? 0) + 1;
+        return acc;
+    }, {});
+    const kpiItems: KPIItem[] = [
+        { label: 'Total', value: kpis?.elections.total ?? elections.length },
+        {
+            label: 'Actifs',
+            value: byStatus.active ?? 0,
+            valueColor: 'var(--color-accent-green, #3fb950)',
+        },
+        {
+            label: 'Planifiés',
+            value: byStatus.planned ?? 0,
+            valueColor: 'var(--color-accent-blue, #58a6ff)',
+        },
+        {
+            label: 'Clôturés',
+            value: (byStatus.closed ?? 0) + (byStatus.archived ?? 0),
+            valueColor: 'var(--color-text-muted, #7d8590)',
+        },
+    ];
 
     return (
         <div className="admin-section">
             <TabHeader
                 title="🗳️ Scrutins"
-                subtitle={`${elections.length} scrutin${elections.length > 1 ? 's' : ''} enregistré${elections.length > 1 ? 's' : ''}`}
+                subtitle={`${kpis?.elections.total ?? elections.length} scrutin${(kpis?.elections.total ?? elections.length) > 1 ? 's' : ''} au total · ${kpis?.elections.active ?? byStatus.active ?? 0} actif${(kpis?.elections.active ?? byStatus.active ?? 0) > 1 ? 's' : ''}`}
                 actions={
                     <button className="admin-refresh-btn" onClick={fetchElections}>🔄 Actualiser</button>
                 }
-            />
+            >
+                <KPIBand items={kpiItems} />
+            </TabHeader>
 
             {/* Formulaire de création */}
             <div className="region-add-form">

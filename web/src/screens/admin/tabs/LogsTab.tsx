@@ -5,10 +5,24 @@
 import Pagination from '../../../components/Pagination';
 import { formatDate } from '../../../utils/format';
 import type { AdminPanelState } from '../useAdminPanelState';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
 
 export default function LogsTab({ state }: { state: AdminPanelState }) {
     const { auditLogs, auditPagination, auditLoading, fetchAuditLogs } = state;
+
+    // KPI Band : agrégats sur la page courante des logs + total global.
+    // "Sur cette page" reflète ce que l'admin voit ; "Total" vient de
+    // la pagination (compteur global côté backend).
+    const onPage = auditLogs.length;
+    const kpiItems: KPIItem[] = [
+        { label: 'Total', value: auditPagination.total },
+        { label: 'Sur cette page', value: onPage },
+        {
+            label: 'Pages',
+            value: auditPagination.total_pages,
+            valueColor: 'var(--color-text-muted, #7d8590)',
+        },
+    ];
 
     return (
         <div className="admin-section">
@@ -20,7 +34,9 @@ export default function LogsTab({ state }: { state: AdminPanelState }) {
                         {auditLoading ? '⏳' : '🔄'} Actualiser
                     </button>
                 }
-            />
+            >
+                <KPIBand items={kpiItems} />
+            </TabHeader>
             {auditLogs.length === 0 && !auditLoading ? (
                 <div className="admin-empty">Aucune action enregistrée pour le moment.</div>
             ) : (

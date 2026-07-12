@@ -30,32 +30,32 @@ export default function UsersTab({ state }: { state: AdminPanelState }) {
         fetchUsers, exportUsersCSV,
         handleRoleChange, handleDeleteUser, handleRegionChange,
         pendingDelete, confirmDeleteUser, cancelDeleteUser, deletingUser,
-        auth,
+        auth, kpis,
     } = state;
 
-    // KPI Band : 4 compteurs clés pour contextualiser l'onglet
-    // d'un coup d'œil. Les chiffres sont des placeholders —
-    // on branchera les vraies données du backend quand elles
-    // seront exposées (endpoints /admin/users/stats).
+    // KPI Band : chiffres réels depuis kpis.users (endpoint /admin/kpis
+    // expose déjà by_role — pas besoin d'un endpoint /stats dédié).
+    // Pour les deltas (variation temporelle), il faudrait un endpoint
+    // time-series — non exposé pour l'instant, on omet le delta plutôt
+    // que d'afficher un placeholder trompeur.
+    // `usersPagination.total` est utilisé comme fallback si kpis n'est
+    // pas encore chargé (1er mount avant le GET /admin/kpis).
+    const roleByName = kpis?.users.by_role ?? {};
     const kpiItems: KPIItem[] = [
-        { label: 'Total', value: usersPagination.total, delta: '+5 ce mois' },
+        { label: 'Total', value: kpis?.users.total ?? usersPagination.total },
         {
             label: 'Super admin',
-            value: 3,
-            delta: '-1 vs hier',
-            trend: 'down',
+            value: roleByName.super_admin ?? 0,
             valueColor: 'var(--color-accent-red, #f85149)',
         },
         {
             label: 'Region admin',
-            value: 28,
-            delta: '+2 ce mois',
+            value: roleByName.region_admin ?? 0,
             valueColor: 'var(--color-accent-blue, #58a6ff)',
         },
         {
             label: 'Observateurs',
-            value: usersPagination.total - 31,
-            delta: '+4 ce mois',
+            value: roleByName.observer ?? 0,
             valueColor: 'var(--color-accent-green, #3fb950)',
         },
     ];
@@ -65,7 +65,7 @@ export default function UsersTab({ state }: { state: AdminPanelState }) {
             {/* Nouveau TabHeader (refonte 2026-07) : titre + actions + KPI */}
             <TabHeader
                 title="👥 Utilisateurs"
-                subtitle={`${usersPagination.total} utilisateurs · ${kpiItems[0].value} en ligne maintenant`}
+                subtitle={`${kpis?.users.total ?? usersPagination.total} utilisateurs · ${Object.keys(roleByName).length} rôles représentés`}
                 actions={
                     <>
                         <button className="admin-refresh-btn" onClick={exportUsersCSV}>📥 CSV</button>

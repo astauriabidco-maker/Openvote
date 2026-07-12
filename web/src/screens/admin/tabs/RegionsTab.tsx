@@ -24,7 +24,7 @@
 
 import { useEffect } from 'react';
 import type { AdminPanelState } from '../useAdminPanelState';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormModal from '../components/FormModal';
 import DataTable, { type DataTableColumn } from '../components/DataTable';
@@ -121,11 +121,31 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
         },
     ];
 
+    // KPI Band : agrégats depuis regions[] (qui inclut dept_count par
+    // région, calculé par le backend lors du GET /regions).
+    // Note : RegionWithDepts ne porte que dept_count pour l'instant ;
+    // le total arrondissements nécessiterait un count séparé côté backend.
+    const totalDepts = regions.reduce((a, r) => a + r.dept_count, 0);
+    const kpiItems: KPIItem[] = [
+        { label: 'Régions', value: regions.length },
+        {
+            label: 'Départements',
+            value: totalDepts,
+            valueColor: 'var(--color-accent-blue, #58a6ff)',
+        },
+        {
+            label: 'Avec arrondissements',
+            // Compteur fallback depuis l'API (r.dept_count > 0 dans la plupart)
+            value: regions.filter((r) => r.dept_count > 0).length,
+            valueColor: 'var(--color-accent-green, #3fb950)',
+        },
+    ];
+
     return (
         <div className="admin-section">
             <TabHeader
                 title="🌍 Régions & Départements"
-                subtitle={`${regions.length} régions · ${regions.reduce((a, r) => a + r.dept_count, 0)} départements`}
+                subtitle={`${regions.length} régions · ${totalDepts} départements`}
                 actions={
                     <>
                         <button className="admin-refresh-btn" onClick={() => setImportHistoryOpen(true)}>📊 Historique</button>
@@ -133,7 +153,9 @@ export default function RegionsTab({ state }: { state: AdminPanelState }) {
                         <button className="admin-refresh-btn" onClick={fetchRegions}>🔄 Actualiser</button>
                     </>
                 }
-            />
+            >
+                <KPIBand items={kpiItems} />
+            </TabHeader>
 
             {/* Ajouter une région */}
             <div className="region-add-form">

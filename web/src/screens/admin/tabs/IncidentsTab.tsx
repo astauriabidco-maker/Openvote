@@ -7,7 +7,7 @@
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
-import TabHeader from '../components/TabHeader';
+import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function IncidentsTab({ state }: { state: AdminPanelState }) {
@@ -17,12 +17,41 @@ export default function IncidentsTab({ state }: { state: AdminPanelState }) {
         pendingDeleteIncidentType, confirmDeleteIncidentType, cancelDeleteIncidentType, deletingIncidentType,
     } = state;
 
+    // KPI Band : distribution par sévérité (depuis incidentTypes[].severity).
+    // Si aucun type créé, on affiche 1 seul KPI "Aucun type".
+    const bySeverity = incidentTypes.reduce<Record<number, number>>((acc, t) => {
+        acc[t.severity] = (acc[t.severity] ?? 0) + 1;
+        return acc;
+    }, {});
+    const kpiItems: KPIItem[] = incidentTypes.length === 0
+        ? [{ label: 'Types', value: 0 }]
+        : [
+            { label: 'Total', value: incidentTypes.length },
+            {
+                label: 'Critique (5)',
+                value: bySeverity[5] ?? 0,
+                valueColor: 'var(--color-accent-red, #f85149)',
+            },
+            {
+                label: 'Haute (3-4)',
+                value: (bySeverity[4] ?? 0) + (bySeverity[3] ?? 0),
+                valueColor: 'var(--color-accent-orange, #f0883e)',
+            },
+            {
+                label: 'Moyenne+ (1-2)',
+                value: (bySeverity[2] ?? 0) + (bySeverity[1] ?? 0),
+                valueColor: 'var(--color-accent-blue, #58a6ff)',
+            },
+        ];
+
     return (
         <div className="admin-section">
             <TabHeader
                 title="⚠️ Types d'incidents"
-                subtitle={`${incidentTypes.length} type${incidentTypes.length > 1 ? 's' : ''} enregistré${incidentTypes.length > 1 ? 's' : ''}`}
-            />
+                subtitle={`${incidentTypes.length} type${incidentTypes.length > 1 ? 's' : ''} configuré${incidentTypes.length > 1 ? 's' : ''}`}
+            >
+                <KPIBand items={kpiItems} />
+            </TabHeader>
 
             <div className="region-add-form">
                 <h3>➕ Ajouter un Type d'Incident</h3>
