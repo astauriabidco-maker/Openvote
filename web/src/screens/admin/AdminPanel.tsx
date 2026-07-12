@@ -52,49 +52,11 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
     const {
         activeTab, setActiveTab,
         openSections, toggleSection,
-        theme, toggleTheme, lang, toggleLang, t,
+        theme, toggleTheme, lang, toggleLang,
         notification,
         alertCount, isOnline, showInstallBanner, setShowInstallBanner,
         pendingReportsCount,
-        kpis, users, elections, regions,
     } = state;
-
-    /**
-     * exportPDF ouvre une nouvelle fenêtre avec un rapport HTML imprimable
-     * (synthèse KPIs + tables users/elections/regions). Conservé dans le shell
-     * car il agrège des données de plusieurs onglets. Sera migré dans le
-     * futur <TopBar> pour l'accessibilité.
-     */
-    const exportPDF = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-        const content = `
-          <html><head><title>OpenVote - Rapport Admin</title>
-          <style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#1a73e8}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}h2{margin-top:30px;color:#555}.stat{display:inline-block;margin:10px 20px;text-align:center}.stat-value{font-size:2rem;font-weight:bold}.stat-label{font-size:0.9rem;color:#666}</style></head><body>
-          <h1>🇨🇲 OpenVote - Rapport Administratif</h1>
-          <p>Généré le ${new Date().toLocaleString('fr-FR')}</p>
-          ${kpis ? `<div>
-            <div class="stat"><div class="stat-value">${kpis.users.total}</div><div class="stat-label">Utilisateurs</div></div>
-            <div class="stat"><div class="stat-value">${kpis.reports.total}</div><div class="stat-label">Signalements</div></div>
-            <div class="stat"><div class="stat-value">${kpis.elections.total}</div><div class="stat-label">Scrutins</div></div>
-          </div>` : ''}
-          <h2>Utilisateurs (${users.length})</h2>
-          <table><tr><th>Nom</th><th>Rôle</th><th>Région</th><th>Créé</th></tr>
-          ${users.map((u) => `<tr><td>${u.username}</td><td>${u.role}</td><td>${u.region_id || '—'}</td><td>${new Date(u.created_at).toLocaleDateString('fr-FR')}</td></tr>`).join('')}
-          </table>
-          <h2>Scrutins (${elections.length})</h2>
-          <table><tr><th>Nom</th><th>Type</th><th>Statut</th><th>Date</th></tr>
-          ${elections.map((e) => `<tr><td>${e.name}</td><td>${e.type}</td><td>${e.status}</td><td>${new Date(e.date).toLocaleDateString('fr-FR')}</td></tr>`).join('')}
-          </table>
-          <h2>Régions (${regions.length})</h2>
-          <table><tr><th>Code</th><th>Région</th><th>Départements</th></tr>
-          ${regions.map((r) => `<tr><td>${r.code}</td><td>${r.name}</td><td>${r.dept_count}</td></tr>`).join('')}
-          </table>
-          </body></html>`;
-        printWindow.document.write(content);
-        printWindow.document.close();
-        printWindow.print();
-    };
 
     // ---- Command palette (search ⌘K) ----
     // Le hook gère state + raccourci global. Le composant CommandPalette
@@ -217,15 +179,10 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
                     />
 
                     <div className="admin-shell-main">
-                        {/* Boutons legacy (Observers map, Export PDF) conservés
-                            pour l'instant en haut du contenu — seront migrés
-                            en <TabHeader> par onglet dans une prochaine étape. */}
-                        <div className="admin-header-actions" style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-                            <button className="admin-primary-btn" onClick={() => setActiveTab('map')}>🗺️ {t('observers_map')}</button>
-                            <button className="admin-primary-btn" onClick={exportPDF}>📄 {t('export_pdf')}</button>
-                        </div>
-
-                        {/* Active tab dispatch */}
+                        {/* Active tab dispatch — chaque onglet a son propre
+                            <TabHeader> avec ses actions (cf. refonte BO 2026-07).
+                            L'export PDF est accessible depuis DashboardTab,
+                            la carte observateurs depuis la sidebar. */}
                         <ActiveTabContent activeTab={activeTab} state={state} />
                     </div>
                 </div>

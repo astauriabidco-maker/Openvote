@@ -3,13 +3,18 @@
  *
  * Dépendances : kpis, regions (computed). Pas de fetch propre (déclenché
  * automatiquement par le hook quand activeTab === 'dashboard').
+ *
+ * TabHeader (refonte 2026-07) : utilise le composant partagé, avec
+ * le bouton "📄 Export PDF" migré depuis l'ancien admin-header-actions
+ * du shell AdminPanel.
  */
 
 import type { AdminPanelState } from '../useAdminPanelState';
 import TabHeader from '../components/TabHeader';
+import { exportAdminReport } from '../../../utils/adminReport';
 
 export default function DashboardTab({ state }: { state: AdminPanelState }) {
-    const { kpis, regions } = state;
+    const { kpis, regions, users, elections } = state;
 
     if (!kpis) {
         return <div className="admin-empty">Chargement des KPIs...</div>;
@@ -20,6 +25,14 @@ export default function DashboardTab({ state }: { state: AdminPanelState }) {
             <TabHeader
                 title="📊 Tableau de bord"
                 subtitle="Vue d'ensemble des indicateurs clés du système."
+                actions={
+                    <button
+                        className="admin-primary-btn"
+                        onClick={() => exportAdminReport({ kpis, users, elections, regions })}
+                    >
+                        📄 Exporter en PDF
+                    </button>
+                }
             />
             <div className="kpi-grid">
                 <div className="kpi-card kpi-blue">
