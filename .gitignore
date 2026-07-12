@@ -44,6 +44,7 @@ openvote-token-*
 # Binaires
 /main
 /backend/main
+/backend/api
 /server
 *.exe
 *.exe~

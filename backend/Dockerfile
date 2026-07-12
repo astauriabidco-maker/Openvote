@@ -14,8 +14,10 @@ RUN go mod download
 COPY . .
 RUN go mod tidy
 
-# Compilation
-RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/api/main.go
+# Compilation (build le package complet, pas juste main.go — depuis
+# le refactor fail-fast 2026-07, runMigrations est dans cmd/api/migrations.go
+# à côté de main.go ; les deux fichiers font partie du même package `main`).
+RUN CGO_ENABLED=1 GOOS=linux go build -o main ./cmd/api/
 
 # Run Stage
 FROM alpine:latest

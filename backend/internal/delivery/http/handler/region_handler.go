@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
 )
@@ -483,6 +484,20 @@ func (h *RegionHandler) GetDepartmentDemographicsHistory(c *gin.Context) {
 	deptID := c.Param("id")
 	if deptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID département requis"})
+		return
+	}
+	// Validation UUID avant le repo : sans ça, un ID comme "1" ou
+	// "abc" passait la regexp de la route, atterrissait dans la
+	// query SQL, et le driver postgres renvoyait une erreur
+	// "invalid input syntax for type uuid" → 500. Avec la
+	// validation ici, on retourne 400 BadRequest avec un message
+	// explicite, ce qui est plus correct (l'input est mauvais, pas
+	// le serveur).
+	if _, err := uuid.Parse(deptID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID département invalide (UUID attendu)",
+			"id":    deptID,
+		})
 		return
 	}
 	limit := 100

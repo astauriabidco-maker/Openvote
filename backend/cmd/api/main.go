@@ -16,11 +16,7 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"database/sql"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -185,27 +181,10 @@ func main() {
 	// ============================================================
 	// Exécution des migrations (refonte fail-fast, 2026-07-12)
 	// ============================================================
-	// Avant : chaque migration était lue + exécutée à chaque boot,
-	// avec un simple log.Printf en cas d'erreur → "warning-and-continues".
-	// Bug : les inserts de 002/003/005 ne sont pas idempotents, donc le
-	// 2e boot du backend crash silencieusement (l'erreur est loggée
-	// mais l'app continue avec un état partiel). Idem pour tout
-	// ALTER TABLE non-IF-EXISTS.
-	//
-	// Maintenant :
-	//   1. CREATE TABLE IF NOT EXISTS schema_migrations (idempotent)
-	//   2. Bootstrap one-shot : si la table est vide mais que la DB
-	//      a déjà des tables (déploiement existant), on marque 002-016
-	//      comme appliquées sans les re-rouler.
-	//   3. Pour chaque migration de la liste :
-	//        - si présente dans schema_migrations → skip
-	//        - sinon, BEGIN + EXEC + INSERT version + COMMIT
-	//        - toute erreur ⇒ log.Fatalf (crashloop visible)
-	//
-	// Note : 017_schema_migrations_tracking.sql crée la table elle-même,
-	// donc elle tourne en premier (alphabétique) AVANT le bootstrap. Si
-	// elle n'a pas encore été enregistrée, elle s'inscrit à la fin.
-	if err := runMigrations(db); err != nil {
+	// Voir cmd/api/migrations.go pour le détail de l'implémentation
+	// (runMigrations). En bref : tracking via schema_migrations,
+	// transaction par migration, log.Fatalf sur toute erreur.
+	if err := runMigrations(db, allMigrations); err != nil {
 		log.Fatalf("[MIGRATION] Échec — arrêt du backend : %v", err)
 	}
 
@@ -484,142 +463,4 @@ func main() {
 	}
 
 	log.Printf("[MAIN] Openvote backend stopped")
-}
-
-// ============================================================
-// Migration runner (fail-fast + tracking)
-// ============================================================
-//
-// Voir bloc d'appel dans main() pour le rationale. Retourne une
-// erreur non-nil si une migration échoue — l'appelant fait log.Fatalf
-// pour transformer ça en crashloop visible (k8s/Cloud Run) plutôt
-// qu'un backend qui démarre à moitié mort.
-//
-// Format de version : nom exact du fichier SQL (ex: "002_regions_departments.sql").
-// C'est le primary key de schema_migrations.
-
-type migration struct {
-	file string
-	name string
-}
-
-var allMigrations = []migration{
-	{"migration/002_regions_departments.sql", "régions/départements"},
-	{"migration/003_elections_audit_incidents.sql", "élections/audit/incidents"},
-	{"migration/004_veille_electorale.sql", "veille électorale"},
-	{"migration/005_legal_cms.sql", "CMS Légal"},
-	{"migration/006_departments_data_enrichment.sql", "Données Démographiques"},
-	{"migration/007_document_exploitation.sql", "Exploitation Documents"},
-	{"migration/008_legal_knowledge_base.sql", "Base Connaissance Juridique"},
-	{"migration/009_multilingual_llm_upgrade.sql", "Upgrade Multilingue + LLM"},
-	{"migration/010_demographics_2025.sql", "Démographie 2025 (INS/ELECAM)"},
-	{"migration/011_arrondissements.sql", "Arrondissements (départements clés)"},
-	{"migration/012_data_traceability.sql", "Traçabilité des données"},
-	{"migration/013_all_arrondissements.sql", "Arrondissements complets"},
-	{"migration/014_missing_arrondissements.sql", "Arrondissements manquants (360 total)"},
-	{"migration/015_mfa_and_lockout.sql", "MFA TOTP + lockout par tentatives (H3 audit)"},
-	{"migration/016_department_demographics_history.sql", "Historique démographique département (time series)"},
-	{"migration/017_schema_migrations_tracking.sql", "Table schema_migrations (self-tracking)"},
-}
-
-func runMigrations(db *sql.DB) error {
-	// 1. Bootstrap idempotent de la table de tracking.
-	// On duplique le DDL de 017 ici pour qu'il n'y ait pas de
-	// chicken-and-egg : la table doit exister AVANT qu'on lise
-	// son contenu pour tracker.
-	if _, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS schema_migrations (
-			version TEXT PRIMARY KEY,
-			applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-			checksum TEXT NOT NULL
-		)`); err != nil {
-		return fmt.Errorf("create schema_migrations: %w", err)
-	}
-
-	// 2. Bootstrap one-shot pour les déploiements existants :
-	// si schema_migrations est vide MAIS que la table 'regions'
-	// existe déjà, on est dans le cas "ancien déploiement, on
-	// passe en fail-fast". On marque 002-016 comme appliquées
-	// sans les re-rouler (sinon leurs INSERT non-idempotents
-	// crash).
-	var n int
-	if err := db.QueryRow("SELECT COUNT(*) FROM schema_migrations").Scan(&n); err != nil {
-		return fmt.Errorf("count schema_migrations: %w", err)
-	}
-	if n == 0 {
-		var hasRegions bool
-		if err := db.QueryRow(
-			"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='regions')",
-		).Scan(&hasRegions); err != nil {
-			return fmt.Errorf("check regions: %w", err)
-		}
-		if hasRegions {
-			log.Printf("[MIGRATION] Bootstrap : schema_migrations vide mais tables présentes, backfill 002-016 + 017")
-			// Backfill 002-017 (017 aussi, vu qu'on vient de la créer)
-			// pour éviter qu'elles soient re-roulées. Le checksum
-			// 'bootstrap-2026-07' marque cette transition — utile
-			// pour distinguer les migrations "vraiment appliquées"
-			// des migrations "déjà là au moment du switch fail-fast".
-			for _, mig := range allMigrations {
-				if mig.file == "migration/001_init_schema.sql" {
-					continue // 001 = initdb docker-entrypoint, jamais tracké
-				}
-				if _, err := db.Exec(
-					"INSERT INTO schema_migrations (version, checksum) VALUES ($1, 'bootstrap-2026-07') ON CONFLICT (version) DO NOTHING",
-					mig.file,
-				); err != nil {
-					return fmt.Errorf("backfill %s: %w", mig.file, err)
-				}
-			}
-		}
-	}
-
-	// 3. Run des migrations non trackées.
-	for _, mig := range allMigrations {
-		var applied bool
-		if err := db.QueryRow(
-			"SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version=$1)",
-			mig.file,
-		).Scan(&applied); err != nil {
-			return fmt.Errorf("check %s: %w", mig.file, err)
-		}
-		if applied {
-			log.Printf("[MIGRATION] %s déjà appliquée, skip", mig.name)
-			continue
-		}
-
-		// Lecture fichier — on fail-fast si absent (avant on
-		// silent-skip ; un fichier de migration listé mais absent
-		// est un bug à signaler, pas à ignorer).
-		data, err := os.ReadFile(mig.file)
-		if err != nil {
-			return fmt.Errorf("read %s: %w", mig.file, err)
-		}
-
-		// Transaction : exec + insert tracking doivent être
-		// atomiques. Si l'insert échoue, on rollback pour ne pas
-		// avoir un état partiel.
-		tx, err := db.Begin()
-		if err != nil {
-			return fmt.Errorf("begin tx %s: %w", mig.file, err)
-		}
-		if _, err := tx.Exec(string(data)); err != nil {
-			_ = tx.Rollback()
-			return fmt.Errorf("exec %s: %w", mig.name, err)
-		}
-		checksum := sha256.Sum256(data)
-		if _, err := tx.Exec(
-			"INSERT INTO schema_migrations (version, checksum) VALUES ($1, $2)",
-			mig.file, hex.EncodeToString(checksum[:]),
-		); err != nil {
-			_ = tx.Rollback()
-			return fmt.Errorf("track %s: %w", mig.file, err)
-		}
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("commit %s: %w", mig.file, err)
-		}
-		log.Printf("[MIGRATION] %s appliquée avec succès", mig.name)
-	}
-
-	return nil
 }
