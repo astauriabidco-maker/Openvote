@@ -1,0 +1,1625 @@
+{
+  "source": "/Users/user/Downloads/Liste des bureaux de vote (1).pdf",
+  "rows": [
+    {
+      "region": "AD",
+      "dept": "AD-DJ",
+      "effectif": "2",
+      "bureau": "Ecole publique Groupe I de Tibati A",
+      "voters": 62,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-DJ",
+      "effectif": "2",
+      "bureau": "Ecole publique Groupe I de Tibati A1",
+      "voters": 145,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-FD",
+      "effectif": "2",
+      "bureau": "Lycée bilingue de Tignère A",
+      "voters": 92,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-FD",
+      "effectif": "2",
+      "bureau": "Lycée bilingue de Tignère A1",
+      "voters": 180,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-MB",
+      "effectif": "2",
+      "bureau": "Ecole annexe GP2 de Banyo A",
+      "voters": 88,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-MB",
+      "effectif": "2",
+      "bureau": "Ecole annexe GP2 de Banyo A1",
+      "voters": 202,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-MR",
+      "effectif": "2",
+      "bureau": "Ecole publique Groupe 3 Meiganga A",
+      "voters": 109,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-MR",
+      "effectif": "2",
+      "bureau": "Ecole publique Groupe 3 Meiganga A1",
+      "voters": 133,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-VI",
+      "effectif": "6",
+      "bureau": "Lycée classique et moderne de Ngaoundéré A",
+      "voters": 106,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-VI",
+      "effectif": "6",
+      "bureau": "Lycée classique et moderne de Ngaoundéré B",
+      "voters": 110,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-VI",
+      "effectif": "6",
+      "bureau": "Lycée classique et moderne de Ngaoundéré A1",
+      "voters": 90,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-VI",
+      "effectif": "6",
+      "bureau": "Lycée classique et moderne de Ngaoundéré B1",
+      "voters": 90,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-VI",
+      "effectif": "6",
+      "bureau": "Lycée classique et moderne de Ngaoundéré C1",
+      "voters": 90,
+      "page": 1
+    },
+    {
+      "region": "AD",
+      "dept": "AD-VI",
+      "effectif": "6",
+      "bureau": "Lycée classique et moderne de Ngaoundéré D1",
+      "voters": 64,
+      "page": 1
+    },
+    {
+      "region": "CE",
+      "dept": "CE-HS",
+      "effectif": "3",
+      "bureau": "Lycée classique de Nanga Eboko A",
+      "voters": 155,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-HS",
+      "effectif": "3",
+      "bureau": "Lycée classique de Nanga Eboko A1",
+      "voters": 130,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-HS",
+      "effectif": "3",
+      "bureau": "Lycée classique de Nanga Eboko B1",
+      "voters": 88,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-LK",
+      "effectif": "4",
+      "bureau": "Lycée technique de Monatélé A",
+      "voters": 125,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-LK",
+      "effectif": "4",
+      "bureau": "Lycée technique de Monatélé B",
+      "voters": 120,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-LK",
+      "effectif": "4",
+      "bureau": "Lycée technique de Monatélé A1",
+      "voters": 208,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-LK",
+      "effectif": "4",
+      "bureau": "Lycée technique de Monatélé B1",
+      "voters": 215,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MI",
+      "effectif": "4",
+      "bureau": "Lycée classique de Bafia A",
+      "voters": 108,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MI",
+      "effectif": "4",
+      "bureau": "Lycée classique de Bafia B",
+      "voters": 104,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MI",
+      "effectif": "4",
+      "bureau": "Lycée classique de Bafia A1",
+      "voters": 110,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MI",
+      "effectif": "4",
+      "bureau": "Lycée classique de Bafia B1",
+      "voters": 93,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MK",
+      "effectif": "2",
+      "bureau": "Lycée Général de Ntui A",
+      "voters": 113,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MK",
+      "effectif": "2",
+      "bureau": "Lycée Général de Ntui A1",
+      "voters": 108,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "3",
+      "bureau": "Ecole publique inclusive d'application A",
+      "voters": 175,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "3",
+      "bureau": "Ecole publique inclusive d'application A1",
+      "voters": 121,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "3",
+      "bureau": "Ecole publique inclusive d'application B1",
+      "voters": 161,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MA",
+      "effectif": "3",
+      "bureau": "Ecole annexe II de Ngoumou A",
+      "voters": 93,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MA",
+      "effectif": "3",
+      "bureau": "Ecole annexe II de Ngoumou A1",
+      "voters": 110,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MA",
+      "effectif": "3",
+      "bureau": "Ecole annexe II de Ngoumou B1",
+      "voters": 92,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "4",
+      "bureau": "Ecole bilingue de Bastos A",
+      "voters": 135,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "4",
+      "bureau": "Ecole bilingue de Bastos B",
+      "voters": 133,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "4",
+      "bureau": "Lycée technique Charles Atangana A1",
+      "voters": 90,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MF",
+      "effectif": "4",
+      "bureau": "Lycée technique Charles Atangana A2",
+      "voters": 79,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-NK",
+      "effectif": "4",
+      "bureau": "ENIEG d'Eseka A",
+      "voters": 120,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-NK",
+      "effectif": "4",
+      "bureau": "ENIEG d'Eseka B",
+      "voters": 118,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-NK",
+      "effectif": "4",
+      "bureau": "ENIEG d'Eseka A1",
+      "voters": 120,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-NK",
+      "effectif": "4",
+      "bureau": "ENIEG d'Eseka B1",
+      "voters": 120,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MM",
+      "effectif": "3",
+      "bureau": "E.P. publique inclusive d'Akonolinga A",
+      "voters": 132,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MM",
+      "effectif": "3",
+      "bureau": "E.P. publique inclusive d'Akonolinga A1",
+      "voters": 125,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MM",
+      "effectif": "3",
+      "bureau": "E.P. publique inclusive d'Akonolinga B1",
+      "voters": 125,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MM",
+      "effectif": "3",
+      "bureau": "Ecole publique New-Town A",
+      "voters": 158,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MM",
+      "effectif": "3",
+      "bureau": "Ecole publique New-Town A1",
+      "voters": 102,
+      "page": 2
+    },
+    {
+      "region": "CE",
+      "dept": "CE-MM",
+      "effectif": "3",
+      "bureau": "Ecole publique New-Town B1",
+      "voters": 94,
+      "page": 2
+    },
+    {
+      "region": "ES",
+      "dept": "ES-BN",
+      "effectif": "2",
+      "bureau": "Lycée classique de Yokadouma A",
+      "voters": 107,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-BN",
+      "effectif": "2",
+      "bureau": "Lycée classique de Yokadouma A1",
+      "voters": 175,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-HN",
+      "effectif": "5",
+      "bureau": "Lycée classique d'Abong-Mbang A",
+      "voters": 120,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-HN",
+      "effectif": "5",
+      "bureau": "Lycée classique d'Abong-Mbang B",
+      "voters": 120,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-HN",
+      "effectif": "5",
+      "bureau": "Lycée classique d'Abong-Mbang C",
+      "voters": 80,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-HN",
+      "effectif": "5",
+      "bureau": "Lycée classique d'Abong-Mbang A1",
+      "voters": 230,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-HN",
+      "effectif": "5",
+      "bureau": "Lycée classique d'Abong-Mbang B1",
+      "voters": 226,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-KD",
+      "effectif": "3",
+      "bureau": "Lycée Bilingue de Batouri A",
+      "voters": 100,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-KD",
+      "effectif": "3",
+      "bureau": "Lycée Bilingue de Batouri B",
+      "voters": 74,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-KD",
+      "effectif": "3",
+      "bureau": "Lycée Bilingue de Batouri A1",
+      "voters": 225,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-LD",
+      "effectif": "3",
+      "bureau": "Lycée scientifique de Bertoua A",
+      "voters": 100,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-LD",
+      "effectif": "3",
+      "bureau": "Lycée scientifique de Bertoua B",
+      "voters": 77,
+      "page": 3
+    },
+    {
+      "region": "ES",
+      "dept": "ES-LD",
+      "effectif": "3",
+      "bureau": "Lycée scientifique de Bertoua A1",
+      "voters": 253,
+      "page": 3
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua A",
+      "voters": 120,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua B",
+      "voters": 121,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua A1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua B1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua C1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua D1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua E1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua F1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua G1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua H1",
+      "voters": 124,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua I1",
+      "voters": 190,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-DI",
+      "effectif": "12",
+      "bureau": "Lycée technique bilingue de Maroua J1",
+      "voters": 78,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri A",
+      "voters": 100,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri B",
+      "voters": 100,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri C",
+      "voters": 55,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri A1",
+      "voters": 155,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri B1",
+      "voters": 175,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri C1",
+      "voters": 175,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri D1",
+      "voters": 175,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri E1",
+      "voters": 175,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri F1",
+      "voters": 210,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri G1",
+      "voters": 210,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri H1",
+      "voters": 210,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri I1",
+      "voters": 210,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-LC",
+      "effectif": "13",
+      "bureau": "Lycée mixte de Kousseri J1",
+      "voters": 211,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MD",
+      "effectif": "5",
+      "bureau": "Lycée bilingue de Yagoua A",
+      "voters": 110,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MD",
+      "effectif": "5",
+      "bureau": "Lycée bilingue de Yagoua B",
+      "voters": 110,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MD",
+      "effectif": "5",
+      "bureau": "Lycée bilingue de Yagoua C",
+      "voters": 87,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MD",
+      "effectif": "5",
+      "bureau": "Lycée bilingue de Yagoua A1",
+      "voters": 160,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MD",
+      "effectif": "5",
+      "bureau": "Lycée bilingue de Yagoua B1",
+      "voters": 137,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé A",
+      "voters": 100,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé B",
+      "voters": 99,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé A1",
+      "voters": 159,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé B1",
+      "voters": 159,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé C1",
+      "voters": 159,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé D1",
+      "voters": 159,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé E1",
+      "voters": 159,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée bilingue de Kaélé F1",
+      "voters": 160,
+      "page": 4
+    },
+    {
+      "region": "EN",
+      "dept": "EN-MK",
+      "effectif": "8",
+      "bureau": "Lycée classique de Mora A",
+      "voters": 102,
+      "page": 4
+    },
+    {
+      "region": "LT",
+      "dept": "LT-MO",
+      "effectif": "5",
+      "bureau": "Lycée de Manengouba A",
+      "voters": 120,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-MO",
+      "effectif": "5",
+      "bureau": "Lycée de Manengouba B",
+      "voters": 120,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-MO",
+      "effectif": "5",
+      "bureau": "Lycée de Manengouba C",
+      "voters": 125,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-MO",
+      "effectif": "5",
+      "bureau": "Lycée de Manengouba A1",
+      "voters": 125,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-MO",
+      "effectif": "5",
+      "bureau": "Lycée de Manengouba B1",
+      "voters": 109,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-NK",
+      "effectif": "3",
+      "bureau": "Lycée technique de Yabassi A",
+      "voters": 93,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-NK",
+      "effectif": "3",
+      "bureau": "Lycée technique de Yabassi A1",
+      "voters": 110,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-NK",
+      "effectif": "3",
+      "bureau": "Lycée technique de Yabassi B1",
+      "voters": 91,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-SM",
+      "effectif": "4",
+      "bureau": "Lycée bilingue d'Edéa A",
+      "voters": 130,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-SM",
+      "effectif": "4",
+      "bureau": "Lycée bilingue d'Edéa B",
+      "voters": 125,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-SM",
+      "effectif": "4",
+      "bureau": "Lycée bilingue d'Edéa A1",
+      "voters": 175,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-SM",
+      "effectif": "4",
+      "bureau": "Lycée bilingue d'Edéa B1",
+      "voters": 168,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-WO",
+      "effectif": "3",
+      "bureau": "Lycée Joss A",
+      "voters": 135,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-WO",
+      "effectif": "3",
+      "bureau": "Lycée Joss B",
+      "voters": 120,
+      "page": 6
+    },
+    {
+      "region": "LT",
+      "dept": "LT-WO",
+      "effectif": "3",
+      "bureau": "Lycée Joss A1",
+      "voters": 67,
+      "page": 6
+    },
+    {
+      "region": "NW",
+      "dept": "NW-BO",
+      "effectif": "2",
+      "bureau": "G.T.H.S. Fundong A",
+      "voters": 108,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-BO",
+      "effectif": "2",
+      "bureau": "G.T.H.S. Fundong A1",
+      "voters": 67,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-BU",
+      "effectif": "3",
+      "bureau": "G.B.H.S Kumbo A",
+      "voters": 110,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-BU",
+      "effectif": "3",
+      "bureau": "G.B.H.S Kumbo B",
+      "voters": 78,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-BU",
+      "effectif": "3",
+      "bureau": "G.B.H.S Kumbo A1",
+      "voters": 67,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-DM",
+      "effectif": "3",
+      "bureau": "G.P.S Group 1, Nkambe A",
+      "voters": 100,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-DM",
+      "effectif": "3",
+      "bureau": "G.P.S Group 1, Nkambe B",
+      "voters": 62,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-DM",
+      "effectif": "3",
+      "bureau": "G.P.S Group 1, Nkambe A1",
+      "voters": 113,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MC",
+      "effectif": "2",
+      "bureau": "G.N.P.S Wum A",
+      "voters": 99,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MC",
+      "effectif": "2",
+      "bureau": "G.N.P.S Wum A1",
+      "voters": 90,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MZ",
+      "effectif": "3",
+      "bureau": "Former PWD, Up Station A",
+      "voters": 130,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MZ",
+      "effectif": "3",
+      "bureau": "Former PWD, Up Station B",
+      "voters": 92,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MZ",
+      "effectif": "3",
+      "bureau": "Former PWD, Up Station A1",
+      "voters": 37,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MM",
+      "effectif": "2",
+      "bureau": "Mbengwi Municipal Council Hall A",
+      "voters": 124,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-MM",
+      "effectif": "2",
+      "bureau": "Mbengwi Municipal Council Hall A1",
+      "voters": 90,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-NK",
+      "effectif": "2",
+      "bureau": "G.P.S. Ndop A",
+      "voters": 96,
+      "page": 7
+    },
+    {
+      "region": "NW",
+      "dept": "NW-NK",
+      "effectif": "2",
+      "bureau": "G.P.S. Ndop A1",
+      "voters": 16,
+      "page": 7
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué A",
+      "voters": 120,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué B",
+      "voters": 120,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué C",
+      "voters": 105,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué A1",
+      "voters": 150,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué B1",
+      "voters": 150,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué C1",
+      "voters": 150,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-BE",
+      "effectif": "7",
+      "bureau": "Collège moderne de la Bénoué D1",
+      "voters": 162,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-FA",
+      "effectif": "3",
+      "bureau": "EPIA GII Poli A",
+      "voters": 47,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-FA",
+      "effectif": "3",
+      "bureau": "EPIA GII Poli A1",
+      "voters": 160,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-FA",
+      "effectif": "3",
+      "bureau": "EPIA GII Poli B1",
+      "voters": 120,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-ML",
+      "effectif": "4",
+      "bureau": "Lycée de Guider A",
+      "voters": 109,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-ML",
+      "effectif": "4",
+      "bureau": "Lycée de Guider A1",
+      "voters": 195,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-ML",
+      "effectif": "4",
+      "bureau": "Lycée de Guider B1",
+      "voters": 195,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-ML",
+      "effectif": "4",
+      "bureau": "Lycée de Guider C1",
+      "voters": 92,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-MR",
+      "effectif": "2",
+      "bureau": "EP Man DII A",
+      "voters": 134,
+      "page": 9
+    },
+    {
+      "region": "NO",
+      "dept": "NO-MR",
+      "effectif": "2",
+      "bureau": "EP Man DII A1",
+      "voters": 227,
+      "page": 9
+    },
+    {
+      "region": "OU",
+      "dept": "OU-BM",
+      "effectif": "3",
+      "bureau": "Lycée bilingue de Mbouda A",
+      "voters": 118,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-BM",
+      "effectif": "3",
+      "bureau": "Lycée bilingue de Mbouda A1",
+      "voters": 168,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-BM",
+      "effectif": "3",
+      "bureau": "Lycée bilingue de Mbouda B1",
+      "voters": 144,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HN",
+      "effectif": "3",
+      "bureau": "Ecole Publique Groupe A",
+      "voters": 159,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HN",
+      "effectif": "3",
+      "bureau": "Ecole Publique Groupe A1",
+      "voters": 121,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HN",
+      "effectif": "3",
+      "bureau": "Ecole Publique Groupe B1",
+      "voters": 112,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HP",
+      "effectif": "2",
+      "bureau": "Centre multifonctionnel de Baham A",
+      "voters": 93,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HP",
+      "effectif": "2",
+      "bureau": "Centre multifonctionnel de Baham A1",
+      "voters": 98,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HP",
+      "effectif": "2",
+      "bureau": "Lycée classique de Bandjoun A",
+      "voters": 81,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-HP",
+      "effectif": "2",
+      "bureau": "Lycée classique de Bandjoun A1",
+      "voters": 96,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-MN",
+      "effectif": "4",
+      "bureau": "Lycée classique de Dschang A",
+      "voters": 102,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-MN",
+      "effectif": "4",
+      "bureau": "Lycée classique de Dschang B",
+      "voters": 76,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-MN",
+      "effectif": "4",
+      "bureau": "Lycée classique de Dschang A1",
+      "voters": 100,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-MN",
+      "effectif": "4",
+      "bureau": "Lycée classique de Dschang B1",
+      "voters": 67,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-MF",
+      "effectif": "2",
+      "bureau": "Ecole primaire publique d'Application (EPPA) du Centre Administratif A",
+      "voters": 120,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-MF",
+      "effectif": "2",
+      "bureau": "Ecole primaire publique d'Application (EPPA) du Centre Administratif A1",
+      "voters": 155,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-ND",
+      "effectif": "2",
+      "bureau": "Lycée technique de Bangangté A",
+      "voters": 109,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-ND",
+      "effectif": "2",
+      "bureau": "Lycée technique de Bangangté A1",
+      "voters": 108,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-NN",
+      "effectif": "4",
+      "bureau": "Ecole Annexe Groupe I A",
+      "voters": 140,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-NN",
+      "effectif": "4",
+      "bureau": "Ecole Annexe Groupe I B",
+      "voters": 113,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-NN",
+      "effectif": "4",
+      "bureau": "Ecole Annexe Groupe I A1",
+      "voters": 87,
+      "page": 11
+    },
+    {
+      "region": "OU",
+      "dept": "OU-NN",
+      "effectif": "4",
+      "bureau": "Ecole Annexe Groupe I B1",
+      "voters": 79,
+      "page": 11
+    },
+    {
+      "region": "SW",
+      "dept": "SW-FA",
+      "effectif": "3",
+      "bureau": "GHS Limbe A",
+      "voters": 110,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-FA",
+      "effectif": "3",
+      "bureau": "GHS Limbe B",
+      "voters": 91,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-FA",
+      "effectif": "3",
+      "bureau": "GHS Limbe A1",
+      "voters": 144,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-FA",
+      "effectif": "3",
+      "bureau": "Woman empowerment centre A",
+      "voters": 85,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-FA",
+      "effectif": "3",
+      "bureau": "Woman empowerment centre A1",
+      "voters": 80,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-FA",
+      "effectif": "3",
+      "bureau": "Woman empowerment centre B1",
+      "voters": 78,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-LE",
+      "effectif": "2",
+      "bureau": "Post office Menji A",
+      "voters": 83,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-LE",
+      "effectif": "2",
+      "bureau": "Post office Menji A1",
+      "voters": 169,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-MA",
+      "effectif": "2",
+      "bureau": "GNPS Mamfé A",
+      "voters": 94,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-MA",
+      "effectif": "2",
+      "bureau": "GNPS Mamfé A1",
+      "voters": 109,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-ME",
+      "effectif": "2",
+      "bureau": "Community development A",
+      "voters": 140,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-ME",
+      "effectif": "2",
+      "bureau": "Community development A1",
+      "voters": 84,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-ND",
+      "effectif": "3",
+      "bureau": "GBNS Mundemba A",
+      "voters": 115,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-ND",
+      "effectif": "3",
+      "bureau": "GBNS Mundemba B",
+      "voters": 94,
+      "page": 13
+    },
+    {
+      "region": "SW",
+      "dept": "SW-ND",
+      "effectif": "3",
+      "bureau": "GBNS Mundemba A1",
+      "voters": 121,
+      "page": 13
+    },
+    {
+      "region": "SU",
+      "dept": "SU-DL",
+      "effectif": "5",
+      "bureau": "Lycée classique et moderne de Sangmélima A",
+      "voters": 106,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-DL",
+      "effectif": "5",
+      "bureau": "Lycée classique et moderne de Sangmélima B",
+      "voters": 103,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-DL",
+      "effectif": "5",
+      "bureau": "Lycée classique et moderne de Sangmélima A1",
+      "voters": 180,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-DL",
+      "effectif": "5",
+      "bureau": "Lycée classique et moderne de Sangmélima B1",
+      "voters": 180,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-DL",
+      "effectif": "5",
+      "bureau": "Lycée classique et moderne de Sangmélima C1",
+      "voters": 62,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-MV",
+      "effectif": "4",
+      "bureau": "Lycée classique et moderne d'Ebolowa A",
+      "voters": 100,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-MV",
+      "effectif": "4",
+      "bureau": "Lycée classique et moderne d'Ebolowa B",
+      "voters": 96,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-MV",
+      "effectif": "4",
+      "bureau": "Lycée classique et moderne d'Ebolowa A1",
+      "voters": 200,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-MV",
+      "effectif": "4",
+      "bureau": "Lycée classique et moderne d'Ebolowa B1",
+      "voters": 175,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-OC",
+      "effectif": "4",
+      "bureau": "Lycée technique de Kribi A",
+      "voters": 110,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-OC",
+      "effectif": "4",
+      "bureau": "Lycée technique de Kribi B",
+      "voters": 99,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-OC",
+      "effectif": "4",
+      "bureau": "Lycée technique de Kribi A1",
+      "voters": 120,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-OC",
+      "effectif": "4",
+      "bureau": "Lycée technique de Kribi B1",
+      "voters": 106,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-VN",
+      "effectif": "3",
+      "bureau": "Ecole publique du Centre Groupe 1 A",
+      "voters": 92,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-VN",
+      "effectif": "3",
+      "bureau": "Ecole publique du Centre Groupe 1 A1",
+      "voters": 107,
+      "page": 17
+    },
+    {
+      "region": "SU",
+      "dept": "SU-VN",
+      "effectif": "3",
+      "bureau": "Ecole publique du Centre Groupe 1 B1",
+      "voters": 70,
+      "page": 17
+    }
+  ],
+  "totals": [
+    {
+      "page": 6,
+      "bureaux": 15,
+      "voters": 1813,
+      "raw": "Total Littoral : 15 Total électeurs/Voters : 1 813"
+    }
+  ],
+  "regions": {
+    "AD": 14,
+    "CE": 33,
+    "ES": 13,
+    "EN": 39,
+    "LT": 15,
+    "NW": 17,
+    "NO": 16,
+    "OU": 22,
+    "SW": 15,
+    "SU": 16
+  }
+}
