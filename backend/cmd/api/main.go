@@ -240,9 +240,12 @@ func main() {
 	// ============================================================
 	r := gin.Default()
 
-	// CORS strict (H1 audit) : whitelist explicite, fail-fast en prod.
+	// CORS strict (H1 audit) : defense in depth avec 2 middlewares.
+	// Ordre important : OriginCheck AVANT Preflight, pour qu'un preflight
+	// avec Origin refusée soit rejeté avant qu'on valide la méthode.
 	middleware.InitCORS()
-	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.OriginCheckMiddleware())
+	r.Use(middleware.PreflightMiddleware())
 
 	// Middleware
 	authMiddleware := middleware.AuthMiddleware(authService, userRepo)
