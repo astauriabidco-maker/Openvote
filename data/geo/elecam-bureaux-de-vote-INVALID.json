@@ -1621,5 +1621,10 @@
     "OU": 22,
     "SW": 15,
     "SU": 16
+  },
+  "__INVALID__": {
+    "reason": "Ce fichier n'est PAS fiable. Le PDF source ne contenait qu'un sous-ensemble ridicule (200 BV / 24k ins. sur ~30k BV / 7.8M attendus). Vérifié contre https://portail.elecam.cm/fr/statistiques-des-inscrits/ le 2026-07-13, le scrap ne capturait que 0.31% à 0.94% des vrais chiffres par région. NE PAS UTILISER. Voir elecam-statistiques-inscrits.json à la place.",
+    "correct_data": "data/geo/elecam-statistiques-inscrits.json",
+    "checked_on": "2026-07-13"
   }
 }

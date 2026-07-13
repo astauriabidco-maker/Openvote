@@ -1,0 +1,139 @@
+{
+  "source": "https://portail.elecam.cm/fr/statistiques-des-inscrits/ (scrapé 2026-07-13)",
+  "periode": "Révision des listes électorales au 31 décembre 2024",
+  "granularite": "Région (le portail n'expose PAS publiquement la liste par département/arrondissement/bureau)",
+  "rows": [
+    {
+      "region": "AD",
+      "region_name": "ADAMAOUA",
+      "hommes": 278957,
+      "femmes": 223156,
+      "jeunes": 197374,
+      "handicapes": 1968,
+      "total": 502113,
+      "bv": 1845
+    },
+    {
+      "region": "CE",
+      "region_name": "CENTRE",
+      "hommes": 807373,
+      "femmes": 624821,
+      "jeunes": 476762,
+      "handicapes": 5233,
+      "total": 1432194,
+      "bv": 6002
+    },
+    {
+      "region": "ES",
+      "region_name": "EST",
+      "hommes": 214161,
+      "femmes": 163017,
+      "jeunes": 119081,
+      "handicapes": 1270,
+      "total": 377178,
+      "bv": 1694
+    },
+    {
+      "region": "EN",
+      "region_name": "EXTREME-NORD",
+      "hommes": 630815,
+      "femmes": 594511,
+      "jeunes": 412076,
+      "handicapes": 7018,
+      "total": 1225326,
+      "bv": 4547
+    },
+    {
+      "region": "LT",
+      "region_name": "LITTORAL",
+      "hommes": 736747,
+      "femmes": 538823,
+      "jeunes": 420298,
+      "handicapes": 3948,
+      "total": 1275570,
+      "bv": 4164
+    },
+    {
+      "region": "NO",
+      "region_name": "NORD",
+      "hommes": 419187,
+      "femmes": 362252,
+      "jeunes": 268533,
+      "handicapes": 4635,
+      "total": 781439,
+      "bv": 2696
+    },
+    {
+      "region": "NW",
+      "region_name": "NORD-OUEST",
+      "hommes": 287294,
+      "femmes": 333959,
+      "jeunes": 185563,
+      "handicapes": 2419,
+      "total": 621253,
+      "bv": 2500
+    },
+    {
+      "region": "OU",
+      "region_name": "OUEST",
+      "hommes": 422975,
+      "femmes": 457415,
+      "jeunes": 303609,
+      "handicapes": 5008,
+      "total": 880390,
+      "bv": 3195
+    },
+    {
+      "region": "SU",
+      "region_name": "SUD",
+      "hommes": 173433,
+      "femmes": 141124,
+      "jeunes": 107990,
+      "handicapes": 1201,
+      "total": 314557,
+      "bv": 1703
+    },
+    {
+      "region": "SW",
+      "region_name": "SUD-OUEST",
+      "hommes": 219596,
+      "femmes": 189206,
+      "jeunes": 108434,
+      "handicapes": 1257,
+      "total": 408802,
+      "bv": 1916
+    },
+    {
+      "region": "DI",
+      "region_name": "DIASPORA",
+      "hommes": 17419,
+      "femmes": 9381,
+      "jeunes": 7601,
+      "handicapes": 28,
+      "total": 26800,
+      "bv": 95
+    }
+  ],
+  "totals": {
+    "regions": {
+      "hommes": 4190538,
+      "femmes": 3628284,
+      "jeunes": 2599720,
+      "handicapes": 33957,
+      "total": 7818822,
+      "bv": 30262,
+      "region": "TOTAL-RX",
+      "region_name": "TOTAL (Régions)"
+    },
+    "national": {
+      "hommes": 4207957,
+      "femmes": 3637665,
+      "jeunes": 2607321,
+      "handicapes": 33985,
+      "total": 7845622,
+      "bv": 30357,
+      "region": "TOTAL-NAT",
+      "region_name": "TOTAL NATIONAL"
+    }
+  }
+}
