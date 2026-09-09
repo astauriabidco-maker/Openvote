@@ -154,6 +154,202 @@ export interface IncidentTypeData {
 }
 
 // ============================================================
+// Comptage parallèle — bureaux de vote, candidats et PV
+// ============================================================
+
+export interface PollingStation {
+    id: string;
+    election_id: string;
+    code: string;
+    name: string;
+    region_id: string;
+    department_id: string;
+    arrondissement_id: string;
+    registered_voters: number;
+    location_name: string;
+    gps_location: string;
+    h3_index: string;
+    source_name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Candidate {
+    id: string;
+    election_id: string;
+    name: string;
+    party: string;
+    ballot_number?: number;
+    created_at: string;
+}
+
+export interface PVResultInput {
+    candidate_id: string;
+    votes: number;
+}
+
+export interface PVSubmission {
+    id: string;
+    election_id: string;
+    polling_station_id: string;
+    observer_id: string;
+    status: string;
+    registered_voters: number;
+    voters_count: number;
+    null_votes: number;
+    blank_votes: number;
+    disputed_votes: number;
+    pv_photo_url: string;
+    pv_hash: string;
+    signed_payload_hash: string;
+    signature: string;
+    proof_manifest_version?: number;
+    client_recorded_at?: string;
+    device_latitude?: number;
+    device_longitude?: number;
+    device_id?: string;
+    server_payload_hash?: string;
+    integrity_status?: string;
+    integrity_errors?: string[];
+    canonical_payload?: string;
+    notes: string;
+    submitted_at: string;
+    results?: PVResult[];
+}
+
+export interface PVAuditEvent {
+    id: string;
+    pv_submission_id: string;
+    election_id: string;
+    polling_station_id: string;
+    actor_id?: string;
+    actor_role?: string;
+    event_type: string;
+    from_status?: string;
+    to_status?: string;
+    integrity_status?: string;
+    server_payload_hash?: string;
+    comment: string;
+    metadata?: string;
+    created_at: string;
+}
+
+export interface PVResult {
+    id: string;
+    pv_submission_id: string;
+    candidate_id: string;
+    votes: number;
+    candidate_name?: string;
+    party?: string;
+    created_at: string;
+}
+
+export interface CandidateResultSummary {
+    candidate_id: string;
+    candidate_name: string;
+    party: string;
+    total_votes: number;
+    pv_count: number;
+}
+
+export interface ElectionResultSummary {
+    election_id: string;
+    total_stations: number;
+    submitted_pv: number;
+    coverage_rate: number;
+    total_voters: number;
+    total_candidate_votes: number;
+    results: CandidateResultSummary[];
+}
+
+export interface FieldCoverageRegion {
+    region_id: string;
+    region_name: string;
+    total_stations: number;
+    assigned_stations: number;
+    submitted_pv: number;
+    observer_count: number;
+    coverage_rate: number;
+}
+
+export interface FieldCoverageObserver {
+    observer_id: string;
+    observer_name: string;
+    region_id: string;
+    assigned_stations: number;
+    submitted_pv: number;
+    completion_rate: number;
+}
+
+export interface FieldCoverageSummary {
+    election_id: string;
+    total_stations: number;
+    assigned_stations: number;
+    unassigned_stations: number;
+    submitted_pv: number;
+    observer_count: number;
+    coverage_rate: number;
+    regions: FieldCoverageRegion[];
+    observers: FieldCoverageObserver[];
+}
+
+export type PVVerificationStatus = 'submitted' | 'pending' | 'verified' | 'rejected' | 'needs_clarification' | string;
+
+export interface PVAnomaly {
+    code: string;
+    severity: 'low' | 'medium' | 'high' | 'critical' | string;
+    message: string;
+    field?: string;
+    expected?: number | string;
+    actual?: number | string;
+}
+
+export interface PVVerificationItem extends PVSubmission {
+    polling_station_code?: string;
+    polling_station_name?: string;
+    polling_station_region?: string;
+    observer_name?: string;
+    observer_username?: string;
+    anomalies?: PVAnomaly[];
+    anomaly_count?: number;
+    total_candidate_votes?: number;
+    verification_comment?: string;
+    verified_at?: string;
+}
+
+export interface PublicPVProof {
+    id: string;
+    election_id: string;
+    polling_station_id: string;
+    polling_station_code: string;
+    polling_station_name: string;
+    polling_station_region?: string;
+    status: string;
+    pv_hash: string;
+    server_payload_hash: string;
+    integrity_status: string;
+    anomalies: PVAnomaly[];
+    submitted_at: string;
+    updated_at: string;
+}
+
+export interface PublicPVProofExport {
+    proof_manifest_version: number;
+    election_id: string;
+    generated_at: string;
+    total: number;
+    pv_proofs: PublicPVProof[];
+}
+
+export interface PublicPVExportProof {
+    algorithm: string;
+    export_hash: string;
+    signature: string;
+    public_key: string;
+    canonical_export?: string;
+}
+
+// ============================================================
 // KPIs dashboard
 // ============================================================
 

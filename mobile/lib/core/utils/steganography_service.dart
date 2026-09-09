@@ -9,7 +9,15 @@ class SteganographyService {
     "Confirmation de transfert: [PAYLOAD]. Montant: 5000 XAF.",
   ];
 
-  static final List<String> _names = ["Musa", "Kofi", "Amadou", "Fatou", "Jean", "Abou", "Bakary"];
+  static final List<String> _names = [
+    "Musa",
+    "Kofi",
+    "Amadou",
+    "Fatou",
+    "Jean",
+    "Abou",
+    "Bakary",
+  ];
 
   /// Masque le payload dans un template aléatoire.
   static String mask(String payload) {
@@ -17,8 +25,6 @@ class SteganographyService {
     final template = _templates[random.nextInt(_templates.length)];
     final name = _names[random.nextInt(_names.length)];
 
-    return template
-        .replaceAll("[NOM]", name)
-        .replaceAll("[PAYLOAD]", payload);
+    return template.replaceAll("[NOM]", name).replaceAll("[PAYLOAD]", payload);
   }
 }

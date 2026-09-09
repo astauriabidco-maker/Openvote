@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../crypto/device_signature_service.dart';
 import '../database/database_service.dart';
+import 'evidence_service.dart';
 import '../utils/sms_encoder.dart';
 import '../utils/steganography_service.dart';
 import '../utils/censorship_detector.dart';
@@ -41,9 +44,11 @@ class SyncService {
   StreamSubscription<bool>? _censorshipSubscription;
   bool _isSyncing = false;
   int _failureCount = 0;
-  
+
   // URL de l'API (À configurer via .env en prod)
-  final String apiUrl = 'http://10.0.2.2:8095/api/v1/reports'; 
+  final String reportsApiUrl = 'http://10.0.2.2:8095/api/v1/reports';
+  final String pvApiUrl = 'http://10.0.2.2:8095/api/v1/pv';
+  final String pvUploadApiUrl = 'http://10.0.2.2:8095/api/v1/pv-photos';
 
   /// Initialise le service, workmanager et le détecteur de censure
   Future<void> init() async {
@@ -51,7 +56,9 @@ class SyncService {
     CensorshipDetector().startMonitoring();
 
     // Écouter les changements de censure
-    _censorshipSubscription = CensorshipDetector().onCensorshipChange.listen((isCensored) {
+    _censorshipSubscription = CensorshipDetector().onCensorshipChange.listen((
+      isCensored,
+    ) {
       if (isCensored) {
         print("SyncService: Censure détectée ! Bascule automatique vers SMS.");
         _forceSmsMode();
@@ -62,26 +69,23 @@ class SyncService {
     });
 
     // Écouteur connectivité
-    _subscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+    _subscription = Connectivity().onConnectivityChanged.listen((
+      ConnectivityResult result,
+    ) {
       if (result != ConnectivityResult.none) {
         syncPendingReports();
       }
     });
 
     // Initialisation Workmanager
-    await Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: true,
-    );
+    await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
     // Enregistrement de la tâche périodique (15 min)
     await Workmanager().registerPeriodicTask(
       "1",
       syncTaskName,
       frequency: const Duration(minutes: 15),
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
+      constraints: Constraints(networkType: NetworkType.connected),
     );
   }
 
@@ -122,7 +126,7 @@ class SyncService {
       }
 
       final db = await DatabaseService().database;
-      
+
       final List<Map<String, dynamic>> pending = await db.query(
         'local_reports',
         where: 'synced_at IS NULL',
@@ -141,7 +145,10 @@ class SyncService {
           _failureCount = 0;
           await db.update(
             'local_reports',
-            {'synced_at': DateTime.now().toIso8601String(), 'status': 'verified'},
+            {
+              'synced_at': DateTime.now().toIso8601String(),
+              'status': 'verified',
+            },
             where: 'id = ?',
             whereArgs: [reportData['id']],
           );
@@ -150,26 +157,198 @@ class SyncService {
           _failureCount++;
           if (_failureCount >= 3) {
             print("SyncService: 3 échecs consécutifs. Vérification censure...");
-            
+
             // Vérifier si c'est de la censure
             final isCensored = await CensorshipDetector().checkCensorship();
             if (isCensored) {
-              print("SyncService: Censure confirmée ! Bascule SMS automatique.");
+              print(
+                "SyncService: Censure confirmée ! Bascule SMS automatique.",
+              );
             } else {
               print("SyncService: Pas de censure, bascule SMS par précaution.");
             }
-            
+
             await sendViaSmsFallBack(reportData);
             _failureCount = 0;
             break;
           }
         }
       }
+
+      await syncPendingPvSubmissions();
     } catch (e) {
       print("SyncService Erreur : $e");
     } finally {
       _isSyncing = false;
     }
+  }
+
+  Future<void> syncPendingPvSubmissions() async {
+    final pendingPvs = await DatabaseService().getPendingPvSubmissions();
+    if (pendingPvs.isEmpty) return;
+
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'access_token');
+    await const DeviceSignatureService().registerPublicKeyIfPossible();
+
+    for (final pv in pendingPvs) {
+      var pvPhotoUrl = pv.pvPhotoUrl;
+      final payload = {
+        'election_id': pv.electionId,
+        'polling_station_id': pv.pollingStationId,
+        'registered_voters': pv.registeredVoters,
+        'voters_count': pv.votersCount,
+        'null_votes': pv.nullVotes,
+        'blank_votes': pv.blankVotes,
+        'disputed_votes': pv.disputedVotes,
+        'pv_photo_url': pvPhotoUrl,
+        'pv_hash': pv.pvHash,
+        'signed_payload_hash': pv.signedPayloadHash,
+        'signature': pv.signature,
+        'proof_manifest_version': pv.proofManifestVersion,
+        'client_recorded_at': pv.clientRecordedAt,
+        'device_latitude': pv.deviceLatitude,
+        'device_longitude': pv.deviceLongitude,
+        'device_id': pv.deviceId,
+        'notes': pv.notes,
+        'results': pv.results
+            .map(
+              (result) => {
+                'candidate_id': result.candidateId,
+                'votes': result.votes,
+              },
+            )
+            .toList(),
+      };
+
+      try {
+        if (pv.pvPhotoPath.isNotEmpty && pvPhotoUrl.isEmpty) {
+          pvPhotoUrl =
+              await EvidenceService(baseUrl: pvUploadApiUrl).uploadEvidence(
+            File(pv.pvPhotoPath),
+          ) ??
+                  '';
+          if (pvPhotoUrl.isEmpty) {
+            throw Exception('Upload photo PV impossible');
+          }
+          payload['pv_photo_url'] = pvPhotoUrl;
+        }
+        final response = await http.post(
+          Uri.parse(pvApiUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(payload),
+        );
+
+        if (response.statusCode == 201) {
+          final now = DateTime.now();
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          final serverPv = (body['pv'] ?? body) as Map<String, dynamic>;
+          await DatabaseService().updatePvSubmissionStatus(
+            id: pv.id,
+            status: _serverStatus(serverPv) ?? 'submitted',
+            serverId: serverPv['id'],
+            statusMessage: _serverStatusMessage(serverPv),
+            serverPayloadHash: serverPv['server_payload_hash'],
+            integrityStatus: serverPv['integrity_status'],
+            integrityErrorsJson: _serverIntegrityErrorsJson(serverPv),
+            syncedAt: now,
+            statusUpdatedAt: now,
+          );
+        } else {
+          await DatabaseService().updatePvSubmissionStatus(
+            id: pv.id,
+            status: 'failed',
+            statusMessage:
+                'Envoi refusé par le serveur (${response.statusCode})',
+          );
+        }
+      } catch (e) {
+        await DatabaseService().updatePvSubmissionStatus(
+          id: pv.id,
+          status: 'failed',
+          statusMessage: 'Synchronisation impossible: $e',
+        );
+      }
+    }
+  }
+
+  Future<int> refreshPvStatuses() async {
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: 'access_token');
+    if (token == null) return 0;
+
+    final localPvs = await DatabaseService().getPvSubmissions();
+    if (localPvs.isEmpty) return 0;
+
+    final elections = await DatabaseService().getCachedElections();
+    var updated = 0;
+
+    for (final election in elections) {
+      try {
+        final response = await http.get(
+          Uri.parse('$pvApiUrl?election_id=${election.id}'),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+        if (response.statusCode != 200) continue;
+
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final rawPvs = (body['pv_submissions'] ?? body['pvs'] ?? []) as List;
+        for (final raw in rawPvs) {
+          final serverPv = raw as Map<String, dynamic>;
+          final status = _serverStatus(serverPv);
+          if (status == null) continue;
+
+          for (final localPv in localPvs) {
+            final sameServerId = localPv.serverId.isNotEmpty &&
+                localPv.serverId == (serverPv['id'] ?? '');
+            final sameStation = localPv.serverId.isEmpty &&
+                localPv.electionId == election.id &&
+                localPv.pollingStationId == serverPv['polling_station_id'];
+            if (!sameServerId && !sameStation) continue;
+
+            await DatabaseService().updatePvSubmissionStatus(
+              id: localPv.id,
+              status: status,
+              serverId: serverPv['id'],
+              statusMessage: _serverStatusMessage(serverPv),
+              serverPayloadHash: serverPv['server_payload_hash'],
+              integrityStatus: serverPv['integrity_status'],
+              integrityErrorsJson: _serverIntegrityErrorsJson(serverPv),
+              statusUpdatedAt: DateTime.now(),
+            );
+            updated++;
+            break;
+          }
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+
+    return updated;
+  }
+
+  String? _serverStatus(Map<String, dynamic> serverPv) {
+    final rawStatus = serverPv['status'] ?? serverPv['verification_status'];
+    if (rawStatus is! String || rawStatus.isEmpty) return null;
+    return rawStatus;
+  }
+
+  String _serverStatusMessage(Map<String, dynamic> serverPv) {
+    final message = serverPv['status_message'] ??
+        serverPv['review_comment'] ??
+        serverPv['clarification_request'] ??
+        serverPv['rejection_reason'];
+    return message is String ? message : '';
+  }
+
+  String _serverIntegrityErrorsJson(Map<String, dynamic> serverPv) {
+    final errors = serverPv['integrity_errors'];
+    if (errors is List) return jsonEncode(errors);
+    return '[]';
   }
 
   Future<void> sendViaSmsFallBack(Map<String, dynamic> data) async {
@@ -190,14 +369,12 @@ class SyncService {
       final Uri smsUri = Uri(
         scheme: 'sms',
         path: gateway,
-        queryParameters: <String, String>{
-          'body': message,
-        },
+        queryParameters: <String, String>{'body': message},
       );
 
       if (await canLaunchUrl(smsUri)) {
         await launchUrl(smsUri);
-        
+
         // 5. Mise à jour locale
         final db = await DatabaseService().database;
         await db.update(
@@ -206,7 +383,7 @@ class SyncService {
           where: 'id = ?',
           whereArgs: [data['id']],
         );
-        
+
         print("SyncService: SMS Intent lancé pour le rapport ${data['id']}");
       } else {
         print("SyncService: Impossible de lancer l'app SMS");
@@ -229,9 +406,9 @@ class SyncService {
 
       final storage = const FlutterSecureStorage();
       final token = await storage.read(key: 'access_token');
-      
+
       final response = await http.post(
-        Uri.parse(apiUrl),
+        Uri.parse(reportsApiUrl),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -242,7 +419,9 @@ class SyncService {
       if (response.statusCode == 201) {
         return true;
       } else {
-        print("SyncService: Rejet API (${response.statusCode}) : ${response.body}");
+        print(
+          "SyncService: Rejet API (${response.statusCode}) : ${response.body}",
+        );
         return false;
       }
     } catch (e) {

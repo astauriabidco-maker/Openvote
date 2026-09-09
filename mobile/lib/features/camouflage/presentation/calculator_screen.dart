@@ -12,7 +12,7 @@ class CalculatorScreen extends StatefulWidget {
 class _CalculatorScreenState extends State<CalculatorScreen> {
   String _display = "0";
   String _expression = "";
-  
+
   // MAGIC TRIGGER: Si le résultat du calcul donne cette valeur, on déverrouille.
   // Exemple: 1330 + 7 = 1337 -> Login
   static const String MAGIC_RESULT = "1337";
@@ -32,7 +32,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   void _onOperatorPress(String op) {
     setState(() {
       // Éviter double opérateur
-      if (_expression.isNotEmpty && !"+-*/".contains(_expression[_expression.length - 1])) {
+      if (_expression.isNotEmpty &&
+          !"+-*/".contains(_expression[_expression.length - 1])) {
         _expression += op;
         _display += op;
       }
@@ -50,7 +51,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     if (_expression.isEmpty) return;
 
     try {
-      Parser p = Parser();
+      final p = ShuntingYardParser();
       Expression exp = p.parse(_expression);
       ContextModel cm = ContextModel();
       double eval = exp.evaluate(EvaluationType.REAL, cm);
@@ -73,13 +74,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       setState(() {
         _display = resultStr;
         // On permet de continuer le calcul sur le résultat
-        _expression = resultStr; 
+        _expression = resultStr;
       });
-
     } catch (e) {
       setState(() {
         _display = "Error";
-         _expression = "";
+        _expression = "";
       });
     }
   }
@@ -88,16 +88,24 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea( // Ajout SafeArea pour éviter notch
+      body: SafeArea(
+        // Ajout SafeArea pour éviter notch
         child: Column(
           children: [
             Expanded(
               child: Container(
                 alignment: Alignment.bottomRight,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
                 child: Text(
                   _display,
-                  style: const TextStyle(color: Colors.white, fontSize: 64, fontWeight: FontWeight.w300),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 64,
+                    fontWeight: FontWeight.w300,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -137,10 +145,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       padding: const EdgeInsets.all(8.0),
       child: MaterialButton(
         onPressed: () {
-          if (label == "C") _clear();
-          else if (label == "=") _calculate();
-          else if (["+", "-", "*", "/"].contains(label)) _onOperatorPress(label);
-          else _onDigitPress(label);
+          if (label == "C")
+            _clear();
+          else if (label == "=")
+            _calculate();
+          else if (["+", "-", "*", "/"].contains(label))
+            _onOperatorPress(label);
+          else
+            _onDigitPress(label);
         },
         color: _getButtonColor(label),
         textColor: Colors.white,
@@ -149,14 +161,18 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         minWidth: 80,
         elevation: 0,
         highlightElevation: 0,
-        child: Text(label, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.normal)),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.normal),
+        ),
       ),
     );
   }
 
   Color _getButtonColor(String label) {
     if (label == "=") return Colors.orange;
-    if (["+", "-", "*", "/"].contains(label)) return Colors.orange; // iOS Style operators
+    if (["+", "-", "*", "/"].contains(label))
+      return Colors.orange; // iOS Style operators
     if (label == "C") return Colors.grey;
     return const Color(0xFF333333); // Dark Gray
   }

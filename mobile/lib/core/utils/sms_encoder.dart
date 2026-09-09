@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:archive/archive.dart';
 
 class SmsEncoder {
@@ -20,10 +20,12 @@ class SmsEncoder {
   static String encode(Map<String, dynamic> minifiedReport) {
     final jsonStr = jsonEncode(minifiedReport);
     final bytes = utf8.encode(jsonStr);
-    
+
     // Compression Gzip
     final gzipBytes = GZipEncoder().encode(bytes);
-    if (gzipBytes == null) return base64Encode(bytes); // Fallback si compression échoue
+    if (gzipBytes == null) {
+      return base64Encode(bytes); // Fallback si compression échoue
+    }
 
     // Encodage Base64
     return base64Encode(gzipBytes);
@@ -32,11 +34,11 @@ class SmsEncoder {
   /// Décode une chaîne Base64 compressée en Gzip vers un objet JSON.
   static Map<String, dynamic> decode(String base64Str) {
     final gzipBytes = base64Decode(base64Str);
-    
+
     // Décompression Gzip
     final bytes = GZipDecoder().decodeBytes(gzipBytes);
     final jsonStr = utf8.decode(bytes);
-    
+
     return jsonDecode(jsonStr);
   }
 }

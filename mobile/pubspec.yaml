@@ -22,6 +22,8 @@ dependencies:
   url_launcher: ^6.2.5
   archive: ^3.4.10
   image_picker: ^1.1.2
+  crypto: ^3.0.3
+  pointycastle: ^3.9.1
 
 dev_dependencies:
   flutter_test:

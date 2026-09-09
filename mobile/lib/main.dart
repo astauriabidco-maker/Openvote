@@ -5,8 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import 'core/database/database_service.dart';
 import 'core/sync/sync_service.dart';
 import 'core/sync/evidence_service.dart';
+import 'core/sync/reference_sync_service.dart';
 import 'core/models/report.dart';
 import 'features/camouflage/presentation/calculator_screen.dart';
+import 'features/pv/presentation/pv_form_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'features/auth/presentation/enrolment_screen.dart';
@@ -41,7 +43,9 @@ class _OpenvoteAppState extends State<OpenvoteApp> {
   @override
   Widget build(BuildContext context) {
     if (_isEnrolled == null) {
-      return const MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator())));
+      return const MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
     return MaterialApp(
@@ -51,15 +55,15 @@ class _OpenvoteAppState extends State<OpenvoteApp> {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      routes: {
-        '/home': (context) => const InitializationPage(),
-      },
+      routes: {'/home': (context) => const InitializationPage()},
       home: _isEnrolled!
           ? Builder(
               builder: (context) => CalculatorScreen(
                 onUnlock: () {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const InitializationPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const InitializationPage(),
+                    ),
                   );
                 },
               ),
@@ -98,12 +102,13 @@ class _InitializationPageState extends State<InitializationPage> {
       await DatabaseService().openEncryptedDatabase(password);
       // Lancer le service de synchronisation et le worker
       await SyncService().init();
-      
+      await ReferenceSyncService().syncFieldReferences();
+
       setState(() {
         _isInitialized = true;
         _status = "Base de données ouverte et SyncService démarré !";
       });
-      
+
       // Naviguer vers la page d'accueil après un court délai
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
@@ -164,7 +169,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _reportController = TextEditingController();
   String _selectedIncidentType = 'Fraude';
-  final List<String> _incidentTypes = ['Fraude', 'Violence', 'Intimidation', 'Logistique', 'Autre'];
+  final List<String> _incidentTypes = [
+    'Fraude',
+    'Violence',
+    'Intimidation',
+    'Logistique',
+    'Autre',
+  ];
   File? _capturedImage;
   bool _isUploading = false;
   String? _uploadedProofUrl;
@@ -190,13 +201,13 @@ class _HomePageState extends State<HomePage> {
   /// Upload de la preuve vers MinIO
   Future<void> _uploadProof() async {
     if (_capturedImage == null) return;
-    
+
     setState(() => _isUploading = true);
-    
+
     try {
       final evidenceService = EvidenceService();
       final result = await evidenceService.uploadEvidence(_capturedImage!);
-      
+
       if (result != null) {
         setState(() {
           _uploadedProofUrl = result;
@@ -213,7 +224,9 @@ class _HomePageState extends State<HomePage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("⚠️ Upload échoué. La preuve sera envoyée à la prochaine sync."),
+              content: Text(
+                "⚠️ Upload échoué. La preuve sera envoyée à la prochaine sync.",
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -222,10 +235,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("❌ Erreur: $e"),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text("❌ Erreur: $e"), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -261,10 +271,12 @@ class _HomePageState extends State<HomePage> {
       _capturedImage = null;
       _uploadedProofUrl = null;
     });
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signalement sauvegardé localement (Offline-First)")),
+        const SnackBar(
+          content: Text("Signalement sauvegardé localement (Offline-First)"),
+        ),
       );
     }
 
@@ -282,13 +294,10 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<String>(
-              value: _selectedIncidentType,
+              initialValue: _selectedIncidentType,
               decoration: const InputDecoration(labelText: "Type d'incident"),
               items: _incidentTypes.map((String type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: Text(type),
-                );
+                return DropdownMenuItem<String>(value: type, child: Text(type));
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
@@ -323,7 +332,7 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Aperçu de l'image capturée
                   if (_capturedImage != null) ...[
                     ClipRRect(
@@ -341,14 +350,25 @@ class _HomePageState extends State<HomePage> {
                             top: 8,
                             right: 8,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: _uploadedProofUrl != null ? Colors.green : Colors.orange,
+                                color: _uploadedProofUrl != null
+                                    ? Colors.green
+                                    : Colors.orange,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                _uploadedProofUrl != null ? "✅ Uploadée" : "⏳ En attente",
-                                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                                _uploadedProofUrl != null
+                                    ? "✅ Uploadée"
+                                    : "⏳ En attente",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -367,7 +387,11 @@ class _HomePageState extends State<HomePage> {
                                   color: Colors.red,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -376,13 +400,15 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                  
+
                   // Boutons de capture
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _isUploading ? null : () => _captureProof(fromCamera: true),
+                          onPressed: _isUploading
+                              ? null
+                              : () => _captureProof(fromCamera: true),
                           icon: const Icon(Icons.camera_alt, size: 18),
                           label: const Text("Caméra"),
                         ),
@@ -390,14 +416,16 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _isUploading ? null : () => _captureProof(fromCamera: false),
+                          onPressed: _isUploading
+                              ? null
+                              : () => _captureProof(fromCamera: false),
                           icon: const Icon(Icons.photo_library, size: 18),
                           label: const Text("Galerie"),
                         ),
                       ),
                     ],
                   ),
-                  
+
                   // Indicateur de chargement upload
                   if (_isUploading) ...[
                     const SizedBox(height: 8),
@@ -423,6 +451,19 @@ class _HomePageState extends State<HomePage> {
                 foregroundColor: Colors.white,
               ),
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const PvFormScreen()),
+                );
+              },
+              icon: const Icon(Icons.how_to_vote),
+              label: const Text("Saisir un PV de bureau"),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
             const Divider(height: 40),
             const Text(
               "Les rapports sont chiffrés et stockés localement en priorité. La synchronisation se fait automatiquement.",
@@ -435,4 +476,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

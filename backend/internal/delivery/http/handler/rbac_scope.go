@@ -10,7 +10,8 @@ import (
 // roleLevel associe chaque rôle à un niveau numérique pour les comparaisons.
 // Plus le niveau est élevé, plus le rôle a de privilèges.
 // Note : super_admin est le seul qui peut créer d'autres super_admin.
-//        region_admin peut gérer les users SAUF super_admin et SAUF hors région.
+//
+//	region_admin peut gérer les users SAUF super_admin et SAUF hors région.
 var roleLevel = map[entity.UserRole]int{
 	entity.RoleCitizen:         0,
 	entity.RoleVerifiedCitizen: 1,
@@ -40,6 +41,12 @@ func IsSuperAdmin(c *gin.Context) bool {
 func CallerRole(c *gin.Context) entity.UserRole {
 	role, _ := c.Get("role")
 	return entity.UserRole(toString(role))
+}
+
+// CallerUserID retourne l'identifiant utilisateur extrait du JWT.
+func CallerUserID(c *gin.Context) string {
+	userID, _ := c.Get("userID")
+	return toString(userID)
 }
 
 // CallerRegionID retourne la région de l'appelant. Vide si non défini.
@@ -99,9 +106,9 @@ func RequireSameRegionOrSuperAdmin(c *gin.Context, targetRegionID string) bool {
 	}
 	if targetRegionID != callerRegion {
 		c.JSON(http.StatusForbidden, gin.H{
-			"error":          "action interdite hors de votre région",
-			"caller_region":  callerRegion,
-			"target_region":  targetRegionID,
+			"error":         "action interdite hors de votre région",
+			"caller_region": callerRegion,
+			"target_region": targetRegionID,
 		})
 		c.Abort()
 		return false

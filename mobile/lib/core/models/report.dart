@@ -53,7 +53,9 @@ class Report {
       status: map['status'],
       proofUrl: map['proof_url'],
       createdAt: DateTime.parse(map['created_at']),
-      syncedAt: map['synced_at'] != null ? DateTime.parse(map['synced_at']) : null,
+      syncedAt: map['synced_at'] != null
+          ? DateTime.parse(map['synced_at'])
+          : null,
     );
   }
 }

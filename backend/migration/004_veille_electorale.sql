@@ -8,7 +8,7 @@ ALTER TABLE departments ADD COLUMN IF NOT EXISTS registered_voters INTEGER DEFAU
 -- 2. Table pour le Cadre Réglementaire (Code Électoral)
 CREATE TABLE IF NOT EXISTS legal_framework (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    article_number VARCHAR(100) NOT NULL,
+    article_number VARCHAR(100) NOT NULL UNIQUE,
     title VARCHAR(1000) NOT NULL,
     content TEXT NOT NULL,
     category VARCHAR(100), -- ex: 'Inscription', 'Scrutin', 'Contentieux'

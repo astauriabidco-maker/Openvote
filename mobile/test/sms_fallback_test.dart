@@ -25,7 +25,7 @@ void main() {
     test('SmsEncoder: Full cycle (Encode/Decode) should preserve data', () {
       final minified = SmsEncoder.minify(testReport);
       final encoded = SmsEncoder.encode(minified);
-      
+
       print('Encoded Payload (Base64+Gzip): $encoded');
       expect(encoded.isNotEmpty, true);
 
@@ -37,7 +37,7 @@ void main() {
     test('SteganographyService: Mask should contain payload', () {
       const payload = "H4sIAAAAAAAA/zI0MDAwAQA";
       final masked = SteganographyService.mask(payload);
-      
+
       print('Masked Message: $masked');
       expect(masked.contains(payload), true);
       expect(masked.length > payload.length, true);

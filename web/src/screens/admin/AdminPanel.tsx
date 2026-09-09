@@ -33,6 +33,8 @@ import DashboardTab from './tabs/DashboardTab';
 import UsersTab from './tabs/UsersTab';
 import ElectionsTab from './tabs/ElectionsTab';
 import TokensTab from './tabs/TokensTab';
+import FieldOpsTab from './tabs/FieldOpsTab';
+import PVVerificationTab from './tabs/PVVerificationTab';
 import RegionsTab from './tabs/RegionsTab';
 import IncidentsTab from './tabs/IncidentsTab';
 import LogsTab from './tabs/LogsTab';
@@ -156,7 +158,13 @@ function AdminPanel({ auth, apiClient }: AdminPanelProps) {
                 onQueryChange={palette.setQuery}
                 results={palette.results}
                 selectedIndex={palette.selectedIndex}
-                onSelect={(r) => handleResultClick(r.tabKey)}
+                onSelect={(r) => {
+                    if (r.kind === 'tab') {
+                        handleResultClick(r.tabKey);
+                    } else {
+                        palette.closePalette();
+                    }
+                }}
                 onHighlightPrev={palette.highlightPrev}
                 onHighlightNext={palette.highlightNext}
                 onSelectHighlighted={palette.selectHighlighted}
@@ -257,6 +265,8 @@ const ActiveTabContent = memo(function ActiveTabContent({
         case 'users': return <UsersTab state={state} />;
         case 'elections': return <ElectionsTab state={state} />;
         case 'tokens': return <TokensTab state={state} />;
+        case 'field': return <FieldOpsTab state={state} />;
+        case 'pvVerification': return <PVVerificationTab state={state} />;
         case 'regions': return <RegionsTab state={state} />;
         case 'incidents': return <IncidentsTab state={state} />;
         case 'logs': return <LogsTab state={state} />;

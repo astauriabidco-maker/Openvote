@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/sync/sync_service.dart';
+import '../../../core/auth/offline_session_service.dart';
 
 class EnrolmentScreen extends StatefulWidget {
   const EnrolmentScreen({super.key});
@@ -16,14 +16,14 @@ class EnrolmentScreen extends StatefulWidget {
 class _EnrolmentScreenState extends State<EnrolmentScreen> {
   final MobileScannerController controller = MobileScannerController();
   final storage = const FlutterSecureStorage();
-  
+
   String? _scannedToken;
   String _pin = "";
   bool _isLoading = false;
 
   void _onDetect(BarcodeCapture capture) {
     if (_scannedToken != null) return;
-    
+
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       if (barcode.rawValue != null) {
@@ -44,26 +44,26 @@ class _EnrolmentScreenState extends State<EnrolmentScreen> {
 
     try {
       // 10.0.2.2 pour émulateur Android, localhost pour iOS
-      // const baseUrl = 'http://10.0.2.2:8095/api/v1'; 
+      // const baseUrl = 'http://10.0.2.2:8095/api/v1';
       // Utilisation de l'URL definie dans SyncService pour cohérence (même si c'est privé)
       const baseUrl = 'http://10.0.2.2:8095/api/v1';
 
       final response = await http.post(
         Uri.parse('$baseUrl/auth/enroll'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'activation_token': _scannedToken,
-          'pin': _pin,
-        }),
+        body: jsonEncode({'activation_token': _scannedToken, 'pin': _pin}),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         // Stockage sécurisé des tokens
         await storage.write(key: 'access_token', value: data['access_token']);
         await storage.write(key: 'refresh_token', value: data['refresh_token']);
-        
+        await const OfflineSessionService().persistEnrollmentIdentity(
+          data as Map<String, dynamic>,
+        );
+
         // Stocker le PIN user pour le Duress Code local (si besoin) ou simple login local
         // Ici on stocke juste un flag comme quoi l'app est initialisée
         final prefs = await SharedPreferences.getInstance();
@@ -71,29 +71,29 @@ class _EnrolmentScreenState extends State<EnrolmentScreen> {
         await prefs.setString('user_pin', _pin); // À sécuriser mieux en prod
 
         if (mounted) {
-           Navigator.of(context).pushReplacementNamed('/home');
+          Navigator.of(context).pushReplacementNamed('/home');
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: ${response.body}')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erreur: ${response.body}')));
           // Restart cam
           setState(() {
-             _scannedToken = null;
+            _scannedToken = null;
           });
           controller.start();
         }
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur réseau: $e')),
-         );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur réseau: $e')));
       }
     } finally {
       if (mounted) {
-         setState(() => _isLoading = false);
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -104,10 +104,7 @@ class _EnrolmentScreenState extends State<EnrolmentScreen> {
       // Étape 1: Scanner
       return Scaffold(
         appBar: AppBar(title: const Text('Scanner le QR d\'activation')),
-        body: MobileScanner(
-          controller: controller,
-          onDetect: _onDetect,
-        ),
+        body: MobileScanner(controller: controller, onDetect: _onDetect),
       );
     } else {
       // Étape 2: Définir le PIN
@@ -119,11 +116,17 @@ class _EnrolmentScreenState extends State<EnrolmentScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Token détecté !', 
-                style: TextStyle(color: Colors.green, fontSize: 16, fontWeight: FontWeight.bold)
+                'Token détecté !',
+                style: TextStyle(
+                  color: Colors.green,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
-              const Text('Choisissez un code PIN (4-8 chiffres) pour sécuriser l\'accès local.'),
+              const Text(
+                'Choisissez un code PIN (4-8 chiffres) pour sécuriser l\'accès local.',
+              ),
               const SizedBox(height: 20),
               TextField(
                 keyboardType: TextInputType.number,
@@ -136,12 +139,12 @@ class _EnrolmentScreenState extends State<EnrolmentScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              _isLoading 
-                 ? const CircularProgressIndicator()
-                 : ElevatedButton(
-                    onPressed: _submitEnrollment,
-                    child: const Text('Activer l\'application'),
-                   )
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _submitEnrollment,
+                      child: const Text('Activer l\'application'),
+                    ),
             ],
           ),
         ),

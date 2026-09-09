@@ -174,6 +174,12 @@ func main() {
 	reportRepo := postgres.NewReportRepository(db)
 	regionRepo := postgres.NewRegionRepository(db)
 	electionRepo := postgres.NewElectionRepository(db)
+	pollingStationRepo := postgres.NewPollingStationRepository(db)
+	candidateRepo := postgres.NewCandidateRepository(db)
+	pvRepo := postgres.NewPVRepository(db)
+	pollingStationAssignmentRepo := postgres.NewPollingStationAssignmentRepository(db)
+	observerDeviceKeyRepo := postgres.NewObserverDeviceKeyRepository(db)
+	pvAuditRepo := postgres.NewPVAuditRepository(db)
 	auditLogRepo := postgres.NewAuditLogRepository(db)
 	incidentTypeRepo := postgres.NewIncidentTypeRepository(db)
 	legalRepo := postgres.NewLegalRepository(db)
@@ -208,6 +214,7 @@ func main() {
 	statsHandler := handler.NewStatsHandler(reportService)
 	regionHandler := handler.NewRegionHandler(regionRepo)
 	electionHandler := handler.NewElectionHandler(electionRepo)
+	pvHandler := handler.NewPVHandler(pollingStationRepo, candidateRepo, pvRepo, pollingStationAssignmentRepo, observerDeviceKeyRepo, pvAuditRepo, storageService)
 	incidentTypeHandler := handler.NewIncidentTypeHandler(incidentTypeRepo)
 
 	// Handlers admin découpés par domaine (cf. M1 audit).
@@ -271,13 +278,13 @@ func main() {
 
 	// Middlewares business
 	authMiddleware := middleware.AuthMiddleware(authService, userRepo)
-	rateLimiter := middleware.RateLimitMiddleware(100, time.Minute)              // 100 req/min global (par IP)
-	authRateLimiter := middleware.RateLimitMiddleware(10, time.Minute)           // 10 req/min auth (par IP, anti brute-force)
-	tokenGenRateLimiter := middleware.RateLimitMiddleware(5, time.Minute)        // H6 : 5 génération tokens/min (par IP)
+	rateLimiter := middleware.RateLimitMiddleware(100, time.Minute)       // 100 req/min global (par IP)
+	authRateLimiter := middleware.RateLimitMiddleware(10, time.Minute)    // 10 req/min auth (par IP, anti brute-force)
+	tokenGenRateLimiter := middleware.RateLimitMiddleware(5, time.Minute) // H6 : 5 génération tokens/min (par IP)
 	// userMgmtRateLimiter (IP) remplacé par userMgmtUserRateLimiter (userID) sur
 	// les routes /admin/users — un userID est plus stable qu'une IP (NAT, VPN)
 	// et bloque un attaquant précis, pas tout un sous-réseau.
-	userMgmtUserRateLimiter := middleware.UserRateLimitMiddleware(30, time.Minute) // 30 ops CRUD users/min PAR USER
+	userMgmtUserRateLimiter := middleware.UserRateLimitMiddleware(30, time.Minute)   // 30 ops CRUD users/min PAR USER
 	adminWriteUserRateLimiter := middleware.UserRateLimitMiddleware(60, time.Minute) // 60 admin writes/min/user (régions, élections, etc.)
 
 	// Routes API Versioning
@@ -309,9 +316,26 @@ func main() {
 		}
 
 		// Régions & Départements (lecture pour tous les utilisateurs authentifiés)
+		api.GET("/public/pv-proofs", pvHandler.ListPublicPVProofs)
 		api.GET("/regions", authMiddleware, regionHandler.ListRegions)
 		api.GET("/departments", authMiddleware, regionHandler.ListDepartments)
 		api.GET("/incident-types", authMiddleware, incidentTypeHandler.List)
+		api.GET("/elections", authMiddleware, electionHandler.List)
+		api.GET("/polling-stations", authMiddleware, pvHandler.ListPollingStations)
+		api.GET("/my-polling-stations", authMiddleware, middleware.ObserverAndAbove(), pvHandler.ListMyPollingStations)
+		api.GET("/my-assignments", authMiddleware, middleware.ObserverAndAbove(), pvHandler.ListMyAssignments)
+		api.GET("/candidates", authMiddleware, pvHandler.ListCandidates)
+		api.GET("/pv", authMiddleware, pvHandler.ListPVs)
+		api.GET("/pv/:id", authMiddleware, middleware.RequireUUIDParam("id"), pvHandler.GetPV)
+		api.GET("/pv-summary", authMiddleware, pvHandler.GetSummary)
+		api.POST("/device-keys", authMiddleware, middleware.ObserverAndAbove(), pvHandler.RegisterDeviceKey)
+		api.GET("/pv-photos/upload-url", authMiddleware, middleware.ObserverAndAbove(), pvHandler.GetPVUploadURL)
+
+		pv := api.Group("/pv")
+		pv.Use(authMiddleware, middleware.ObserverAndAbove())
+		{
+			pv.POST("", pvHandler.SubmitPV)
+		}
 
 		// Rapports
 		reports := api.Group("/reports")
@@ -408,6 +432,18 @@ func main() {
 			admin.PATCH("/elections/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), electionHandler.Update)
 			admin.PATCH("/elections/:id/status", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), electionHandler.UpdateStatus)
 			admin.DELETE("/elections/:id", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), electionHandler.Delete)
+
+			// Bureaux de vote, candidats et PV — socle du comptage parallèle.
+			admin.POST("/polling-stations", adminWriteUserRateLimiter, pvHandler.CreatePollingStation)
+			admin.POST("/polling-stations/import-csv", adminWriteUserRateLimiter, pvHandler.ImportPollingStationsCSV)
+			admin.POST("/candidates", adminWriteUserRateLimiter, pvHandler.CreateCandidate)
+			admin.POST("/candidates/import-csv", adminWriteUserRateLimiter, pvHandler.ImportCandidatesCSV)
+			admin.POST("/polling-station-assignments", adminWriteUserRateLimiter, pvHandler.CreateAssignment)
+			admin.POST("/polling-station-assignments/bulk", adminWriteUserRateLimiter, pvHandler.CreateAssignmentsBulk)
+			admin.GET("/field-coverage", pvHandler.GetFieldCoverage)
+			admin.GET("/pv-review", pvHandler.ListPVsForReview)
+			admin.GET("/pv-review/:id/audit", middleware.RequireUUIDParam("id"), pvHandler.ListPVAuditEvents)
+			admin.PATCH("/pv-review/:id/status", adminWriteUserRateLimiter, middleware.RequireUUIDParam("id"), pvHandler.UpdatePVVerification)
 
 			// Types d'incidents (admin CRUD)
 			admin.POST("/incident-types", adminWriteUserRateLimiter, incidentTypeHandler.Create)

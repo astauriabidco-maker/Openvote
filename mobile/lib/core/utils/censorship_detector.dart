@@ -23,9 +23,9 @@ class CensorshipDetector {
   // Points de vérification : sites normalement accessibles partout
   // On évite Google/Facebook (déjà bloqués dans certains pays)
   static const List<String> _probeUrls = [
-    'https://www.wikipedia.org',      // Rarement censuré
-    'https://www.bbc.com',            // Service d'info international
-    'https://cloudflare.com',         // Infrastructure CDN
+    'https://www.wikipedia.org', // Rarement censuré
+    'https://www.bbc.com', // Service d'info international
+    'https://cloudflare.com', // Infrastructure CDN
   ];
 
   // URL de l'API backend (à configurer)
@@ -85,7 +85,9 @@ class CensorshipDetector {
     if (_isCensored != previousState) {
       _controller?.add(_isCensored);
       if (_isCensored) {
-        print("[CENSORSHIP DETECTOR] ⚠️ Censure détectée ! Bascule vers les canaux alternatifs.");
+        print(
+          "[CENSORSHIP DETECTOR] ⚠️ Censure détectée ! Bascule vers les canaux alternatifs.",
+        );
       } else {
         print("[CENSORSHIP DETECTOR] ✅ Accès réseau normal rétabli.");
       }
@@ -100,13 +102,13 @@ class CensorshipDetector {
       final uri = Uri.parse(url);
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 5);
-      
+
       final request = await client.getUrl(uri);
       final response = await request.close().timeout(
         const Duration(seconds: 5),
         onTimeout: () => throw TimeoutException('Timeout'),
       );
-      
+
       client.close();
       return response.statusCode < 500;
     } catch (e) {
@@ -117,7 +119,7 @@ class CensorshipDetector {
   /// Retourne un diagnostic lisible
   Future<Map<String, dynamic>> getDiagnostic() async {
     final results = <String, bool>{};
-    
+
     for (final url in _probeUrls) {
       results[url] = await _isReachable(url);
     }

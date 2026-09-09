@@ -24,6 +24,7 @@ import { unlock, lock } from './session';
 import { wipeAllReports } from './offlineManager';
 import LoginScreen from './screens/LoginScreen';
 import Dashboard from './screens/Dashboard';
+import PublicVerifier from './PublicVerifier';
 import type { AuthState } from './types';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
     // C'est volontaire : un appareil saisi + extrait du navigateur ne doit
     // pas pouvoir être ré-utilisé sans le mot de passe de l'utilisateur.
     const [auth, setAuth] = useState<AuthState | null>(null);
+    const [publicVerifierOpen, setPublicVerifierOpen] = useState(() => window.location.pathname === '/verify');
 
     const handleLogin = async (authState: AuthState, password: string) => {
         // Dérive la clé de chiffrement (PBKDF2) avant de set l'auth state.
@@ -77,8 +79,28 @@ function App() {
         return () => window.removeEventListener('openvote:session-locked', onLocked);
     }, []);
 
+    const openPublicVerifier = useCallback(() => {
+        window.history.pushState({}, '', '/verify');
+        setPublicVerifierOpen(true);
+    }, []);
+
+    const closePublicVerifier = useCallback(() => {
+        window.history.pushState({}, '', '/');
+        setPublicVerifierOpen(false);
+    }, []);
+
+    useEffect(() => {
+        const onPopState = () => setPublicVerifierOpen(window.location.pathname === '/verify');
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
+
+    if (publicVerifierOpen) {
+        return <PublicVerifier onBack={closePublicVerifier} />;
+    }
+
     if (!auth) {
-        return <LoginScreen onLogin={handleLogin} />;
+        return <LoginScreen onLogin={handleLogin} onOpenPublicVerifier={openPublicVerifier} />;
     }
 
     return <Dashboard auth={auth} onLogout={handleLogout} />;

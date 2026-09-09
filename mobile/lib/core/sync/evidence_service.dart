@@ -5,13 +5,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart' as path;
 
 class EvidenceService {
-  final String baseUrl = 'http://10.0.2.2:8095/api/v1/reports';
+  final String baseUrl;
+
+  const EvidenceService({
+    this.baseUrl = 'http://10.0.2.2:8095/api/v1/reports',
+  });
 
   /// Gère l'upload complet d'une preuve vers MinIO via une URL présignée.
   Future<String?> uploadEvidence(File file) async {
     try {
       final fileName = path.basename(file.path);
-      
+
       // 1. Demander une URL présignée au Backend
       final uploadUrlInfo = await _getGetPresignedUrl(fileName);
       if (uploadUrlInfo == null) return null;
@@ -23,7 +27,9 @@ class EvidenceService {
       final success = await _uploadToMinio(uploadUrl, file);
       if (success) {
         // Retourne le nom du fichier (S3 Key) pour le lier au rapport
-        return fileName;
+        return uploadUrlInfo['pv_photo_url'] ??
+            uploadUrlInfo['proof_url'] ??
+            fileName;
       }
       return null;
     } catch (e) {
@@ -38,36 +44,36 @@ class EvidenceService {
 
     final response = await http.get(
       Uri.parse('$baseUrl/upload-url?file_name=$fileName'),
-      headers: {
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
+      headers: {if (token != null) 'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      print("EvidenceService: Échec récupération URL présignée (${response.statusCode})");
+      print(
+        "EvidenceService: Échec récupération URL présignée (${response.statusCode})",
+      );
       return null;
     }
   }
 
   Future<bool> _uploadToMinio(String url, File file) async {
     final bytes = await file.readAsBytes();
-    
+
     // Pour MinIO via presigned URL, on utilise souvent un PUT binaire
     final response = await http.put(
       Uri.parse(url),
       body: bytes,
-      headers: {
-        'Content-Type': _getContentType(file.path),
-      },
+      headers: {'Content-Type': _getContentType(file.path)},
     );
 
     if (response.statusCode == 200) {
       print("EvidenceService: Upload MinIO réussi");
       return true;
     } else {
-      print("EvidenceService: Échec upload MinIO (${response.statusCode}) : ${response.body}");
+      print(
+        "EvidenceService: Échec upload MinIO (${response.statusCode}) : ${response.body}",
+      );
       return false;
     }
   }

@@ -16,9 +16,10 @@ import { API_URL } from '../constants';
 
 interface LoginScreenProps {
     onLogin: (auth: AuthState, password: string) => void;
+    onOpenPublicVerifier?: () => void;
 }
 
-export default function LoginScreen({ onLogin }: LoginScreenProps) {
+export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScreenProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -145,10 +146,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                         <img src="/icon-192.png" alt="Openvote" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
                         <span>Openvote</span>
                     </div>
-                    <div className="landing-badge">
-                        <span className="landing-badge-dot" />
-                        Système opérationnel
-                    </div>
+                <div className="landing-badge">
+                    <span className="landing-badge-dot" />
+                    Système opérationnel
+                </div>
+                    {onOpenPublicVerifier && (
+                        <button type="button" className="landing-public-link" onClick={onOpenPublicVerifier}>
+                            Vérifier un export
+                        </button>
+                    )}
                 </div>
 
                 {/* Hero */}

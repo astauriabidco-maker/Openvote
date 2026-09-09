@@ -61,35 +61,38 @@ void main() {
       expect(map['synced_at'], null);
     });
 
-    test('Report round-trip : toMap -> fromMap préserve toutes les données', () {
-      final original = Report(
-        id: 'roundtrip-001',
-        observerId: 'obs-rt',
-        incidentType: 'Logistique',
-        description: 'PV manquant',
-        latitude: 5.9631,
-        longitude: 10.1591,
-        h3Index: '8a2a1072b59aaa0',
-        status: 'pending',
-        proofUrl: 'https://evidence.test/img001.jpg',
-        createdAt: now,
-        syncedAt: now.add(const Duration(minutes: 5)),
-      );
+    test(
+      'Report round-trip : toMap -> fromMap préserve toutes les données',
+      () {
+        final original = Report(
+          id: 'roundtrip-001',
+          observerId: 'obs-rt',
+          incidentType: 'Logistique',
+          description: 'PV manquant',
+          latitude: 5.9631,
+          longitude: 10.1591,
+          h3Index: '8a2a1072b59aaa0',
+          status: 'pending',
+          proofUrl: 'https://evidence.test/img001.jpg',
+          createdAt: now,
+          syncedAt: now.add(const Duration(minutes: 5)),
+        );
 
-      final map = original.toMap();
-      final restored = Report.fromMap(map);
+        final map = original.toMap();
+        final restored = Report.fromMap(map);
 
-      expect(restored.id, original.id);
-      expect(restored.observerId, original.observerId);
-      expect(restored.incidentType, original.incidentType);
-      expect(restored.description, original.description);
-      expect(restored.latitude, original.latitude);
-      expect(restored.longitude, original.longitude);
-      expect(restored.h3Index, original.h3Index);
-      expect(restored.status, original.status);
-      expect(restored.proofUrl, original.proofUrl);
-      expect(restored.syncedAt, isNotNull);
-    });
+        expect(restored.id, original.id);
+        expect(restored.observerId, original.observerId);
+        expect(restored.incidentType, original.incidentType);
+        expect(restored.description, original.description);
+        expect(restored.latitude, original.latitude);
+        expect(restored.longitude, original.longitude);
+        expect(restored.h3Index, original.h3Index);
+        expect(restored.status, original.status);
+        expect(restored.proofUrl, original.proofUrl);
+        expect(restored.syncedAt, isNotNull);
+      },
+    );
 
     test('Report avec caractères spéciaux dans la description', () {
       final report = Report(
@@ -107,7 +110,10 @@ void main() {
       final map = report.toMap();
       final restored = Report.fromMap(map);
 
-      expect(restored.description, 'Présence de "faux bulletins" & menaces <graves>');
+      expect(
+        restored.description,
+        'Présence de "faux bulletins" & menaces <graves>',
+      );
     });
 
     test('Report avec proofUrl défini', () {

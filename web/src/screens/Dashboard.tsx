@@ -2,7 +2,7 @@
  * Openvote — Dashboard principal (carte + signalements + mode admin).
  *
  * Extrait de l'ancien god-component App.tsx (cf. M2 audit).
- * Trois vues : map (Leaflet + signalements), analytics (carte électorale),
+ * Quatre vues : map (Leaflet + signalements), analytics, PV/comptage,
  * admin (délègue à AdminPanel).
  *
  * Note : la fonction ChangeView (helper Leaflet) est définie localement
@@ -17,6 +17,8 @@ import { API_URL } from '../constants';
 import { formatDate, getRoleBadge } from '../utils/format';
 import StableAdminPanel from './admin/AdminPanel';
 const OfflineReportForm = lazy(() => import('../OfflineReportForm'));
+const PVOfflineForm = lazy(() => import('../PVOfflineForm'));
+const ParallelCountDashboard = lazy(() => import('../ParallelCountDashboard'));
 
 // Fix pour les icones Leaflet par défaut
 import L from 'leaflet';
@@ -48,12 +50,13 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const [zoom, setZoom] = useState(13);
   const [refreshCountdown, setRefreshCountdown] = useState(15);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<'map' | 'analytics' | 'admin'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'analytics' | 'pv' | 'admin'>('map');
   const [searchQuery, setSearchQuery] = useState('');
   const [reportLegalMatches, setReportLegalMatches] = useState<ReportLegalMatch[]>([]);
   const [llmAnalysis, setLlmAnalysis] = useState<{ summary: string; recommendation: string; severity_level: number; raw_response: string; violations: { article_number: string; description: string; severity: string }[] } | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showReportForm, setShowReportForm] = useState(false);
+  const [pvRefreshKey, setPVRefreshKey] = useState(0);
 
   useEffect(() => {
     const h1 = () => setIsOnline(true);
@@ -280,6 +283,11 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
               title="Vue Analytics"
             >📊</button>
             <button
+              className={`toggle-btn ${activeView === 'pv' ? 'active' : ''}`}
+              onClick={() => setActiveView('pv')}
+              title="PV & Comptage"
+            >🧾</button>
+            <button
               className="toggle-btn export-btn"
               onClick={exportCSV}
               title="Exporter CSV"
@@ -312,7 +320,7 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
             (activeView === 'admin'), on cache ce sidebar pour
             éviter le layout hybride observé (cf. capture 2026-07-12
             où sidebar et AdminPanel étaient superposés). */}
-        {activeView !== 'admin' && (
+        {activeView === 'map' && (
         <aside className="sidebar">
           <div className="filter-bar">
             <button className={`filter-btn ${filter === '' ? 'active' : ''}`} onClick={() => setFilter('')}>
@@ -720,6 +728,18 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+          {activeView === 'pv' && (
+            <div className="pv-workspace">
+              <Suspense fallback={<div className="pv-loading">Chargement du module PV...</div>}>
+                <PVOfflineForm
+                  token={auth.token}
+                  isOnline={isOnline}
+                  onPVSubmitted={() => setPVRefreshKey((value) => value + 1)}
+                />
+                <ParallelCountDashboard token={auth.token} refreshKey={pvRefreshKey} />
+              </Suspense>
             </div>
           )}
           {/* L'ancienne instance StableAdminPanel a été déplacée à la

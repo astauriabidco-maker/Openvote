@@ -35,4 +35,4 @@ UPDATE legal_framework SET document_id = 'b2000001-0000-0000-0000-000000000002' 
 INSERT INTO legal_framework (article_number, title, content, category, document_id) VALUES
 ('Art 1.2', 'La République', 'La République du Cameroun est un Etat unitaire décentralisé. Elle est une et indivisible...', 'Principes', 'b2000001-0000-0000-0000-000000000001'),
 ('Art 2.1', 'Souveraineté', 'La souveraineté nationale appartient au peuple camerounais qui l''exerce soit par l''intermédiaire de ses députés...', 'Souveraineté', 'b2000001-0000-0000-0000-000000000001')
-ON CONFLICT (article_number) DO NOTHING;
+ON CONFLICT (document_id, article_number) DO NOTHING;

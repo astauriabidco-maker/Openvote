@@ -53,6 +53,16 @@ var allMigrations = []migration{
 	{"migration/016_department_demographics_history.sql", "Historique démographique département (time series)"},
 	{"migration/017_schema_migrations_tracking.sql", "Table schema_migrations (self-tracking)"},
 	{"migration/018_region_demographics.sql", "Démographie BUCREP par région (2016-2025, 19 indicateurs × 3 sexes × 13 zones)"},
+	{"migration/019_polling_station_pv_results.sql", "Bureaux de vote, PV terrain et résultats"},
+	{"migration/020_polling_station_assignments.sql", "Affectations observateur-bureau de vote"},
+	{"migration/021_pv_verification_workflow.sql", "Workflow vérification PV et anomalies"},
+	{"migration/022_source_documents.sql", "Documents sources vérifiables"},
+	{"migration/023_bucrep_2023_department_population.sql", "Population départementale BUCREP 2023"},
+	{"migration/024_pv_cryptographic_trust.sql", "Preuve cryptographique et confiance PV"},
+	{"migration/025_observer_device_keys.sql", "Clés publiques appareils observateurs"},
+	{"migration/026_elecam_election_source_documents.sql", "Documents sources ELECAM élections et bureaux de vote"},
+	{"migration/027_pv_audit_events.sql", "Journal append-only des événements PV"},
+	{"migration/028_elecam_2025_arrondissement_reference_gaps.sql", "Compléments arrondissements ELECAM 2025"},
 }
 
 // schemaMigrationsDDL est dupliqué ici (vs lu depuis 017.sql) pour

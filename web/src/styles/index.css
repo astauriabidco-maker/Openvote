@@ -9,6 +9,9 @@
  *   3. login.css     → styles de l'écran de login
  *   4. admin.css     → dashboard + panneau d'admin
  *   5. mfa.css       → onglet MFA du panneau admin
+ *   6. pv.css        → formulaire PV + comptage parallèle
+ *   7. fieldops.css  → onglet admin terrain/PV
+ *   8. pvverification.css → onglet admin vérification PV
  * ============================================================ */
 
 @import './tokens.css';
@@ -16,3 +19,7 @@
 @import './login.css';
 @import './admin.css';
 @import './mfa.css';
+@import './pv.css';
+@import './fieldops.css';
+@import './pvverification.css';
+@import './publicverify.css';

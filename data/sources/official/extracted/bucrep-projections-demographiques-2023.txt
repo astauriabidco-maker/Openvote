@@ -1,0 +1,997 @@
+REPUBLIQUE DU CAMEROUN                               REPUBLIC OF CAMEROON
+    Paix – Travail - Patrie                            Peace-Work-Fatherland
+
+
+
+
+     Bureau Central des Recensements et des Etudes de Population
+         Central Bureau of the Census and Population Studies
+ BP : 12932          E-mail : contact@bucrep.cm   tél. / fax : (237) 222 20 30 71
+
+
+
+
+     ESTIMATION DE LA POPULATION DU
+           CAMEROUN EN 2023
+
+
+
+
+                                                                    Octobre 2024
+Sommaire
+AVANT-PROPOS ----------------------------------------------------------------------------------------------------------- 3
+Sigles et abréviations --------------------------------------------------------------------------------------------------- 4
+Liste des tableaux et graphiques ---------------------------------------------------------------------------------- 5
+Introduction ----------------------------------------------------------------------------------------------------------------- 6
+1.     Contexte ---------------------------------------------------------------------------------------------------------------- 7
+2.     Approche méthodologique ------------------------------------------------------------------------------------ 9
+3.     Effectifs estimés par unité administrative ------------------------------------------------------------ 10
+     3.1.    Estimation de la population au niveau régional --------------------------------------------- 10
+     3.2.    Estimation de la population au niveau départemental et communal -------------- 12
+       3.2.1.      Région de l’Adamaoua---------------------------------------------------------------------------- 12
+       3.2.2.      Région du Centre------------------------------------------------------------------------------------ 13
+       3.2.3.      Région de l’Est --------------------------------------------------------------------------------------- 15
+       3.2.4.      Région de l’Extrême-Nord----------------------------------------------------------------------- 16
+       3.2.5.      Région du Littoral ----------------------------------------------------------------------------------- 18
+       3.2.6.      Région du Nord -------------------------------------------------------------------------------------- 19
+       3.2.7.      Région du Nord-Ouest ---------------------------------------------------------------------------- 20
+       3.2.8.      Région de l’Ouest ----------------------------------------------------------------------------------- 21
+       3.2.9.      Région du Sud ---------------------------------------------------------------------------------------- 23
+       3.2.10.        Région du Sud-Ouest -------------------------------------------------------------------------- 24
+Conclusion et perspectives ---------------------------------------------------------------------------------------- 25
+
+
+
+
+                                                                2
+AVANT-PROPOS
+        Le Recensement Général de la Population et de l’Habitat est la meilleure
+source qui permet de disposer, de façon exhaustive, de données détaillées jusqu’au
+niveau géographique le plus fin sur les caractéristiques démographiques,
+économiques et socioculturelles de la population. Ces données constituent un
+précieux instrument pour l’élaboration, le suivi et l’évaluation des plans et
+programmes de développement, tant au niveau national, régional que des
+collectivités territoriales décentralisées.
+       Le Cameroun a déjà réalisé 3 recensements généraux de population, le
+premier en avril 1976, le second en avril 1987 et le troisième en novembre 2005. La
+réalisation du quatrième Recensement Général de la Population et de l’Habitat (4 ème
+RGPH), dont le dénombrement principal est en cours de préparation, est nécessaire
+et urgente pour mettre à la disposition des utilisateurs des données démographiques
+récentes, au regard de l’obsolescence des données de projections.
+        En attendant la mise en œuvre du dénombrement principal du 4 ème RGPH, le
+BUCREP a entrepris de produire les estimations de population pour toutes les unités
+administratives, afin de faire face aux nombreuses demandes des différents
+utilisateurs. Ces estimations comptent pour l’année 2023 et sont obtenues à partir
+d’un modèle statistique reposant sur le traitement et l’intégration des données issues
+du recensement pilote du 4ème RGPH, des enquêtes nationales récentes, des limites
+administratives du Cameroun et des zones de dénombrement, de l’empreinte du bâti
+et des informations géospatiales.
+        Le présent document est composé de deux parties, une première qui décrit le
+contexte de l’étude et l’approche méthodologique, et une seconde relative aux
+effectifs estimés de population dans les différentes unités administratives,
+notamment au niveau national, régional, départemental et communal.
+      L’équipe du Bureau Central des Recensements et des Etudes de Population
+remercie tous les acteurs du Système National d’Informations Statistiques et les
+autres administrations publiques et privées qui ont participé, à travers la fourniture
+des informations, à la confection et à la publication du présent rapport. Toutes les
+suggestions en vue d’améliorer les prochaines éditions sont fort appréciées.
+
+                                           Directeur Général du BUCREP
+                                        Coordonnateur National du 4ème RGPH
+
+
+
+
+                                              Mme Bernadette MBARGA
+
+
+
+
+                                          3
+Sigles et abréviations
+BUCREP    : Bureau Central des Recensements et des Etudes de Population
+DSCE      : Document de Stratégie pour la Croissance et l’Emploi
+GRID 3    : Geo-Referenced Infrastructure and Demographic Data for Development
+INS       : Institut National de la Statistique
+RGPH      : Recensement Général de la Population et de l'Habitat
+SND30     : Stratégie Nationale de Développement 2020 -2030
+SNDS      : Stratégie Nationale de Développement de la Statistique
+SNIS      : Système National d’Informations Statistiques
+UNFPA     : Fonds des Nations Unies pour la Population
+
+
+
+
+                                   4
+Liste des tableaux et graphiques
+Tableau 1: Population estimé par région en 2023 ----------------------------------------------------------- 10
+Tableau 2: Estimation de la population dans la région de l’Adamaoua ------------------------------ 12
+Tableau 3: Estimation de la population dans la région du Centre -------------------------------------- 13
+Tableau 4: Estimation de la population dans la région de l’Est ----------------------------------------- 15
+Tableau 5: Estimation de la population dans la région de l’Extrême-Nord-------------------------- 16
+Tableau 6: Estimation de la population dans la région du Littoral-------------------------------------- 18
+Tableau 7: Estimation de la population dans la région du Nord ---------------------------------------- 19
+Tableau 8: Estimation de la population dans la région du Nord-Ouest------------------------------- 20
+Tableau 9: Estimation de la population dans la région de l’Ouest ------------------------------------- 21
+Tableau 10: Estimation de la population dans la région du Sud ---------------------------------------- 23
+Tableau 11: Estimation de la population dans la région du Sud-Ouest ------------------------------ 24
+
+
+Graphique 1: Effectifs de population par région au 3ème RGPH en 2005 et estimés en 2023
+---------------------------------------------------------------------------------------------------------------------------------- 11
+
+
+
+
+                                                                 5
+Introduction
+
+      La production des effectifs de population est un objectif majeur pour chaque
+pays, dans la perspective de l’élaboration et du suivi de ses politiques publiques et la
+mise en œuvre efficace de sa stratégie de développement. Les Recensements
+démographiques sont la principale source de production de ces effectifs, à côté des
+statistiques d’Etat civil et des Registres de population.
+      Pour les périodes intercensitaires, le besoin en information sur l’effectif de la
+population est pallié dans la plupart des pays en développement, par les projections
+démographiques. Bien que constituant un outil indispensable, d’exploration et
+d’anticipation sur le futur, pour tout ce qui concerne les investissements, le suivi et
+l’évaluation des programmes dans tous les secteurs notamment la santé, l’éducation,
+l’emploi, elles sont souvent limitées dans le temps et à certains niveaux
+géographiques.
+     Or, face à la demande sans cesse croissante des effectifs de population par
+diverses administrations, des utilisateurs, des Collectivités Territoriales
+Décentralisées dans un contexte de mise en œuvre de la décentralisation, il est
+apparu la nécessité de produire de nouvelles estimations de ces effectifs de
+population jusqu’au niveau des communes et qui prennent en compte les évolutions
+récentes.
+       L’objectif de ce document est de mettre à la disposition des utilisateurs, des
+estimations de populations au niveau national, régional, département et communal
+pour l’année 2023.
+Outre l’introduction et la conclusion, le présent document comporte 3 sections, le
+contexte, l’approche méthodologique, et les effectifs estimés par unité administrative.
+
+
+
+
+                                           6
+   1. Contexte
+
+       En 2009, le Cameroun a adopté un document de vision de son
+développement dans lequel, il aspire à devenir « un pays émergent, démocratique et
+uni dans sa diversité » à l’horizon 2035. Dans l’optique de concrétiser cette vision, il
+s’est doté d’un Document de Stratégie pour la Croissance et d’Emploi (DSCE). Cette
+stratégie a été implémentée sur la période 2010-2019. Par la suite, la Stratégie
+Nationale de Développement à l’horizon 2030 (SND30) a été adoptée et cette
+stratégie est en cour de mise en œuvre depuis 2022. Les programmes de la SND30
+sont centrés sur la transformation structurelle de l’économie, l’amélioration des
+conditions de vie des populations, le développement du capital humain et la
+promotion d’une gouvernance inclusive et efficace.
+         Comme ce fut le cas avec le DSCE, le dispositif de suivi et d’évaluation de la
+SND30 repose sur la Stratégie Nationale de Développement de la Statistique
+(SNDS). En effet, la SNDS vise l’établissement de mécanismes favorables à
+l’utilisation des statistiques pour le pilotage des politiques de développement. En
+effet, la satisfaction des besoins en données statistiques, exprimés par les instances
+de suivi-évaluation des politiques et stratégies de développement est une
+interpellation forte pour les structures de production statistique.
+        La disponibilité des effectifs de population désagrégés jusqu’au niveau des
+communes selon les caractéristiques sociodémographiques comme le sexe et l’âge
+est fondamentale pour la production des indicateurs de suivi-évaluation. Le
+recensement étant la principale source qui permet de fournir de manière fiable et
+complète ces données de population, sa réalisation est assujettie à une périodicité
+décennale. Dans la période intercensitaire, les données sur l’évolution des effectifs
+de population sont produites à l’aide de projections afin de répondre aux besoins des
+utilisateurs.
+       Une projection de la population est une estimation du nombre de personnes
+supposées vivantes à une date donnée, en fonction des hypothèses sur les
+naissances, les décès et les migrations. Lors des précédents recensements réalisés
+au Cameroun en 1976, 1987 et 2005, des projections démographiques ont
+systématiquement été réalisées. Elles étaient faites à partir de méthodes
+mathématiques (notamment le taux d’accroissement de la population qui est un
+indicateur stable et fiable), car les données sur la fécondité et la mortalité sont
+généralement issues de méthodes indirectes. Ces méthodes mathématiques ne
+sauraient s’appliquer à l’échelle d’un département et encore moins d’une commune.
+C’est ce qui justifie généralement, la limitation des projections démographique aux
+niveaux national et régional.
+        A l’issue du 3ème RGPH réalisé en 2005, les projections ne portent que sur les
+effectifs globaux désagrégés par sexe et par âge au niveau de la région. La méthode
+
+
+
+                                           7
+utilisée pour réaliser ces projections était celle de l’interpolation polynomiale. Ces
+projections couvraient la période 2006 à 2015 correspondant à la période
+intercensitaire recommandée dans les principes. L’horizon fixé étant dépassé, la
+fiabilité de la méthode pour ces projections n’est plus assurée non seulement du fait
+de l’obsolescence des données de base mais aussi des changements au niveau des
+phénomènes démographiques (migration, natalité, mortalité). Concernant
+particulièrement les migrations, les troubles liés à la secte islamiste « Boko-haram »,
+l’instabilité sociopolitique en Centrafrique, les troubles sécuritaires dans les régions
+du Nord-ouest et du Sud-ouest ont entrainé des déplacements massifs de population
+avec un impact sur le nombre d’habitants des différentes unités administratives du
+pays. Pour cette raison principale, la méthode de désagrégation des effectifs qui
+consiste à redistribuer les effectifs de population projetés pour une région au niveau
+des entités inférieures que sont les départements et les arrondissements sous
+l’hypothèse de la constance du poids démographiques de ces entités, n’est plus
+plausible.
+        Pour tenir compte de ces changements dans la répartition de population au
+niveau des unités administratives, les projections réalisées en 2010 dans le cadre de
+la production des résultats du 3e RGPH doivent être réajustés. En effet, quelle que
+soit l’unité administrative considérée, les besoins en données sociodémographiques
+sont importants. Du fait que le Cameroun s’est engagé à mettre en œuvre une
+politique de décentralisation considérée comme base de la promotion du
+développement, de la démocratie et de la bonne gouvernance au niveau local, la
+maitrise de la situation démographique des unités opérationnelles de la
+décentralisation est une nécessité. Les unités opérationnelles de mise en œuvre de
+la décentralisation sont les Régions et les Communes reconnues comme
+Collectivités Territoriales Décentralisées (CTD).
+       Si les projections des effectifs de population au niveau des régions peuvent
+être réalisées avec plus de fiabilité, celles au niveau de la commune/arrondissement
+exigent des méthodes plus complexes à implémenter. Des techniques d’estimation
+de la population à petite échelle géographique sont actuellement développées et
+promues par les partenaires techniques. La méthodologie utilisée pour la production
+de ces estimations d’effectifs de population nécessite l’utilisation de plusieurs
+sources de données (RGPH, Enquêtes sociodémographiques, données
+administratives, données géospatiales, etc.).
+       Pour répondre aux besoins en données sur les effectifs de population
+actualisés et désagrégés au niveau de toutes les unités administratives, le BUCREP
+dont la mission est de produire et mettre à disposition les données
+sociodémographiques, s’est engagé avec l’appui d’autres partenaires techniques et
+administratifs d’actualiser les projections démographiques afin qu’elles soient plus
+fiables et suffisamment désagrégées pour répondre à la demande des utilisateurs et
+celle plus pressante et insistante des acteurs de la décentralisation.
+
+
+
+                                           8
+    2. Approche méthodologique
+
+    Les estimations de population au niveau désagrégé ont été effectuées à partir de
+nouvelles techniques d’estimations développées par WorldPop1, Groupe
+interdisciplinaire de recherche appliquée qui se consacre principalement à
+l'amélioration de la base de données démographiques et spatiales, et à l'utilisation de
+ces données pour des applications dans le domaine de la santé et du
+développement, afin d’atteindre les objectifs de développement durable. Cette
+méthodologie a d’ailleurs été reprise à son compte par l’UNFPA pour les estimations
+dans des pays2 en développement. Elles consistent à entrer certaines données
+géospatiales et démographiques dans un modèle bayésien, et de déterminer les
+effectifs sur l’ensemble du territoire considéré par unité souhaitée. Ces nouvelles
+techniques ont l’avantage de produire des estimations jusqu’au niveau le plus fin
+souhaité et apportent une contribution aux travaux de recensements généraux, en
+permettant, entre autres, d’estimer la population dans des zones inaccessibles.
+   Dans le contexte actuel où le dénombrement principal du 4ème RGPH est en cours
+de préparation et que plusieurs administrations et institutions sont demandeuses de
+données actualisées, ces estimations constituent une alternative crédible.
+    Ces estimations sont effectuées à partir des données d’entrée suivantes :
+    ❖ Les recensements pilotes du 4ème RGPH réalisés en 2018 et 2023 ;
+    ❖ L’Enquête sur les indicateurs du Paludisme au Cameroun (CMIS 2022) ;
+    ❖ L’Enquête sur l’Emploi et le Secteur Informel (EESI, 2021) ;
+    ❖ Les phases 1, 2 & 3 de la cinquième enquête camerounaise auprès des
+      ménages (ECAM5, 2021/2022).
+    ❖ Les données sur les limites administratives du Cameroun ;
+    ❖ Les données relatives à l’empreinte du bâti ;
+    ❖ Les données géospatiales (occupation des sols, variables climatiques, les
+      caractéristiques physiques, les infrastructures routières, etc.).
+Le traitement et la fusion de l’ensemble de ces données ont permis d’obtenir les
+estimations de population présentées dans la section des résultats.
+
+
+
+
+1
+De l'Université de Southampton
+2
+Burkina Faso, Nigéria et République Démocratique du Congo
+
+
+
+                                             9
+   3. Effectifs estimés par unité administrative
+
+      La population du Cameroun en 2023 est estimée à 28 856 127 habitants. Les
+sources externes notamment la Division de la Population des Nations Unies (UN
+DESA), Worldometers, et bien d’autres estiment la population du Cameroun autour
+de 28 millions d’habitants également. Ce qui conforte les estimations obtenues.
+
+
+   3.1.     Estimation de la population au niveau régional
+         Au niveau régional, les effectifs estimés sont présentés dans le tableau ci-
+après.
+
+
+
+Tableau 1: Population estimée par région en 2023
+
+                                                      Poids démographique
+      Régions                       Effectif estimé
+                                                               (%)
+      Adamaoua                           1 525 175             5,3
+      Centre                             5 204 170            18,0
+      Est                                1 200 281             4,2
+      Extrême-Nord                       5 573 289            19,3
+      Littoral                           4 247 503            14,7
+      Nord                               3 753 485            13,0
+      Nord-Ouest                         1 774 119             6,1
+      Ouest                              3 315 190             11,5
+      Sud                                  938 738             3,3
+      Sud-Ouest                          1 324 187             4,6
+      Total Cameroun                    28 856 127            100,0
+
+
+     Les données obtenues sont également confortées par le graphique 1 qui
+présente les effectifs de population lors du recensement de la population effectué en
+2005 et les estimations de population en 2023. Certaines régions notamment
+l’Extrême-Nord, le Centre, et le Littoral gardent les effectifs les plus élevés au
+Cameroun.
+
+
+
+
+                                          10
+   Graphique 1: Effectifs de population par région au 3ème RGPH en 2005 et estimés
+   en 2023
+
+
+
+  Adamaoua                   884 289
+                                       1 525 175
+
+
+                                                                  3 098 044
+      Centre
+                                                                                                   5 204 170
+
+                           771 755
+         Est
+                                 1 200 281
+
+                                                                  3 111 792
+Extrême-Nord
+                                                                                                          5 573 289
+
+
+     Littoral                                         2 510 263
+                                                                                     4 247 503
+
+
+       Nord                               1 687 959
+                                                                              3 753 485
+
+
+  Nord-Ouest                              1 728 953
+                                             1 774 119
+
+                                          1 720 047
+      Ouest
+                                                                     3 315 190
+
+                         634 655
+        Sud
+                             938 738
+
+                                     1 316 079
+   Sud-Ouest
+                                     1 324 187
+
+                0       1 000 000       2 000 000        3 000 000       4 000 000        5 000 000       6 000 000
+
+         Effectif recensement 2005      Effectif estimé 2023                                 Effectif de la population
+
+
+
+
+       La stagnation relative de la population du Nord-Ouest et du Sud-Ouest, ainsi que
+   la forte progression de la population du Centre, de l’Ouest et du Littoral
+   s’expliqueraient par le déplacement des populations.
+
+
+
+
+                                                      11
+     3.2.   Estimation de la population au niveau départemental et
+            communal
+
+     Cette section présente pour chacune des régions du Cameroun, les estimations
+  de population au niveau départemental et communal en 2023.
+
+
+     3.2.1. Région de l’Adamaoua
+
+
+  Tableau 2: Estimation de la population dans la région de l’Adamaoua
+
+     REGION        DEPARTEMENT       ARRONDISSEMENT               POPULATION
+                                  NGAOUNDAL                                       75 463
+                   DJEREM
+                                  TIBATI                                         128 192
+                   TOTAL DJEREM                                                  203 655
+                                 GALIM-TIGNERE                                    49 751
+                                 KONTCHA                                           8 216
+                   FARO ET DEO
+                                 MAYO BALEO                                       32 185
+                                 TIGNERE                                          74 511
+                   TOTAL FARO ET DEO                                             164 663
+                                 BANKIM                                          111 204
+                   MAYO-BANYO BANYO                                              135 818
+                                 MAYO-DARLE                                       35 668
+                   TOTAL MAYO-BANYO                                              282 690
+                                 DIR                                              38 141
+ADAMAOUA                         DJOHONG                                          37 589
+                   MBERE
+                                 MEIGANGA                                        169 271
+                                 NGAOUI                                           26 790
+                   TOTAL MBERE                                                   271 791
+                                 BELEL                                            68 303
+                                 MARTAP                                           62 197
+                                 MBE                                              31 002
+                                 NGANHA                                           74 334
+                   VINA
+                                 NGAOUNDERE 1                                    128 752
+                                 NGAOUNDERE 2                                    144 554
+                                 NGAOUNDERE 3                                     36 097
+                                 NYAMBAKA                                         57 137
+                   TOTAL VINA                                                    602 376
+TOTAL ADAMAOUA                                                                 1 525 175
+
+
+
+
+                                         12
+    3.2.2. Région du Centre
+
+
+ Tableau 3: Estimation de la population dans la région du Centre
+
+  REGION        DEPARTEMENT        ARRONDISSEMENT                  POPULATION
+                                  BIBEY                                           7 546
+                                  LEMBE YEZOUM                                    6 875
+                                  MBANDJOCK                                      34 189
+             HAUTE SANAGA         MINTA                                          17 903
+                                  NANGA EBOKO                                    26 925
+                                  NKOTENG                                        33 728
+                                  NSEM                                           10 562
+             TOTAL HAUTE SANAGA                                                 137 728
+                                  BATCHENGA                                      13 529
+                                  EBEBDA                                         34 154
+                                  ELIG-MFOMO                                     25 555
+                                  EVODOULA                                       26 327
+             LEKIE                LOBO                                           26 524
+                                  MONATELE                                       54 912
+                                  OBALA                                         142 320
+                                  OKOLA                                         103 561
+                                  SA'A                                           82 575
+             TOTAL LEKIE                                                        509 457
+                                BAFIA                                            77 207
+                                BOKITO                                           67 041
+CENTRE                          DEUK                                             17 514
+                                KIIKI                                            15 167
+             MBAM ET INOUBOU    KON-YAMBETTA                                     11 916
+                                MAKENENE                                         28 934
+                                NDIKINIMEKI                                      25 019
+                                NITOUKOU                                          7 745
+                                OMBESSA                                          32 939
+             TOTAL MBAM ET INOUBOU                                              283 482
+                                MBANGASSINA                                      85 988
+                                NGAMBE-TIKAR                                     54 091
+             MBAM ET KIM        NGORO                                            29 210
+                                NTUI                                             57 425
+                                YOKO                                             25 501
+             TOTAL MBAM ET KIM                                                  252 215
+                                AFANLOUM                                          3 488
+                                ASSAMBA                                           8 571
+                                AWAE                                             37 388
+             MEFOU ET AFAMBA
+                                EDZENDOUAN                                       10 393
+                                ESSE                                             25 862
+                                MFOU                                            148 615
+
+
+
+
+                                         13
+   REGION        DEPARTEMENT       ARRONDISSEMENT   POPULATION
+                                   NKOLAFAMBA                      268 655
+                                   SOA                             201 100
+               TOTAL MEFOU ET AFAMBA                               704 072
+                                   AKONO                            17 430
+                                   BIKOK                            38 569
+               MEFOU ET AKONO
+                                   MBANKOMO                        143 944
+                                   NGOUMOU                          32 954
+               TOTAL MEFOU ET AKONO                                232 897
+                                   YAOUNDE 1                       459 950
+                                   YAOUNDE 2                       190 664
+                                   YAOUNDE 3                       314 525
+               MFOUNDI             YAOUNDE 4                       607 906
+                                   YAOUNDE 5                       410 643
+                                   YAOUNDE 6                       299 233
+                                   YAOUNDE 7                       178 808
+               TOTAL MFOUNDI                                     2 461 729
+                                   BIYOUHA                           4 379
+                                   BONDJOCK                          9 387
+                                   BOT-MAKAK                        33 284
+                                   DIBANG                           17 712
+                                   ESEKA                            43 656
+               NYONG-ET-KELLE
+                                   MAKAK                            53 333
+                                   MATOMB                           32 347
+                                   MESSONDO                         23 493
+                                   NGOG-MAPUBI                      19 682
+                                   NGUIBASSAL                        8 595
+               TOTAL NYONG-ET-KELLE                                245 868
+                                   AKONOLINGA                       65 802
+                                   AYOS                             33 792
+               NYONG ET MFOUMOU ENDOM                               27 930
+                                   MENGANG                          15 813
+                                   NYAKOKOMBO                       16 778
+               TOTAL NYONG ET MFOUMOU                              160 115
+                                   AKOEMAN                          10 896
+                                   DZENG                            21 942
+                                   MBALMAYO                        101 092
+               NYONG ET SO'O
+                                   MENGUEME                         16 547
+                                   NGOMEDZAP                        37 450
+                                   NKOLMETET                        28 680
+               TOTAL NYONG ET SO'O                                 216 607
+TOTAL CENTRE                                                     5 204 170
+
+
+
+
+                                         14
+   3.2.3. Région de l’Est
+
+
+Tableau 4: Estimation de la population dans la région de l’Est
+
+   REGION       DEPARTEMENT       ARRONDISSEMENT                 POPULATION
+                                GARI GOMBO                                       22 038
+                                MOLOUNDOU                                        25 066
+              BOUMBA ET NGOKO
+                                SALAPOUMBE                                       23 778
+                                YOKADOUMA                                        88 220
+              TOTAL BOUMBA ET NGOKO                                             159 102
+                                ABONG - MBANG                                    39 404
+                                BEBEND                                           12 682
+                                DIMAKO                                           17 517
+                                DJA                                              14 171
+                                DOUMAINTANG                                      10 808
+                                DOUME                                            25 036
+                                LOMIE                                            25 747
+              HAUT NYONG
+                                MBOANZ                                           18 487
+                                MBOMA                                            11 031
+                                MESSAMENA                                        35 529
+                                MESSOK                                           15 233
+                                NGOYLA                                            6 010
+                                NGUELEMENDOUKA                                   28 661
+EST                             SOMALOMO                                          6 659
+              TOTAL HAUT NYONG                                                  266 975
+                                BATOURI                                          83 354
+                                BOMBE                                            37 819
+                                KETTE                                            54 541
+              KADEY             MBANG                                            26 207
+                                MBOTORO                                           8 537
+                                NDELELE                                          25 310
+                                NDEM-NAM                                         13 705
+              TOTAL KADEY                                                       249 473
+                                BELABO                                           45 628
+                                BERTOUA 1                                        92 500
+                                BERTOUA 2                                        82 650
+                                BETARE-OYA                                       88 488
+              LOM ET DJEREM
+                                DIANG                                            15 255
+                                MANDJOU                                          53 491
+                                NGOURA                                           55 781
+                                GAROUA-BOULAI                                    90 938
+              TOTAL LOM ET DJEREM                                               524 731
+TOTAL EST                                                                     1 200 281
+
+
+
+
+                                         15
+   3.2.4. Région de l’Extrême-Nord
+
+
+Tableau 5: Estimation de la population dans la région de l’Extrême-Nord
+
+     REGION         DEPARTEMENT    ARRONDISSEMENT             POPULATION
+                                   BOGO                                      168 416
+                                   DARGALA                                    67 293
+                                   GAZAWA                                     47 116
+                                   MAROUA 1                                  237 183
+                   DIAMARE         MAROUA 2                                  196 520
+                                   MAROUA 3                                  190 143
+                                   MERI                                      158 865
+                                   NDOUKOULA                                  52 896
+                                   PETTE                                      97 811
+                   TOTAL DIAMARE                                           1 216 243
+                                   BLANGOUA                                   55 178
+                                   DARAK                                      47 257
+                                   FOTOKOL                                    62 796
+                                   GOULFEY                                   106 777
+                                   HILE-HALIFA                                39 526
+                   LOGONE ET CHARI
+                                   KOUSSERI                                  175 849
+                                   LOGONE BIRNI                              124 406
+                                   MAKARI                                    251 009
+                                   WAZA                                       41 426
+EXTREME-                           ZINA                                       46 567
+                   TOTAL LOGONE ET CHARI                                     950 791
+NORD                               DATCHEKA                                   71 243
+                                   GOBO                                      100 077
+                                   GUERE                                      86 351
+                                   KAIKAI                                    116 104
+                                   KALFOU                                     50 693
+                   MAYO DANAY      KARHAY                                     80 879
+                                   MAGA                                      184 068
+                                   TCHATIBALI                                 51 043
+                                   VELE                                       87 710
+                                   WINA                                       59 149
+                                   YAGOUA                                    184 315
+                   TOTAL MAYO DANAY                                        1 071 632
+                                   GUIDIGUIS                                 113 342
+                                   KAELE                                     264 243
+                                   MINDIF                                    119 363
+                   MAYO KANI       MOULVOUDAYE                               168 973
+                                   MOUTOURWA                                  80 785
+                                   PORHI                                      57 352
+                                   TAIBONG                                    69 047
+
+
+
+
+                                        16
+    REGION       DEPARTEMENT      ARRONDISSEMENT   POPULATION
+                TOTAL MAYO KANI                                   873 105
+                                KOLOFATA                           74 831
+                 MAYO SAVA      MORA                              303 471
+                                TOKOMBERE                         125 485
+                 TOTAL MAYO SAVA                                  503 787
+                                BOURRHA                           122 767
+                                HINA                               82 313
+                                KOZA                               75 624
+                 MAYO TSANAGA MAYO-MOSKOTA                         60 575
+                                MOGODE                            122 961
+                                MOKOLO                            404 317
+                                SOULEDE ROUA                       89 174
+                 TOTAL MAYO TSANAGA                               957 731
+TOTAL EXTREME-NORD                                              5 573 289
+
+
+
+
+                                      17
+   3.2.5. Région du Littoral
+
+
+Tableau 6: Estimation de la population dans la région du Littoral
+
+   REGION         DEPARTEMENT       ARRONDISSEMENT                  POPULATION
+                                 BARE-BAKEM                                     27 823
+                                 DIBOMBARI                                      68 263
+                                 FIKO                                           53 544
+                                 LOUM                                           67 473
+                                 MANJO                                          61 706
+                                 MBANGA                                         74 701
+                 MOUNGO          MELONG                                         95 022
+                                 MOMBO                                          10 853
+                                 NJOMBE-PENJA                                   60 653
+                                 NKONGSAMBA 1                                   56 384
+                                 NKONGSAMBA 2                                   41 115
+                                 NKONGSAMBA 3                                   18 119
+                                 NLONAKO                                        27 099
+                 TOTAL MOUNGO                                                  662 755
+                                 NKONDJOCK                                      27 710
+                                 NORD MAKOMBE                                    6 963
+                 NKAM
+                                 YABASSI                                        43 461
+                                 YINGUI                                          7 430
+                 TOTAL NKAM                                                     85 564
+LITTORAL                         DIBAMBA                                        22 336
+                                 DIZANGUE                                       23 228
+                                 EDEA 1                                         82 823
+                                 EDEA 2                                         24 346
+                                 MASSOK-SONGLOULOU                              18 311
+                 SANAGA MARITIME MOUANKO                                        19 806
+                                 NDOM                                           18 928
+                                 NGAMBE                                          9 173
+                                 NYANON                                         20 136
+                                 POUMA                                          32 746
+                                 NGWEI                                          14 882
+                 TOTAL SANAGA-MARITIME                                         286 715
+                                 DOUALA 1                                      379 493
+                                 DOUALA 2                                      281 789
+                                 DOUALA 3                                    1 242 148
+                 WOURI
+                                 DOUALA 4                                      447 019
+                                 DOUALA 5                                      843 085
+                                 DOUALA 6                                       18 935
+                 TOTAL WOURI                                                 3 212 469
+TOTAL LITTORAL                                                               4 247 503
+
+
+
+
+                                         18
+   3.2.6. Région du Nord
+
+
+Tableau 7: Estimation de la population dans la région du Nord
+
+    REGION        DEPARTEMENT       ARRONDISSEMENT              POPULATION
+                                    BASCHEO                                     54 499
+                                    BIBEMI                                     305 925
+                                    DEMBO                                       34 340
+                                    DEMSA                                       80 077
+                                    GAROUA 1                                   197 901
+                                    GAROUA 2                                   217 356
+                 BENOUE
+                                    GAROUA 3                                   100 149
+                                    LAGDO                                      328 567
+                                    MAYO HOURNA                                 60 065
+                                    PITOA                                      151 875
+                                    TCHEBOA                                    197 449
+                                    TOUROUA                                     88 914
+NORD             TOTAL BENOUE                                                1 817 117
+                                    BEKA                                        59 884
+                 FARO
+                                    POLI                                        93 216
+                 TOTAL FARO                                                    153 100
+                                    FIGUIL                                     148 860
+                 MAYO LOUTI         GUIDER                                     492 634
+                                    MAYO OULO                                  191 884
+                 TOTAL MAYO LOUTI                                              833 378
+                                    MADINGRING                                 135 737
+                                    REY-BOUBA                                  309 255
+                 MAYO REY
+                                    TCHOLLIRE                                  132 226
+                                    TOUBORO                                    372 672
+                 TOTAL MAYO REY                                                949 890
+TOTAL NORD                                                                   3 753 485
+
+
+
+
+                                           19
+   3.2.7. Région du Nord-Ouest
+Tableau 8: Estimation de la population dans la région du Nord-Ouest
+
+     REGION     DEPARTEMENT     ARRONDISSEMENT              POPULATION
+                              BELO                                          65 656
+                              BUM                                           17 480
+                BOYO
+                              FUNDONG                                       51 708
+                              NJINIKOM                                      26 953
+                TOTAL BOYO                                                 161 797
+                              JAKIRI                                        54 004
+                              KUMBO                                         96 292
+                              MBVEN                                         27 414
+                BUI
+                              NKUM                                          55 291
+                              NONI                                          24 584
+                              OKU                                           56 005
+                TOTAL BUI                                                  313 590
+                            AKO                                             21 800
+                            MISAJE                                          19 109
+               DONGA
+                            NDU                                             90 136
+               MANTUNG
+                            NKAMBE                                          65 020
+                            NWA                                             63 772
+               TOTAL DONGA MANTUNG                                         259 837
+                            FUNGOM                                          51 401
+                            FURU-AWA                                         9 771
+ NORD-         MENCHUM
+                            MENCHUM VALLEY                                  35 125
+ OUEST                      WUM                                             30 250
+               TOTAL MENCHUM                                               126 547
+                            BAFUT                                           59 754
+                            BALI                                            40 900
+                            BAMENDA 1                                       39 611
+               MEZAM        BAMENDA 2                                      157 113
+                            BAMENDA 3                                       95 299
+                            SANTA                                          105 616
+                            TUBAH                                           73 846
+               TOTAL MEZAM                                                 572 139
+                            BATIBO                                          59 400
+                            MBENGWI                                         49 455
+               MOMO         NGIE                                            15 186
+                            NJIKWA                                          13 314
+                            WIDIKUM-MENKA                                   21 070
+               TOTAL MOMO                                                  158 425
+                            BABESSI                                         50 306
+               NGO
+                            BALIKUMBAT                                      41 843
+               KETUNDJA
+                            NDOP                                            89 625
+               TOTAL NGO-KETUNDJA                                          181 774
+ TOTAL NORD-OUEST                                                        1 774 109
+
+
+
+                                         20
+   3.2.8. Région de l’Ouest
+
+
+Tableau 9: Estimation de la population dans la région de l’Ouest
+
+      REGION        DEPARTEMENT    ARRONDISSEMENT             POPULATION
+                                   BABADJOU                                 64 212
+                                   BATCHAM                                 184 877
+                   BAMBOUTOS
+                                   GALIM                                    66 628
+                                   MBOUDA                                  183 901
+                   TOTAL BAMBOUTOS                                         499 618
+                                   BAFANG                                   38 178
+                                   BAKOU                                     8 191
+                                   BANA                                     25 032
+                   HAUT-NKAM       BANDJA                                   55 030
+                                   BANKA                                    31 940
+                                   BANWA                                    13 963
+                                   KEKEM                                    40 346
+                   TOTAL HAUT-NKAM                                         212 680
+                                   BANGOU                                   75 343
+                                   BAHAM                                    85 313
+                   HAUTS-PLATEAUX
+                                   BAMENDJOU                               109 035
+                                   BATIE                                    42 621
+                   TOTAL HAUTS-PLATEAUX                                    312 312
+                                   BAYANGAM                                 66 674
+                   KOUNG-KHI       DJEBEM                                   43 896
+ OUEST                             POUMOUGNE                               135 417
+                   TOTAL KOUNG-KHI                                         245 987
+                                   DSCHANG                                 218 359
+                                   FOKOUE                                   20 624
+                                   FONGO TONGO                              40 538
+                   MENOUA
+                                   NKONG-NI                                114 940
+                                   PENKA MICHEL                            140 285
+                                   SANTCHOU                                 80 721
+                   TOTAL MENOUA                                            615 467
+                                   BAFOUSSAM 1                             148 786
+                   MIFI            BAFOUSSAM 2                             181 778
+                                   BAFOUSSAM 3                             143 972
+                   TOTAL MIFI                                              474 536
+                                   BANGANGTE                               153 710
+                                   BASSAMBA                                  6 020
+                   NDE
+                                   BAZOU                                    43 431
+                                   TONGA                                    25 420
+                   TOTAL NDE                                               228 581
+                                   BANGOURAIN                               49 107
+                   NOUN
+                                   FOUMBAN                                 152 749
+
+
+
+
+                                        21
+    REGION    DEPARTEMENT   ARRONDISSEMENT   POPULATION
+                            FOUMBOT                         104 655
+                            KOUOPTAMO                        72 532
+                            KOUTABA                          75 283
+                            MAGBA                            62 126
+                            MALANTOUEN                       95 636
+                            MASSANGAM                        64 497
+                            NJIMOM                           49 424
+              TOTAL NOUN                                    726 009
+TOTAL OUEST                                               3 315 190
+
+
+
+
+                                22
+   3.2.9. Région du Sud
+
+
+Tableau 10: Estimation de la population dans la région du Sud
+
+       REGION      DEPARTEMENT ARRONDISSEMENT               POPULATION
+                                  BENGBIS                                 15 012
+                                  DJOUM                                   29 975
+                                  MEYOMESSALA                             45 078
+                                  MEYOMESSI                               10 082
+                   DJA ET LOBO
+                                  MINTOM                                   5 807
+                                  OVENG                                    6 293
+                                  SANGMELIMA                             101 053
+                                  ZOETELE                                 51 878
+                   TOTAL DJA ET LOBO                                     265 178
+                                  BIWONG BANE                             21 767
+                                  BIWONG BULU                             29 554
+                                  EBOLOWA 1                               68 629
+                                  EBOLOWA 2                               99 285
+                   MVILA
+                                  EFOULAN                                 18 185
+                                  MENGONG                                 27 323
+                                  MVANGANE                                22 767
+  SUD                             NGOULEMAKONG                            22 729
+                   TOTAL MVILA                                           310 239
+                                  AKOM 2                                   9 436
+                                  BIPINDI                                 14 167
+                                  CAMPO                                    7 866
+                                  KRIBI 1                                 50 453
+                   OCEAN          KRIBI 2                                 68 673
+                                  LOKOUNDJE                               23 216
+                                  LOLODORF                                18 754
+                                  MVENGUE                                 28 508
+                                  NYETE                                   20 122
+                   TOTAL OCEAN                                           241 195
+                                  AMBAM                                   62 147
+                   VALLEE DU      KYÃ© OSSI                               25 889
+                   NTEM           MA'AN                                   24 647
+                                  OLAMZE                                   9 443
+                   TOTAL VALLEE DU NTEM                                  122 126
+  TOTAL SUD                                                              938 738
+
+
+
+
+                                        23
+   3.2.10.   Région du Sud-Ouest
+
+
+Tableau 11: Estimation de la population dans la région du Sud-Ouest
+
+    REGION          DEPARTEMENT      ARRONDISSEMENT             POPULATION
+                                     BUEA                                     179 836
+                                     LIMBE 1                                  106 738
+                                     LIMBE 2                                   43 265
+                  FAKO               LIMBE 3                                    9 010
+                                     MUYUKA                                    95 918
+                                     TIKO                                     113 884
+                                     WEST-COAST                                 8 134
+                  TOTAL FAKO                                                  556 785
+                                   BANGEM                                      28 437
+                  KUPE MANENGOUBA NGUTI                                        29 110
+                                   TOMBEL                                      79 753
+                  TOTAL KUPE MANENGOUBA                                       137 300
+                                   ALOU                                        24 073
+                  LEBIALEM         FONTEM                                      21 018
+                                   WABANE                                      28 218
+                  TOTAL LEBIALEM                                               73 309
+                                   AKWAYA              32 566
+                                   EYUMODJOCK                                   33 504
+                  MANYU
+SUD-OUEST                          MAMFE CENTRAL                                26 812
+                                   UPPER BANYANG                                31 945
+                  TOTAL MANYU                                                  124 827
+                                   KONYE                                        54 083
+                                   KUMBA 1                                      61 726
+                  MEME             KUMBA 2                                      54 257
+                                   KUMBA 3                                      45 191
+                                   MBONGE                                      131 077
+                  TOTAL MEME                                                   346 334
+                                   BAMUSSO                                      14 849
+                                   DIKOME-BALUE                                  6 825
+                                   EKONDO TITI                                  25 289
+                                   IDABATO                                      10 073
+                  NDIAN            ISANGELE                                      2 238
+                                   KOMBO ABEDIMO                                 5 693
+                                   KOMBO ITINDI                                  4 812
+                                   MUNDEMBA                                     11 649
+                                   TOKO                                          4 204
+                  TOAL NDIAN                                                    85 632
+TOTAL SUD-OUEST                                                              1 324 187
+
+
+
+
+                                       24
+   Conclusion et perspectives
+   Les estimations de population obtenues à partir de nouvelles méthodes
+développées par Worldpop ont été comparées à d’autres sources de données. Il
+ressort de cette comparaison que les estimations sont en général de bonne qualité.
+Ces estimations donnent pour l’instant un meilleur rendu des effectifs de population
+avant la réalisation effective du dénombrement principal du 4ème RGPH.
+
+   En effet, les estimations ne sauraient être un palliatif continu aux données d’un
+recensement général de population qui reste la meilleure source de données
+démographiques.
+
+
+
+
+                                        25
+
