@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { API_URL } from './constants';
 import { getPendingPVs, type DecryptedPV } from './offlineManager';
+import { PV_INTEGRITY_STATUS, formatPVIntegrityStatus } from './types';
 import type {
     ElectionData,
     ElectionResultSummary,
@@ -86,7 +87,7 @@ export default function ParallelCountDashboard({ token, refreshKey = 0 }: Parall
     const localVotes = pendingPVs.reduce((sum, pv) => {
         return sum + pv.results.reduce((inner, result) => inner + result.votes, 0);
     }, 0);
-    const trustedProofs = publicProofs.filter((proof) => proof.integrity_status === 'trusted').length;
+    const trustedProofs = publicProofs.filter((proof) => proof.integrity_status === PV_INTEGRITY_STATUS.trusted).length;
     const anomalousProofs = publicProofs.filter((proof) => (proof.anomalies || []).length > 0).length;
 
     const exportPublicProofs = () => {
@@ -237,7 +238,7 @@ export default function ParallelCountDashboard({ token, refreshKey = 0 }: Parall
                                 <small>{proof.polling_station_name || proof.polling_station_region_name || proof.polling_station_region || 'Bureau publié'}</small>
                             </span>
                             <span>{proof.status}</span>
-                            <span>{proof.integrity_status || '-'}</span>
+                            <span>{formatPVIntegrityStatus(proof.integrity_status)}</span>
                             <code>{proof.pv_hash ? `${proof.pv_hash.slice(0, 14)}...` : '-'}</code>
                             <code>{proof.server_payload_hash ? `${proof.server_payload_hash.slice(0, 14)}...` : '-'}</code>
                             <span className={(proof.anomalies || []).length > 0 ? 'parallel-proof-danger' : ''}>{(proof.anomalies || []).length}</span>

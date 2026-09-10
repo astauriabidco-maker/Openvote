@@ -2,7 +2,14 @@ import { useMemo, useState } from 'react';
 import { ed25519 } from '@noble/curves/ed25519.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { API_URL } from './constants';
-import type { PublicPVExportProof, PublicPVProof, PublicPVProofExport, PublicRegionalRiskProof } from './types';
+import {
+    PV_INTEGRITY_STATUS,
+    formatPVIntegrityStatus,
+    type PublicPVExportProof,
+    type PublicPVProof,
+    type PublicPVProofExport,
+    type PublicRegionalRiskProof,
+} from './types';
 
 interface PublicVerifierProps {
     onBack?: () => void;
@@ -156,7 +163,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
 
     const proofs = useMemo(() => extractProofs(raw), [raw]);
     const regionalRisks = useMemo(() => extractRegionalRisks(raw), [raw]);
-    const trusted = proofs.filter((proof) => proof.integrity_status === 'trusted').length;
+    const trusted = proofs.filter((proof) => proof.integrity_status === PV_INTEGRITY_STATUS.trusted).length;
     const anomalous = proofs.filter((proof) => (proof.anomalies || []).length > 0).length;
     const priorityRegions = regionalRisks.filter((risk) => risk.risk_status === 'prioritaire').length;
     const riskByRegion = useMemo(() => new Map(regionalRisks.map((risk) => [
@@ -380,7 +387,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                         <div className="public-verify-detail-grid">
                             <div>
                                 <span>Intégrité</span>
-                                <strong>{selectedProof.integrity_status || '-'}</strong>
+                                <strong>{formatPVIntegrityStatus(selectedProof.integrity_status)}</strong>
                             </div>
                             <div>
                                 <span>Région</span>
@@ -497,7 +504,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                                     <small>{proof.polling_station_name || proofRegionName(proof) || 'Bureau publié'}</small>
                                 </span>
                                 <span>{proof.status}</span>
-                                <span>{proof.integrity_status || '-'}</span>
+                                <span>{formatPVIntegrityStatus(proof.integrity_status)}</span>
                                 <span>
                                     {regionalRisk ? (
                                         <>

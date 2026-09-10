@@ -3,8 +3,10 @@ package ontology
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
+	"github.com/openvote/backend/internal/domain/entity"
 	"gopkg.in/yaml.v3"
 )
 
@@ -118,6 +120,12 @@ func TestOpenvoteOntologyV1Contract(t *testing.T) {
 		if len(entry.Values) == 0 {
 			t.Fatalf("vocabulaire vide: %s", vocabulary)
 		}
+	}
+	if !reflect.DeepEqual(doc.Vocabularies["integrity_status"].Values, entity.PVIntegrityStatuses) {
+		t.Fatalf("integrity_status diverge du contrat Go: yaml=%v go=%v", doc.Vocabularies["integrity_status"].Values, entity.PVIntegrityStatuses)
+	}
+	if !reflect.DeepEqual(doc.Vocabularies["integrity_error_code"].Values, entity.PVIntegrityErrorCodes) {
+		t.Fatalf("integrity_error_code diverge du contrat Go: yaml=%v go=%v", doc.Vocabularies["integrity_error_code"].Values, entity.PVIntegrityErrorCodes)
 	}
 
 	requiredRelations := []ontologyRelation{

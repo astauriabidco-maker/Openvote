@@ -374,7 +374,7 @@ func TestSubmitPVComputesCanonicalIntegrityHash(t *testing.T) {
 	if pvRepo.createdPV.ServerPayloadHash != expectedHash {
 		t.Fatalf("hash serveur inattendu: %s", pvRepo.createdPV.ServerPayloadHash)
 	}
-	if pvRepo.createdPV.IntegrityStatus != "hash_mismatch" {
+	if pvRepo.createdPV.IntegrityStatus != entity.PVIntegrityHashMismatch {
 		t.Fatalf("statut intégrité inattendu: %s", pvRepo.createdPV.IntegrityStatus)
 	}
 	if len(pvRepo.createdPV.IntegrityErrors) != 3 {
@@ -668,7 +668,7 @@ func TestListPublicPVProofsReturnsAnonymizedProofs(t *testing.T) {
 				Status:                   entity.PVStatusVerified,
 				PVHash:                   "photo-hash",
 				ServerPayloadHash:        "server-hash",
-				IntegrityStatus:          "trusted",
+				IntegrityStatus:          entity.PVIntegrityTrusted,
 				Anomalies:                []entity.PVAnomaly{},
 			},
 		},

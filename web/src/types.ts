@@ -438,6 +438,36 @@ export interface FieldCoverageSummary {
 
 export type PVVerificationStatus = 'submitted' | 'pending' | 'verified' | 'rejected' | 'needs_clarification' | string;
 
+export const PV_INTEGRITY_STATUSES = [
+    'trusted',
+    'hash_verified_unsigned',
+    'hash_mismatch',
+    'incomplete',
+    'unverified',
+] as const;
+
+export type PVIntegrityStatus = (typeof PV_INTEGRITY_STATUSES)[number] | string;
+
+export const PV_INTEGRITY_STATUS = {
+    trusted: 'trusted',
+    hashVerifiedUnsigned: 'hash_verified_unsigned',
+    hashMismatch: 'hash_mismatch',
+    incomplete: 'incomplete',
+    unverified: 'unverified',
+} as const;
+
+export const PV_INTEGRITY_LABELS: Record<string, string> = {
+    trusted: 'Hash + signature OK',
+    hash_verified_unsigned: 'Hash OK, signature absente',
+    hash_mismatch: 'Hash divergent',
+    incomplete: 'Preuve incomplète',
+    unverified: 'Non vérifié',
+};
+
+export function formatPVIntegrityStatus(status?: PVIntegrityStatus): string {
+    return status ? PV_INTEGRITY_LABELS[status] || status : PV_INTEGRITY_LABELS.unverified;
+}
+
 export interface PVAnomaly {
     code: string;
     severity: 'low' | 'medium' | 'high' | 'critical' | string;

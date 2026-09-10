@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AxiosError } from 'axios';
 import type { AdminPanelState } from '../useAdminPanelState';
 import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
+import { formatPVIntegrityStatus } from '../../../types';
 import type {
     ElectionData,
     PVAnomaly,
@@ -124,16 +125,6 @@ function statusClass(status: PVVerificationStatus): string {
     if (status === 'rejected') return 'rejected';
     if (status === 'needs_clarification') return 'clarification';
     return 'pending';
-}
-
-function integrityLabel(status?: string): string {
-    switch (status) {
-        case 'trusted': return 'Hash + signature OK';
-        case 'hash_verified_unsigned': return 'Hash OK, signature absente';
-        case 'hash_mismatch': return 'Hash divergent';
-        case 'incomplete': return 'Preuve incomplète';
-        default: return status || 'Non vérifié';
-    }
 }
 
 function formatDate(value?: string): string {
@@ -371,7 +362,7 @@ export default function PVVerificationTab({ state }: { state: AdminPanelState })
                                 <div><span>Nuls</span><strong>{selectedPV.null_votes ?? 0}</strong></div>
                                 <div><span>Contestés</span><strong>{selectedPV.disputed_votes ?? 0}</strong></div>
                                 <div><span>Soumis</span><strong>{formatDate(selectedPV.submitted_at)}</strong></div>
-                                <div><span>Intégrité</span><strong>{integrityLabel(selectedPV.integrity_status)}</strong></div>
+                                <div><span>Intégrité</span><strong>{formatPVIntegrityStatus(selectedPV.integrity_status)}</strong></div>
                                 <div><span>Hash serveur</span><strong>{selectedPV.server_payload_hash ? `${selectedPV.server_payload_hash.slice(0, 12)}...` : '-'}</strong></div>
                                 <div><span>Hash photo</span><strong>{selectedPV.pv_hash ? `${selectedPV.pv_hash.slice(0, 12)}...` : '-'}</strong></div>
                                 <div><span>Photo PV</span><strong>{selectedPV.pv_photo_url || '-'}</strong></div>
@@ -440,7 +431,7 @@ export default function PVVerificationTab({ state }: { state: AdminPanelState })
                                                 {(event.from_status || event.to_status) && (
                                                     <span>{event.from_status ? STATUS_LABELS[event.from_status] || event.from_status : 'Initial'} → {event.to_status ? STATUS_LABELS[event.to_status] || event.to_status : '-'}</span>
                                                 )}
-                                                <span>{integrityLabel(event.integrity_status)}</span>
+                                                <span>{formatPVIntegrityStatus(event.integrity_status)}</span>
                                                 <span>{event.server_payload_hash ? `${event.server_payload_hash.slice(0, 12)}...` : 'Hash non lié'}</span>
                                             </div>
                                             {event.comment && <p>{event.comment}</p>}

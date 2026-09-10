@@ -1641,18 +1641,18 @@ func decodeIntegrityErrors(raw []byte) []string {
 	}
 	var errors []string
 	if err := json.Unmarshal(raw, &errors); err != nil {
-		return []string{"integrity_errors_unreadable"}
+		return []string{entity.IntegrityErrorUnreadable}
 	}
 	return errors
 }
 
 func integritySeverity(code string) string {
 	switch code {
-	case "payload_hash_mismatch", "invalid_signature", "unregistered_device":
+	case entity.IntegrityErrorPayloadHashMismatch, entity.IntegrityErrorInvalidSignature, entity.IntegrityErrorUnregisteredDevice:
 		return "critical"
-	case "missing_payload_hash", "missing_photo_hash", "missing_photo_url", "missing_device_id":
+	case entity.IntegrityErrorMissingPayloadHash, entity.IntegrityErrorMissingPhotoHash, entity.IntegrityErrorMissingPhotoURL, entity.IntegrityErrorMissingDeviceID:
 		return "high"
-	case "missing_signature", "missing_client_recorded_at":
+	case entity.IntegrityErrorMissingSignature, entity.IntegrityErrorMissingClientRecordedAt:
 		return "medium"
 	default:
 		return "low"
@@ -1661,31 +1661,31 @@ func integritySeverity(code string) string {
 
 func integrityMessage(code string) string {
 	switch code {
-	case "payload_hash_mismatch":
+	case entity.IntegrityErrorPayloadHashMismatch:
 		return "L'empreinte recalculée par le serveur ne correspond pas à l'empreinte transmise."
-	case "missing_payload_hash":
+	case entity.IntegrityErrorMissingPayloadHash:
 		return "Le PV n'a pas transmis d'empreinte canonique locale."
-	case "missing_photo_hash":
+	case entity.IntegrityErrorMissingPhotoHash:
 		return "La preuve photo du PV n'a pas d'empreinte locale."
-	case "missing_photo_url":
+	case entity.IntegrityErrorMissingPhotoURL:
 		return "La preuve photo du PV est hashée mais le fichier n'est pas lié au stockage."
-	case "missing_signature":
+	case entity.IntegrityErrorMissingSignature:
 		return "Le PV n'a pas encore de signature cryptographique vérifiable."
-	case "missing_device_id":
+	case entity.IntegrityErrorMissingDeviceID:
 		return "La signature est présente mais l'identifiant appareil est absent."
-	case "unregistered_device":
+	case entity.IntegrityErrorUnregisteredDevice:
 		return "La signature provient d'un appareil non enrôlé pour cet observateur."
-	case "invalid_signature":
+	case entity.IntegrityErrorInvalidSignature:
 		return "La signature cryptographique du PV est invalide."
-	case "device_key_registry_unavailable":
+	case entity.IntegrityErrorDeviceRegistryUnavailable:
 		return "Le registre des clés appareil est indisponible."
-	case "device_key_lookup_failed":
+	case entity.IntegrityErrorDeviceKeyLookupFailed:
 		return "La clé publique appareil n'a pas pu être vérifiée."
-	case "invalid_registered_public_key":
+	case entity.IntegrityErrorInvalidRegisteredKey:
 		return "La clé publique enregistrée pour l'appareil est invalide."
-	case "unsupported_signature_algorithm":
+	case entity.IntegrityErrorUnsupportedSignatureAlgo:
 		return "L'algorithme de signature appareil n'est pas supporté."
-	case "missing_client_recorded_at":
+	case entity.IntegrityErrorMissingClientRecordedAt:
 		return "L'horodatage local de capture du PV est absent."
 	default:
 		return "Contrôle d'intégrité PV à examiner."

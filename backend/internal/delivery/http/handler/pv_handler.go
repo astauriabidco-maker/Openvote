@@ -624,42 +624,42 @@ func buildCanonicalPVProof(req createPVRequest) (string, string, error) {
 func classifyPVIntegrity(req createPVRequest, serverHash string, signatureVerified bool, signatureError string) (string, []string) {
 	errors := []string{}
 	if strings.TrimSpace(req.PVHash) == "" {
-		errors = append(errors, "missing_photo_hash")
+		errors = append(errors, entity.IntegrityErrorMissingPhotoHash)
 	}
 	if strings.TrimSpace(req.PVHash) != "" && strings.TrimSpace(req.PVPhotoURL) == "" {
-		errors = append(errors, "missing_photo_url")
+		errors = append(errors, entity.IntegrityErrorMissingPhotoURL)
 	}
 	if strings.TrimSpace(req.ClientRecordedAt) == "" {
-		errors = append(errors, "missing_client_recorded_at")
+		errors = append(errors, entity.IntegrityErrorMissingClientRecordedAt)
 	}
 	if strings.TrimSpace(req.SignedPayloadHash) == "" {
-		errors = append(errors, "missing_payload_hash")
+		errors = append(errors, entity.IntegrityErrorMissingPayloadHash)
 	} else if !strings.EqualFold(strings.TrimSpace(req.SignedPayloadHash), serverHash) {
-		errors = append(errors, "payload_hash_mismatch")
+		errors = append(errors, entity.IntegrityErrorPayloadHashMismatch)
 	}
 	if strings.TrimSpace(req.Signature) == "" {
-		errors = append(errors, "missing_signature")
+		errors = append(errors, entity.IntegrityErrorMissingSignature)
 	} else if strings.TrimSpace(req.DeviceID) == "" {
-		errors = append(errors, "missing_device_id")
+		errors = append(errors, entity.IntegrityErrorMissingDeviceID)
 	} else if !signatureVerified {
 		if signatureError == "" {
-			signatureError = "invalid_signature"
+			signatureError = entity.IntegrityErrorInvalidSignature
 		}
 		errors = append(errors, signatureError)
 	}
 
 	if len(errors) == 0 {
-		return "trusted", errors
+		return entity.PVIntegrityTrusted, errors
 	}
-	if len(errors) == 1 && errors[0] == "missing_signature" {
-		return "hash_verified_unsigned", errors
+	if len(errors) == 1 && errors[0] == entity.IntegrityErrorMissingSignature {
+		return entity.PVIntegrityHashVerifiedUnsigned, errors
 	}
 	for _, err := range errors {
-		if err == "payload_hash_mismatch" {
-			return "hash_mismatch", errors
+		if err == entity.IntegrityErrorPayloadHashMismatch {
+			return entity.PVIntegrityHashMismatch, errors
 		}
 	}
-	return "incomplete", errors
+	return entity.PVIntegrityIncomplete, errors
 }
 
 type ecdsaJWK struct {
@@ -720,7 +720,7 @@ func (h *PVHandler) verifyDeviceSignature(c *gin.Context, observerID string, req
 		return false, "device_key_lookup_failed"
 	}
 	if key == nil {
-		return false, "unregistered_device"
+		return false, entity.IntegrityErrorUnregisteredDevice
 	}
 	if key.Algorithm != "ECDSA_P256_SHA256" {
 		return false, "unsupported_signature_algorithm"
@@ -730,7 +730,7 @@ func (h *PVHandler) verifyDeviceSignature(c *gin.Context, observerID string, req
 		return false, "invalid_registered_public_key"
 	}
 	if !verifyECDSAP256Signature(publicKey, canonicalPayload, strings.TrimSpace(req.Signature)) {
-		return false, "invalid_signature"
+		return false, entity.IntegrityErrorInvalidSignature
 	}
 	_ = h.deviceKeyRepo.MarkUsed(c.Request.Context(), key.ID)
 	return true, ""
