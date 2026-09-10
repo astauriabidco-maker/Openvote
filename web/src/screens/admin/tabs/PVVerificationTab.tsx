@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AxiosError } from 'axios';
 import type { AdminPanelState } from '../useAdminPanelState';
 import TabHeader, { KPIBand, type KPIItem } from '../components/TabHeader';
-import { formatPVIntegrityStatus } from '../../../types';
+import { PV_ANOMALY_CODE, formatPVIntegrityStatus } from '../../../types';
 import type {
     ElectionData,
     PVAnomaly,
@@ -90,7 +90,7 @@ function fallbackAnomalies(pv: PVVerificationItem): PVAnomaly[] {
 
     if (pv.voters_count > 0 && expressedTotal > 0 && expressedTotal !== pv.voters_count) {
         anomalies.push({
-            code: 'totals_mismatch',
+            code: PV_ANOMALY_CODE.voteTotalsMismatch,
             severity: 'high',
             message: 'Total candidats + blancs + nuls différent du nombre de votants.',
             expected: pv.voters_count,
@@ -100,7 +100,7 @@ function fallbackAnomalies(pv: PVVerificationItem): PVAnomaly[] {
 
     if (pv.registered_voters > 0 && pv.voters_count > pv.registered_voters) {
         anomalies.push({
-            code: 'voters_above_registered',
+            code: PV_ANOMALY_CODE.votersAboveRegistered,
             severity: 'critical',
             message: 'Le nombre de votants dépasse les inscrits du bureau.',
             expected: pv.registered_voters,
@@ -110,7 +110,7 @@ function fallbackAnomalies(pv: PVVerificationItem): PVAnomaly[] {
 
     if (pv.registered_voters > 0 && pv.voters_count / pv.registered_voters >= 0.98) {
         anomalies.push({
-            code: 'very_high_turnout',
+            code: PV_ANOMALY_CODE.highTurnout,
             severity: 'medium',
             message: 'Participation très élevée à vérifier.',
             actual: `${Math.round((pv.voters_count / pv.registered_voters) * 100)}%`,

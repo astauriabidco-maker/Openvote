@@ -606,7 +606,7 @@ func TestListPVsForReviewFiltersByElectionAndStatus(t *testing.T) {
 			PollingStationID: testStationID,
 			Status:           entity.PVStatusSubmitted,
 			Anomalies: []entity.PVAnomaly{
-				{Code: "high_turnout", Severity: "medium", Message: "Le taux de participation dépasse 95%."},
+				{Code: entity.PVAnomalyHighTurnout, Severity: "medium", Message: "Le taux de participation dépasse 95%."},
 			},
 		},
 	}}

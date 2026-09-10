@@ -1592,14 +1592,14 @@ func buildPVAnomalies(pv *entity.PVSubmission, results []entity.PVResult, duplic
 	anomalies := []entity.PVAnomaly{}
 	for _, integrityError := range pv.IntegrityErrors {
 		anomalies = append(anomalies, entity.PVAnomaly{
-			Code:     "integrity_" + integrityError,
+			Code:     entity.PVAnomalyIntegrityError + "_" + integrityError,
 			Severity: integritySeverity(integrityError),
 			Message:  integrityMessage(integrityError),
 		})
 	}
 	if pv.RegisteredVoters > 0 && pv.VotersCount > pv.RegisteredVoters {
 		anomalies = append(anomalies, entity.PVAnomaly{
-			Code:     "voters_above_registered",
+			Code:     entity.PVAnomalyVotersAboveRegistered,
 			Severity: "high",
 			Message:  "Le nombre de votants dépasse le nombre d'inscrits.",
 		})
@@ -1611,7 +1611,7 @@ func buildPVAnomalies(pv *entity.PVSubmission, results []entity.PVResult, duplic
 	}
 	if totalResults+pv.BlankVotes+pv.NullVotes+pv.DisputedVotes != pv.VotersCount {
 		anomalies = append(anomalies, entity.PVAnomaly{
-			Code:     "vote_totals_mismatch",
+			Code:     entity.PVAnomalyVoteTotalsMismatch,
 			Severity: "high",
 			Message:  "La somme candidats + blancs + nuls + contestés ne correspond pas aux votants.",
 		})
@@ -1619,7 +1619,7 @@ func buildPVAnomalies(pv *entity.PVSubmission, results []entity.PVResult, duplic
 
 	if pv.RegisteredVoters > 0 && float64(pv.VotersCount)/float64(pv.RegisteredVoters) > 0.95 {
 		anomalies = append(anomalies, entity.PVAnomaly{
-			Code:     "high_turnout",
+			Code:     entity.PVAnomalyHighTurnout,
 			Severity: "medium",
 			Message:  "Le taux de participation dépasse 95%.",
 		})
@@ -1627,7 +1627,7 @@ func buildPVAnomalies(pv *entity.PVSubmission, results []entity.PVResult, duplic
 
 	if duplicateCount > 1 {
 		anomalies = append(anomalies, entity.PVAnomaly{
-			Code:     "duplicate_polling_station_pv",
+			Code:     entity.PVAnomalyDuplicateStationPV,
 			Severity: "medium",
 			Message:  "Plusieurs PV existent pour le même bureau de vote.",
 		})

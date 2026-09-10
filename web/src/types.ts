@@ -468,8 +468,26 @@ export function formatPVIntegrityStatus(status?: PVIntegrityStatus): string {
     return status ? PV_INTEGRITY_LABELS[status] || status : PV_INTEGRITY_LABELS.unverified;
 }
 
+export const PV_ANOMALY_CODES = [
+    'integrity_error',
+    'voters_above_registered',
+    'vote_totals_mismatch',
+    'high_turnout',
+    'duplicate_polling_station_pv',
+] as const;
+
+export type PVAnomalyCode = (typeof PV_ANOMALY_CODES)[number] | string;
+
+export const PV_ANOMALY_CODE = {
+    integrityError: 'integrity_error',
+    votersAboveRegistered: 'voters_above_registered',
+    voteTotalsMismatch: 'vote_totals_mismatch',
+    highTurnout: 'high_turnout',
+    duplicatePollingStationPV: 'duplicate_polling_station_pv',
+} as const;
+
 export interface PVAnomaly {
-    code: string;
+    code: PVAnomalyCode;
     severity: 'low' | 'medium' | 'high' | 'critical' | string;
     message: string;
     field?: string;

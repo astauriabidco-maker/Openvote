@@ -25,13 +25,13 @@ func TestBuildPVAnomaliesDetectsVerificationRisks(t *testing.T) {
 	for _, anomaly := range anomalies {
 		codes[anomaly.Code] = true
 	}
-	for _, code := range []string{"vote_totals_mismatch", "high_turnout", "duplicate_polling_station_pv"} {
+	for _, code := range []string{entity.PVAnomalyVoteTotalsMismatch, entity.PVAnomalyHighTurnout, entity.PVAnomalyDuplicateStationPV} {
 		if !codes[code] {
 			t.Fatalf("anomalie %q attendue dans %+v", code, anomalies)
 		}
 	}
-	if codes["voters_above_registered"] {
-		t.Fatalf("voters_above_registered ne doit pas être signalée pour ce PV")
+	if codes[entity.PVAnomalyVotersAboveRegistered] {
+		t.Fatalf("%s ne doit pas être signalée pour ce PV", entity.PVAnomalyVotersAboveRegistered)
 	}
 }
 
@@ -44,9 +44,9 @@ func TestBuildPVAnomaliesDetectsVotersAboveRegistered(t *testing.T) {
 	anomalies := buildPVAnomalies(pv, []entity.PVResult{{Votes: 101}}, 1)
 
 	for _, anomaly := range anomalies {
-		if anomaly.Code == "voters_above_registered" {
+		if anomaly.Code == entity.PVAnomalyVotersAboveRegistered {
 			return
 		}
 	}
-	t.Fatalf("voters_above_registered attendue dans %+v", anomalies)
+	t.Fatalf("%s attendue dans %+v", entity.PVAnomalyVotersAboveRegistered, anomalies)
 }

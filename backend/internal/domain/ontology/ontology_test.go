@@ -127,6 +127,9 @@ func TestOpenvoteOntologyV1Contract(t *testing.T) {
 	if !reflect.DeepEqual(doc.Vocabularies["integrity_error_code"].Values, entity.PVIntegrityErrorCodes) {
 		t.Fatalf("integrity_error_code diverge du contrat Go: yaml=%v go=%v", doc.Vocabularies["integrity_error_code"].Values, entity.PVIntegrityErrorCodes)
 	}
+	if !reflect.DeepEqual(doc.Vocabularies["pv_anomaly_code"].Values, entity.PVAnomalyCodes) {
+		t.Fatalf("pv_anomaly_code diverge du contrat Go: yaml=%v go=%v", doc.Vocabularies["pv_anomaly_code"].Values, entity.PVAnomalyCodes)
+	}
 
 	requiredRelations := []ontologyRelation{
 		{Subject: "PollingStation", Predicate: "belongs_to", Object: "Region"},
