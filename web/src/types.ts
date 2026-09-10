@@ -476,12 +476,33 @@ export interface PublicPVProof {
     updated_at: string;
 }
 
+export interface PublicRegionalRiskProof {
+    region_id: string;
+    region_name: string;
+    normalized_region_name: string;
+    risk_score: number;
+    risk_status: string;
+    rules: RegionalRiskRule[];
+    coverage_rate: number;
+    submitted_pv: number;
+    total_stations: number;
+    turnout_gap_points?: number;
+    invalid_gap_points?: number;
+    reference_election_year?: number;
+    reference_contest_type?: string;
+    reference_source_document_slug?: string;
+    evidence: string[];
+    snapshot_hash: string;
+    created_at: string;
+}
+
 export interface PublicPVProofExport {
     proof_manifest_version: number;
     election_id: string;
     generated_at: string;
     total: number;
     pv_proofs: PublicPVProof[];
+    regional_risks?: PublicRegionalRiskProof[];
 }
 
 export interface PublicPVExportProof {

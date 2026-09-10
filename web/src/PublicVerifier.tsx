@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ed25519 } from '@noble/curves/ed25519.js';
 import { sha256 } from '@noble/hashes/sha2.js';
-import type { PublicPVExportProof, PublicPVProof, PublicPVProofExport } from './types';
+import type { PublicPVExportProof, PublicPVProof, PublicPVProofExport, PublicRegionalRiskProof } from './types';
 
 interface PublicVerifierProps {
     onBack?: () => void;
@@ -11,6 +11,7 @@ interface PublicExportPackage {
     export?: PublicPVProofExport;
     export_proof?: PublicPVExportProof;
     pv_proofs?: PublicPVProof[];
+    regional_risks?: PublicRegionalRiskProof[];
 }
 
 interface VerificationResult {
@@ -102,6 +103,28 @@ function extractProofs(raw: string): PublicPVProof[] {
     }
 }
 
+function extractRegionalRisks(raw: string): PublicRegionalRiskProof[] {
+    try {
+        const parsed = JSON.parse(raw) as PublicExportPackage;
+        return parsed.export?.regional_risks || parsed.regional_risks || [];
+    } catch {
+        return [];
+    }
+}
+
+function formatRiskStatus(status: string): string {
+    switch (status) {
+        case 'signal_faible':
+            return 'signal faible';
+        case 'a_surveiller':
+            return 'à surveiller';
+        case 'prioritaire':
+            return 'prioritaire';
+        default:
+            return status || '-';
+    }
+}
+
 export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [raw, setRaw] = useState('');
     const [result, setResult] = useState<VerificationResult | null>(null);
@@ -109,8 +132,10 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [checking, setChecking] = useState(false);
 
     const proofs = useMemo(() => extractProofs(raw), [raw]);
+    const regionalRisks = useMemo(() => extractRegionalRisks(raw), [raw]);
     const trusted = proofs.filter((proof) => proof.integrity_status === 'trusted').length;
     const anomalous = proofs.filter((proof) => (proof.anomalies || []).length > 0).length;
+    const priorityRegions = regionalRisks.filter((risk) => risk.risk_status === 'prioritaire').length;
 
     const loadFile = async (file?: File) => {
         if (!file) return;
@@ -173,6 +198,38 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                     <div><strong>{proofs.length}</strong><span>PV publiés</span></div>
                     <div><strong>{trusted}</strong><span>Preuves OK</span></div>
                     <div><strong>{anomalous}</strong><span>Anomalies</span></div>
+                    <div><strong>{regionalRisks.length}</strong><span>Régions scorées</span></div>
+                    <div><strong>{priorityRegions}</strong><span>Prioritaires</span></div>
+                </div>
+
+                <div className="public-verify-risk-table">
+                    <div className="public-verify-risk-row head">
+                        <span>Région</span>
+                        <span>Statut</span>
+                        <span>Score</span>
+                        <span>Couverture</span>
+                        <span>Écarts</span>
+                        <span>Règles</span>
+                    </div>
+                    {regionalRisks.slice(0, 80).map((risk) => (
+                        <div key={`${risk.normalized_region_name}-${risk.snapshot_hash}`} className="public-verify-risk-row">
+                            <span>
+                                <strong>{risk.region_name || risk.normalized_region_name}</strong>
+                                <small>{risk.reference_source_document_slug || 'source historique non liée'}</small>
+                            </span>
+                            <span className={`public-risk-pill risk-${risk.risk_status}`}>{formatRiskStatus(risk.risk_status)}</span>
+                            <strong>{risk.risk_score}/100</strong>
+                            <span>{Math.round(risk.coverage_rate * 100)}% · {risk.submitted_pv}/{risk.total_stations} PV</span>
+                            <span>
+                                {typeof risk.turnout_gap_points === 'number' ? `${risk.turnout_gap_points.toFixed(1)} pts part.` : '-'}
+                                {typeof risk.invalid_gap_points === 'number' ? ` · ${risk.invalid_gap_points.toFixed(1)} pts inv.` : ''}
+                            </span>
+                            <span>{(risk.rules || []).map((rule) => rule.code).join(', ') || '-'}</span>
+                        </div>
+                    ))}
+                    {raw && regionalRisks.length === 0 && (
+                        <p>Aucun score régional public lisible dans ce fichier.</p>
+                    )}
                 </div>
 
                 <div className="public-verify-table">

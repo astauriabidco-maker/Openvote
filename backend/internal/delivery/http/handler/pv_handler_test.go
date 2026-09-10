@@ -18,6 +18,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/openvote/backend/internal/domain/entity"
@@ -39,6 +40,7 @@ type mockPVRepo struct {
 	reviewPVs        []entity.PVSubmission
 	publicElectionID string
 	publicProofs     []entity.PublicPVProof
+	publicRisks      []entity.RegionalRiskSnapshot
 	updatedPV        *entity.PVSubmission
 	updateCalls      int
 	updateStatus     entity.PVStatus
@@ -70,6 +72,10 @@ func (m *mockPVRepo) GetForReview(ctx context.Context, electionID, status string
 func (m *mockPVRepo) GetPublicProofs(ctx context.Context, electionID string) ([]entity.PublicPVProof, error) {
 	m.publicElectionID = electionID
 	return m.publicProofs, nil
+}
+
+func (m *mockPVRepo) GetRegionalRiskSnapshots(ctx context.Context, electionID string, limit int) ([]entity.RegionalRiskSnapshot, error) {
+	return m.publicRisks, nil
 }
 
 func (m *mockPVRepo) UpdateVerificationStatus(ctx context.Context, id string, status entity.PVStatus, comment, adminID string) (*entity.PVSubmission, error) {
@@ -649,19 +655,41 @@ func TestListPVsForReviewRejectsInvalidStatus(t *testing.T) {
 }
 
 func TestListPublicPVProofsReturnsAnonymizedProofs(t *testing.T) {
-	pvRepo := &mockPVRepo{publicProofs: []entity.PublicPVProof{
-		{
-			ID:                 "78c278a1-8ca1-4a37-bed4-62300d7145be",
-			ElectionID:         testElectionID,
-			PollingStationID:   testStationID,
-			PollingStationCode: "BV001",
-			Status:             entity.PVStatusVerified,
-			PVHash:             "photo-hash",
-			ServerPayloadHash:  "server-hash",
-			IntegrityStatus:    "trusted",
-			Anomalies:          []entity.PVAnomaly{},
+	pvRepo := &mockPVRepo{
+		publicProofs: []entity.PublicPVProof{
+			{
+				ID:                 "78c278a1-8ca1-4a37-bed4-62300d7145be",
+				ElectionID:         testElectionID,
+				PollingStationID:   testStationID,
+				PollingStationCode: "BV001",
+				Status:             entity.PVStatusVerified,
+				PVHash:             "photo-hash",
+				ServerPayloadHash:  "server-hash",
+				IntegrityStatus:    "trusted",
+				Anomalies:          []entity.PVAnomaly{},
+			},
 		},
-	}}
+		publicRisks: []entity.RegionalRiskSnapshot{
+			{
+				ElectionID:                  testElectionID,
+				RegionID:                    "region-ce",
+				RegionName:                  "CENTRE",
+				NormalizedRegionName:        "CENTRE",
+				ReferenceSourceDocumentSlug: "elecam-presidentielle-2018",
+				TotalStations:               120,
+				SubmittedPV:                 18,
+				CoverageRate:                0.15,
+				RiskScore:                   72,
+				RiskStatus:                  "a_surveiller",
+				Rules: []entity.RegionalRiskRule{
+					{Code: "turnout_gap_high", Label: "Participation atypique", Severity: "high", Weight: 35, Value: 14.2},
+				},
+				Evidence:     []string{"écart participation +14.2 pts"},
+				SnapshotHash: "risk-hash-centre",
+				CreatedAt:    time.Date(2026, 9, 10, 9, 0, 0, 0, time.UTC),
+			},
+		},
+	}
 	h := NewPVHandler(nil, nil, pvRepo, nil, nil, nil, nil)
 	r := setupPVRouter(h)
 
@@ -687,6 +715,12 @@ func TestListPublicPVProofsReturnsAnonymizedProofs(t *testing.T) {
 	}
 	if payload.Total != 1 || payload.Proofs[0].PVHash != "photo-hash" {
 		t.Fatalf("preuves publiques inattendues: %+v", payload)
+	}
+	if payload.Export.ProofManifestVersion != 2 {
+		t.Fatalf("version manifeste inattendue: %d", payload.Export.ProofManifestVersion)
+	}
+	if len(payload.Export.RegionalRisks) != 1 || payload.Export.RegionalRisks[0].RiskScore != 72 {
+		t.Fatalf("risques régionaux publics absents: %+v", payload.Export.RegionalRisks)
 	}
 	if payload.ExportProof.Algorithm != "ED25519_SHA256_EXPORT_V1" || payload.ExportProof.Signature == "" {
 		t.Fatalf("signature export absente: %+v", payload.ExportProof)

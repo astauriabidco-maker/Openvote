@@ -559,13 +559,35 @@ type PublicPVProof struct {
 	UpdatedAt            time.Time   `json:"updated_at" db:"updated_at"`
 }
 
+// PublicRegionalRiskProof expose un score régional vérifiable sans données sensibles.
+type PublicRegionalRiskProof struct {
+	RegionID                    string             `json:"region_id"`
+	RegionName                  string             `json:"region_name"`
+	NormalizedRegionName        string             `json:"normalized_region_name"`
+	RiskScore                   int                `json:"risk_score"`
+	RiskStatus                  string             `json:"risk_status"`
+	Rules                       []RegionalRiskRule `json:"rules"`
+	CoverageRate                float64            `json:"coverage_rate"`
+	SubmittedPV                 int                `json:"submitted_pv"`
+	TotalStations               int                `json:"total_stations"`
+	TurnoutGapPoints            *float64           `json:"turnout_gap_points,omitempty"`
+	InvalidGapPoints            *float64           `json:"invalid_gap_points,omitempty"`
+	ReferenceElectionYear       *int               `json:"reference_election_year,omitempty"`
+	ReferenceContestType        string             `json:"reference_contest_type,omitempty"`
+	ReferenceSourceDocumentSlug string             `json:"reference_source_document_slug,omitempty"`
+	Evidence                    []string           `json:"evidence"`
+	SnapshotHash                string             `json:"snapshot_hash"`
+	CreatedAt                   time.Time          `json:"created_at"`
+}
+
 // PublicPVProofExport est le lot public signé par le backend.
 type PublicPVProofExport struct {
-	ProofManifestVersion int             `json:"proof_manifest_version"`
-	ElectionID           string          `json:"election_id"`
-	GeneratedAt          string          `json:"generated_at"`
-	Total                int             `json:"total"`
-	PVProofs             []PublicPVProof `json:"pv_proofs"`
+	ProofManifestVersion int                       `json:"proof_manifest_version"`
+	ElectionID           string                    `json:"election_id"`
+	GeneratedAt          string                    `json:"generated_at"`
+	Total                int                       `json:"total"`
+	PVProofs             []PublicPVProof           `json:"pv_proofs"`
+	RegionalRisks        []PublicRegionalRiskProof `json:"regional_risks"`
 }
 
 // PublicPVExportProof signe l'empreinte canonique du lot public.

@@ -1082,12 +1082,18 @@ func (h *PVHandler) ListPublicPVProofs(c *gin.Context) {
 	if proofs == nil {
 		proofs = []entity.PublicPVProof{}
 	}
+	snapshots, err := h.pvRepo.GetRegionalRiskSnapshots(c.Request.Context(), electionID, 500)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	export := entity.PublicPVProofExport{
-		ProofManifestVersion: 1,
+		ProofManifestVersion: 2,
 		ElectionID:           electionID,
 		GeneratedAt:          time.Now().UTC().Format(time.RFC3339Nano),
 		Total:                len(proofs),
 		PVProofs:             proofs,
+		RegionalRisks:        publicRegionalRisksFromSnapshots(snapshots),
 	}
 	signature, err := signPublicPVProofExport(export)
 	if err != nil {
@@ -1100,6 +1106,58 @@ func (h *PVHandler) ListPublicPVProofs(c *gin.Context) {
 		"pv_proofs":    proofs,
 		"total":        len(proofs),
 	})
+}
+
+func publicRegionalRisksFromSnapshots(snapshots []entity.RegionalRiskSnapshot) []entity.PublicRegionalRiskProof {
+	latestByRegion := make(map[string]entity.RegionalRiskSnapshot)
+	for _, snapshot := range snapshots {
+		key := snapshot.NormalizedRegionName
+		if key == "" {
+			key = strings.ToUpper(strings.TrimSpace(snapshot.RegionName))
+		}
+		if key == "" {
+			continue
+		}
+		if _, exists := latestByRegion[key]; exists {
+			continue
+		}
+		latestByRegion[key] = snapshot
+	}
+
+	risks := make([]entity.PublicRegionalRiskProof, 0, len(latestByRegion))
+	for _, snapshot := range latestByRegion {
+		rules := snapshot.Rules
+		if rules == nil {
+			rules = []entity.RegionalRiskRule{}
+		}
+		evidence := snapshot.Evidence
+		if evidence == nil {
+			evidence = []string{}
+		}
+		risks = append(risks, entity.PublicRegionalRiskProof{
+			RegionID:                    snapshot.RegionID,
+			RegionName:                  snapshot.RegionName,
+			NormalizedRegionName:        snapshot.NormalizedRegionName,
+			RiskScore:                   snapshot.RiskScore,
+			RiskStatus:                  snapshot.RiskStatus,
+			Rules:                       rules,
+			CoverageRate:                snapshot.CoverageRate,
+			SubmittedPV:                 snapshot.SubmittedPV,
+			TotalStations:               snapshot.TotalStations,
+			TurnoutGapPoints:            snapshot.TurnoutGapPoints,
+			InvalidGapPoints:            snapshot.InvalidGapPoints,
+			ReferenceElectionYear:       snapshot.ReferenceElectionYear,
+			ReferenceContestType:        snapshot.ReferenceContestType,
+			ReferenceSourceDocumentSlug: snapshot.ReferenceSourceDocumentSlug,
+			Evidence:                    evidence,
+			SnapshotHash:                snapshot.SnapshotHash,
+			CreatedAt:                   snapshot.CreatedAt,
+		})
+	}
+	sort.SliceStable(risks, func(i, j int) bool {
+		return risks[i].RegionName < risks[j].RegionName
+	})
+	return risks
 }
 
 func signPublicPVProofExport(export entity.PublicPVProofExport) (entity.PublicPVExportProof, error) {
