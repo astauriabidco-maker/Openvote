@@ -1,0 +1,533 @@
+ontology:
+  id: openvote-ontology
+  version: 1
+  status: draft
+  language: fr
+  purpose: >
+    Ontologie applicative Openvote pour stabiliser le vocabulaire des scrutins,
+    territoires, operations terrain, PV, preuves cryptographiques, audit et
+    publication citoyenne verifiable.
+
+conventions:
+  naming:
+    entities: PascalCase
+    fields: snake_case
+    relations: snake_case
+    vocabulary_values: snake_case
+  identifiers:
+    primary: uuid
+    public_ids_allowed: true
+  time:
+    format: ISO-8601
+    timezone: UTC
+  hash:
+    default_algorithm: SHA-256
+    encoding: hex
+  signatures:
+    device_algorithm: ECDSA_P256_SHA256
+    public_export_algorithm: ED25519_SHA256_EXPORT_V1
+
+domains:
+  election:
+    description: Scrutins, candidats, resultats et statistiques historiques.
+  territory:
+    description: Decoupage administratif camerounais et bureaux de vote.
+  field_ops:
+    description: Observateurs, affectations et couverture terrain.
+  pv:
+    description: Soumissions PV et resultats saisis par bureau.
+  proof:
+    description: Photos, hashes, signatures, manifestes et exports publics.
+  audit:
+    description: Evenements d'audit, anomalies, scores et snapshots de risque.
+
+entities:
+  Election:
+    domain: election
+    table: elections
+    description: Scrutin surveille ou scrutin historique de reference.
+    identifier: id
+    sensitivity: public
+    public_exposure: public
+    fields:
+      id: { type: uuid, required: true }
+      name: { type: string, required: true }
+      type: { type: vocabulary, vocabulary: election_type, required: true }
+      status: { type: vocabulary, vocabulary: election_status, required: true }
+      date: { type: datetime, required: true }
+      region_ids: { type: string, required: false }
+
+  Candidate:
+    domain: election
+    table: candidates
+    description: Candidat, parti ou liste presente dans un scrutin.
+    identifier: id
+    sensitivity: public
+    public_exposure: public
+    fields:
+      id: { type: uuid, required: true }
+      election_id: { type: uuid, required: true }
+      name: { type: string, required: true }
+      party: { type: string, required: false }
+      ballot_number: { type: integer, required: false }
+
+  HistoricalElectionResult:
+    domain: election
+    table: historical_election_results
+    description: Statistique officielle historique issue d'une source ELECAM ou assimilee.
+    identifier: id
+    sensitivity: public
+    public_exposure: aggregate_only
+    fields:
+      election_id: { type: uuid, required: true }
+      source_document_slug: { type: string, required: true }
+      election_year: { type: integer, required: true }
+      contest_type: { type: vocabulary, vocabulary: election_type, required: true }
+      result_level: { type: vocabulary, vocabulary: result_level, required: true }
+      region_name: { type: string, required: false }
+      department_name: { type: string, required: false }
+      commune_name: { type: string, required: false }
+      actor_type: { type: string, required: false }
+      actor_name: { type: string, required: false }
+      metric_type: { type: string, required: true }
+      confidence: { type: vocabulary, vocabulary: source_confidence, required: true }
+
+  Region:
+    domain: territory
+    table: regions
+    description: Region administrative camerounaise.
+    identifier: id
+    sensitivity: public
+    public_exposure: public
+    fields:
+      id: { type: uuid, required: true }
+      name: { type: string, required: true }
+      code: { type: string, required: false }
+
+  Department:
+    domain: territory
+    table: departments
+    description: Departement rattache a une region.
+    identifier: id
+    sensitivity: public
+    public_exposure: public
+    fields:
+      id: { type: uuid, required: true }
+      region_id: { type: uuid, required: true }
+      name: { type: string, required: true }
+
+  Arrondissement:
+    domain: territory
+    table: arrondissements
+    description: Arrondissement ou commune electorale selon la source officielle.
+    identifier: id
+    sensitivity: public
+    public_exposure: public
+    fields:
+      id: { type: uuid, required: true }
+      department_id: { type: uuid, required: true }
+      name: { type: string, required: true }
+
+  PollingStation:
+    domain: territory
+    table: polling_stations
+    description: Bureau de vote officiel importe depuis une source ELECAM.
+    identifier: id
+    sensitivity: internal
+    public_exposure: redacted
+    fields:
+      id: { type: uuid, required: true }
+      election_id: { type: uuid, required: true }
+      code: { type: string, required: true }
+      name: { type: string, required: true }
+      region_id: { type: uuid, required: true }
+      department_id: { type: uuid, required: false }
+      arrondissement_id: { type: uuid, required: false }
+      registered_voters: { type: integer, required: true }
+      gps_location: { type: string, required: false, sensitivity: restricted }
+      h3_index: { type: string, required: false, sensitivity: restricted }
+      source_document_slug: { type: string, required: false }
+      source_sha256: { type: sha256_hex, required: false }
+      source_confidence: { type: vocabulary, vocabulary: source_confidence, required: false }
+
+  Observer:
+    domain: field_ops
+    table: users
+    description: Utilisateur terrain autorise a observer ou coordonner un scrutin.
+    identifier: id
+    sensitivity: sensitive
+    public_exposure: never
+    fields:
+      id: { type: uuid, required: true }
+      username: { type: string, required: true, sensitivity: restricted }
+      role: { type: vocabulary, vocabulary: user_role, required: true }
+
+  PollingStationAssignment:
+    domain: field_ops
+    table: polling_station_assignments
+    description: Affectation d'un observateur a un bureau de vote.
+    identifier: id
+    sensitivity: restricted
+    public_exposure: never
+    fields:
+      election_id: { type: uuid, required: true }
+      polling_station_id: { type: uuid, required: true }
+      observer_id: { type: uuid, required: true, sensitivity: sensitive }
+      assigned_by: { type: uuid, required: false, sensitivity: sensitive }
+
+  FieldCoverageSummary:
+    domain: field_ops
+    kind: computed_view
+    description: Vue calculee de la couverture terrain par region, observateur et zone prioritaire.
+    sensitivity: internal
+    public_exposure: aggregate_only
+
+  PVSubmission:
+    domain: pv
+    table: pv_submissions
+    description: Proces-verbal terrain soumis par un observateur pour un bureau donne.
+    identifier: id
+    sensitivity: restricted
+    public_exposure: redacted
+    fields:
+      id: { type: uuid, required: true }
+      election_id: { type: uuid, required: true }
+      polling_station_id: { type: uuid, required: true }
+      observer_id: { type: uuid, required: true, sensitivity: sensitive, public_exposure: never }
+      status: { type: vocabulary, vocabulary: pv_status, required: true }
+      registered_voters: { type: integer, required: true }
+      voters_count: { type: integer, required: true }
+      null_votes: { type: integer, required: true }
+      blank_votes: { type: integer, required: true }
+      disputed_votes: { type: integer, required: true }
+      pv_photo_url: { type: url, required: false, sensitivity: restricted }
+      pv_hash: { type: sha256_hex, required: true, meaning: hash of the real PV photo/file supplied by client }
+      signed_payload_hash: { type: sha256_hex, required: false, meaning: hash announced and signed by client }
+      server_payload_hash: { type: sha256_hex, required: false, meaning: server hash of canonical PV proof manifest }
+      signature: { type: signature, required: false, sensitivity: restricted }
+      device_id: { type: string, required: false, sensitivity: restricted }
+      client_recorded_at: { type: datetime, required: false }
+      integrity_status: { type: vocabulary, vocabulary: integrity_status, required: false }
+      canonical_payload: { type: json_string, required: false, sensitivity: restricted }
+
+  PVResult:
+    domain: pv
+    table: pv_results
+    description: Resultat par candidat dans un PV soumis.
+    identifier: id
+    sensitivity: restricted
+    public_exposure: aggregate_only
+    fields:
+      pv_submission_id: { type: uuid, required: true }
+      candidate_id: { type: uuid, required: true }
+      votes: { type: integer, required: true }
+
+  PVPhotoProof:
+    domain: proof
+    kind: conceptual_entity
+    description: Preuve photo liee a un PV, actuellement materialisee par pv_photo_url et pv_hash.
+    sensitivity: restricted
+    public_exposure: hash_only
+
+  CanonicalManifest:
+    domain: proof
+    kind: conceptual_entity
+    description: Representation canonique stable qui est hashee et/ou signee.
+    sensitivity: restricted
+    public_exposure: redacted
+
+  ObserverDeviceKey:
+    domain: proof
+    table: observer_device_keys
+    description: Cle publique d'appareil enrole pour verifier une signature observateur.
+    identifier: id
+    sensitivity: restricted
+    public_exposure: never
+    fields:
+      user_id: { type: uuid, required: true, sensitivity: sensitive }
+      device_id: { type: string, required: true, sensitivity: restricted }
+      algorithm: { type: vocabulary, vocabulary: signature_algorithm, required: true }
+      public_key_jwk: { type: json, required: true }
+      active: { type: boolean, required: true }
+
+  SourceDocument:
+    domain: proof
+    table: source_documents
+    description: Source officielle ou document archive servant de reference.
+    identifier: slug
+    sensitivity: public
+    public_exposure: public
+    fields:
+      slug: { type: string, required: true }
+      title: { type: string, required: true }
+      publisher: { type: string, required: false }
+      source_url: { type: url, required: false }
+      sha256_checksum: { type: sha256_hex, required: false }
+      granularity: { type: string, required: false }
+      confidence: { type: vocabulary, vocabulary: source_confidence, required: true }
+      status: { type: vocabulary, vocabulary: source_status, required: true }
+
+  PVAnomaly:
+    domain: audit
+    kind: computed_signal
+    description: Incoherence ou signal d'attention calcule sur un PV.
+    sensitivity: internal
+    public_exposure: public
+    fields:
+      code: { type: vocabulary, vocabulary: pv_anomaly_code, required: true }
+      severity: { type: vocabulary, vocabulary: anomaly_severity, required: true }
+      message: { type: string, required: true }
+
+  PVAuditEvent:
+    domain: audit
+    table: pv_audit_events
+    append_only: true
+    description: Evenement d'audit critique lie a un PV et a son integrite.
+    identifier: id
+    sensitivity: restricted
+    public_exposure: never
+    fields:
+      pv_submission_id: { type: uuid, required: true }
+      election_id: { type: uuid, required: true }
+      polling_station_id: { type: uuid, required: true }
+      actor_id: { type: uuid, required: false, sensitivity: sensitive }
+      event_type: { type: vocabulary, vocabulary: pv_audit_event_type, required: true }
+      from_status: { type: vocabulary, vocabulary: pv_status, required: false }
+      to_status: { type: vocabulary, vocabulary: pv_status, required: false }
+      integrity_status: { type: vocabulary, vocabulary: integrity_status, required: false }
+      server_payload_hash: { type: sha256_hex, required: false }
+
+  AdminAuditLog:
+    domain: audit
+    table: audit_logs
+    description: Journal general d'administration, distinct de la chaine d'audit PV.
+    sensitivity: restricted
+    public_exposure: never
+
+  RegionalRiskSnapshot:
+    domain: audit
+    table: regional_risk_snapshots
+    append_only: true
+    description: Score regional historise derive des PV recus et des references historiques.
+    identifier: id
+    sensitivity: internal
+    public_exposure: aggregate_only
+    fields:
+      region_id: { type: uuid, required: false }
+      region_name: { type: string, required: true }
+      normalized_region_name: { type: string, required: true }
+      risk_score: { type: integer, required: true }
+      risk_status: { type: vocabulary, vocabulary: risk_status, required: true }
+      rules: { type: array, items: RegionalRiskRule, required: true }
+      evidence: { type: array, items: string, required: true }
+      snapshot_hash: { type: sha256_hex, required: true, meaning: hash of the regional risk snapshot }
+
+  RegionalRiskRule:
+    domain: audit
+    kind: embedded_value
+    description: Regle nommee ayant contribue a un score regional.
+    sensitivity: internal
+    public_exposure: public
+    fields:
+      code: { type: vocabulary, vocabulary: risk_rule_code, required: true }
+      label: { type: string, required: true }
+      severity: { type: vocabulary, vocabulary: anomaly_severity, required: true }
+      weight: { type: integer, required: true }
+
+  PublicPVProof:
+    domain: proof
+    kind: api_public
+    description: Preuve publique anonymisee d'un PV.
+    sensitivity: public
+    public_exposure: public
+    fields:
+      polling_station_id: { type: uuid, required: true }
+      polling_station_code: { type: string, required: true }
+      polling_station_name: { type: string, required: false }
+      polling_station_region: { type: string, required: false, note: legacy field; prefer explicit region_id and region_name in future }
+      status: { type: vocabulary, vocabulary: pv_status, required: true }
+      pv_hash: { type: sha256_hex, required: true }
+      server_payload_hash: { type: sha256_hex, required: true }
+      integrity_status: { type: vocabulary, vocabulary: integrity_status, required: true }
+      anomalies: { type: array, items: PVAnomaly, required: true }
+
+  PublicRegionalRiskProof:
+    domain: proof
+    kind: api_public
+    description: Score regional public inclus dans le paquet verifiable.
+    sensitivity: public
+    public_exposure: public
+
+  PublicPVProofExport:
+    domain: proof
+    kind: api_public
+    description: Lot public canonique contenant PV publics et risques regionaux.
+    sensitivity: public
+    public_exposure: public
+
+  PublicPVExportProof:
+    domain: proof
+    kind: api_public
+    description: Signature serveur et hash global du lot public canonique.
+    sensitivity: public
+    public_exposure: public
+
+vocabularies:
+  election_status:
+    values: [planned, active, closed, archived]
+  election_type:
+    values: [presidential, legislative, municipal, senatorial, general]
+  result_level:
+    values: [national, region, department, commune, polling_station]
+  user_role:
+    values: [super_admin, region_admin, local_coord, observer, verified_citizen, citizen]
+  pv_status:
+    values: [draft, submitted, verified, disputed, rejected, needs_clarification]
+  integrity_status:
+    values: [trusted, hash_verified_unsigned, hash_mismatch, incomplete, unverified]
+  integrity_error_code:
+    values:
+      - payload_hash_mismatch
+      - missing_payload_hash
+      - missing_photo_hash
+      - missing_photo_url
+      - missing_signature
+      - missing_device_id
+      - unregistered_device
+      - invalid_signature
+      - device_key_registry_unavailable
+      - device_key_lookup_failed
+      - invalid_registered_public_key
+      - unsupported_signature_algorithm
+      - missing_client_recorded_at
+  pv_anomaly_code:
+    values: [integrity_error, voters_above_registered, vote_totals_mismatch, high_turnout, duplicate_polling_station_pv]
+  pv_audit_event_type:
+    values: [submitted, verification_decision, integrity_changed]
+  anomaly_severity:
+    values: [low, medium, high, critical]
+  risk_status:
+    values: [signal_faible, a_surveiller, prioritaire, stable]
+  risk_rule_code:
+    values: [coverage_low, turnout_gap_high, turnout_gap_medium, invalid_gap_high, invalid_gap_medium, leader_missing, within_expected_range]
+  source_confidence:
+    values: [official, official_estimate, secondary_check, unverified]
+  source_status:
+    values: [planned, downloaded, extracted, ocr_extracted, catalog_tracked, verified, rejected]
+  signature_algorithm:
+    values: [ECDSA_P256_SHA256, ED25519_SHA256_EXPORT_V1]
+  sensitivity_level:
+    values: [public, internal, restricted, sensitive, secret]
+  public_exposure:
+    values: [public, redacted, aggregate_only, hash_only, never]
+
+relations:
+  - subject: Election
+    predicate: has_candidate
+    object: Candidate
+  - subject: Region
+    predicate: contains
+    object: Department
+  - subject: Department
+    predicate: contains
+    object: Arrondissement
+  - subject: Arrondissement
+    predicate: contains
+    object: PollingStation
+  - subject: PollingStation
+    predicate: belongs_to
+    object: Region
+  - subject: PollingStation
+    predicate: belongs_to
+    object: Election
+  - subject: PollingStation
+    predicate: sourced_from
+    object: SourceDocument
+  - subject: PollingStationAssignment
+    predicate: assigned_to
+    object: Observer
+  - subject: PollingStationAssignment
+    predicate: covers
+    object: PollingStation
+  - subject: PVSubmission
+    predicate: concerns
+    object: PollingStation
+  - subject: PVSubmission
+    predicate: submitted_by
+    object: Observer
+  - subject: PVSubmission
+    predicate: has_result
+    object: PVResult
+  - subject: PVSubmission
+    predicate: has_anomaly
+    object: PVAnomaly
+  - subject: PVSubmission
+    predicate: has_photo_proof
+    object: PVPhotoProof
+  - subject: PVSubmission
+    predicate: signed_by
+    object: ObserverDeviceKey
+  - subject: PVSubmission
+    predicate: sealed_by
+    object: CanonicalManifest
+  - subject: PVResult
+    predicate: counts_for
+    object: Candidate
+  - subject: PVAuditEvent
+    predicate: audits
+    object: PVSubmission
+  - subject: RegionalRiskSnapshot
+    predicate: derived_from
+    object: PVSubmission
+  - subject: RegionalRiskSnapshot
+    predicate: compared_to
+    object: HistoricalElectionResult
+  - subject: PublicPVProofExport
+    predicate: includes
+    object: PublicPVProof
+  - subject: PublicPVProofExport
+    predicate: includes
+    object: PublicRegionalRiskProof
+  - subject: PublicPVExportProof
+    predicate: signs
+    object: PublicPVProofExport
+
+invariants:
+  - id: pv_total_votes_must_not_exceed_registered_voters
+    entity: PVSubmission
+    rule: voters_count <= registered_voters
+  - id: pv_candidate_votes_should_match_reported_voters
+    entity: PVSubmission
+    rule: sum(PVResult.votes) + null_votes + blank_votes + disputed_votes ~= voters_count
+  - id: pv_public_export_must_not_expose_observer_identity
+    entity: PublicPVProof
+    rule: observer_id must_not_exist
+  - id: audit_events_are_append_only
+    entity: PVAuditEvent
+    rule: update/delete forbidden
+  - id: regional_risk_snapshots_are_append_only
+    entity: RegionalRiskSnapshot
+    rule: update/delete discouraged_or_forbidden
+  - id: public_export_hash_covers_regional_risks
+    entity: PublicPVProofExport
+    rule: canonical_export includes pv_proofs and regional_risks
+  - id: public_export_signature_verifies_export_hash
+    entity: PublicPVExportProof
+    rule: verify(signature, export_hash, public_key) == true
+  - id: source_document_hash_is_stable
+    entity: SourceDocument
+    rule: sha256_checksum identifies archived source file
+
+known_ambiguities:
+  - id: polling_station_region_legacy_field
+    description: PublicPVProof.polling_station_region may currently contain a region id instead of a readable region name.
+    recommended_resolution: Add explicit region_id and region_name fields to public proof exports.
+  - id: pv_hash_name
+    description: pv_hash means photo/file hash, not the complete PV content hash.
+    recommended_resolution: Prefer photo_hash naming in future public contracts while keeping pv_hash as legacy alias.
+  - id: commune_arrondissement_mapping
+    description: ELECAM historical reports may use commune and arrondissement in overlapping ways.
+    recommended_resolution: Keep Arrondissement as canonical operational level and map commune_name as historical source terminology.
+  - id: signal_faible_semantics
+    description: risk_status signal_faible means evidence is weak or coverage is low; it does not necessarily mean risk is low.
+    recommended_resolution: Keep the French label explicit in citizen-facing UI.
