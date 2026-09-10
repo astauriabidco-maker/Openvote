@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ed25519 } from '@noble/curves/ed25519.js';
 import { sha256 } from '@noble/hashes/sha2.js';
+import { API_URL } from './constants';
 import type { PublicPVExportProof, PublicPVProof, PublicPVProofExport, PublicRegionalRiskProof } from './types';
 
 interface PublicVerifierProps {
@@ -130,6 +131,8 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [result, setResult] = useState<VerificationResult | null>(null);
     const [error, setError] = useState('');
     const [checking, setChecking] = useState(false);
+    const [publicElectionId, setPublicElectionId] = useState('');
+    const [loadingPublicExport, setLoadingPublicExport] = useState(false);
 
     const proofs = useMemo(() => extractProofs(raw), [raw]);
     const regionalRisks = useMemo(() => extractRegionalRisks(raw), [raw]);
@@ -142,6 +145,34 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
         setRaw(await file.text());
         setResult(null);
         setError('');
+    };
+
+    const loadPublicExport = async () => {
+        const electionId = publicElectionId.trim();
+        if (!electionId) {
+            setError('Saisissez un election_id.');
+            setResult(null);
+            return;
+        }
+        setLoadingPublicExport(true);
+        setChecking(true);
+        setError('');
+        setResult(null);
+        try {
+            const response = await fetch(`${API_URL}/public/pv-proofs?election_id=${encodeURIComponent(electionId)}`);
+            if (!response.ok) {
+                throw new Error(`Export public indisponible (${response.status}).`);
+            }
+            const payload = await response.json();
+            const serialized = JSON.stringify(payload, null, 2);
+            setRaw(serialized);
+            setResult(await verifyExportPackage(serialized));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : String(err));
+        } finally {
+            setChecking(false);
+            setLoadingPublicExport(false);
+        }
     };
 
     const verify = async () => {
@@ -172,13 +203,35 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                 </div>
 
                 <div className="public-verify-inputs">
+                    <div className="public-verify-api-row">
+                        <label>
+                            Election ID public
+                            <input
+                                value={publicElectionId}
+                                onChange={(event) => setPublicElectionId(event.target.value)}
+                                placeholder="ex: 00002025-0000-4000-8000-000000000001"
+                            />
+                        </label>
+                        <button type="button" onClick={loadPublicExport} disabled={loadingPublicExport || publicElectionId.trim().length === 0}>
+                            {loadingPublicExport ? 'Chargement...' : 'Charger depuis l’API publique'}
+                        </button>
+                    </div>
                     <label>
                         Fichier JSON signé
                         <input type="file" accept="application/json,.json" onChange={(event) => loadFile(event.target.files?.[0])} />
                     </label>
                     <label>
                         Contenu JSON
-                        <textarea value={raw} onChange={(event) => setRaw(event.target.value)} rows={10} spellCheck={false} />
+                        <textarea
+                            value={raw}
+                            onChange={(event) => {
+                                setRaw(event.target.value);
+                                setResult(null);
+                                setError('');
+                            }}
+                            rows={10}
+                            spellCheck={false}
+                        />
                     </label>
                     <button type="button" onClick={verify} disabled={checking || raw.trim().length === 0}>
                         {checking ? 'Vérification...' : 'Vérifier localement'}

@@ -47,6 +47,11 @@
   padding: 10px 14px;
 }
 
+.public-verify-inputs button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .public-verify-inputs {
   display: grid;
   gap: 12px;
@@ -54,6 +59,13 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-surface);
   padding: 16px;
+}
+
+.public-verify-api-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
 }
 
 .public-verify-inputs label {
@@ -264,6 +276,10 @@
 
   .public-verify-head {
     display: grid;
+  }
+
+  .public-verify-api-row {
+    grid-template-columns: 1fr;
   }
 
   .public-verify-kpis {
