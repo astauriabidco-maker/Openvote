@@ -112,20 +112,46 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
         setError('');
     };
 
-    const FEATURES = [
-        { icon: '🗺️', title: 'Carte Interactive', desc: 'Visualisez les 10 régions, 58 départements et 360 arrondissements en temps réel' },
-        { icon: '📡', title: 'Signalements Terrain', desc: 'Rapportez fraudes, violences et irrégularités géolocalisées avec photos' },
-        { icon: '📱', title: 'Mode Hors-Ligne', desc: 'Fonctionne sans Internet — synchronisation automatique au retour du réseau' },
-        { icon: '📜', title: 'Cadre Juridique', desc: 'Accès aux textes de loi électoraux avec recherche sémantique intelligente' },
-        { icon: '🔐', title: 'Sécurité Renforcée', desc: 'Chiffrement bout-en-bout, aucun tracking, données souveraines' },
-        { icon: '📊', title: 'Intelligence Électorale', desc: 'Données démographiques BUCREP et taux d\'enrôlement ELECAM consolidés' },
+    const PROOF_STEPS = [
+        { label: 'PV terrain', detail: 'Photo et chiffres du bureau collectés même hors ligne.' },
+        { label: 'Hash local', detail: 'Le contenu PV et la photo sont scellés avant envoi.' },
+        { label: 'Signature', detail: 'L’appareil observateur lie la preuve à son origine.' },
+        { label: 'Audit', detail: 'Le backend trace les statuts, anomalies et changements.' },
+        { label: 'Export signé', detail: 'Le paquet public devient vérifiable sans accès admin.' },
     ];
 
-    const STATS = [
-        { value: '29M', label: 'Population', icon: '👥' },
-        { value: '7.7M', label: 'Inscrits ELECAM', icon: '🗳️' },
-        { value: '360', label: 'Arrondissements', icon: '📍' },
-        { value: '10', label: 'Régions', icon: '🌍' },
+    const PUBLIC_CHECKS = [
+        'hash global de l’export',
+        'signature serveur et clé publique',
+        'hash photo et statut d’intégrité',
+        'anomalies PV et score régional',
+        'bureau, région et source de la preuve',
+    ];
+
+    const HISTORICAL_ELECTIONS = [
+        { year: '2011 / 2018', label: 'Présidentielles', detail: 'participation et résultats officiels' },
+        { year: '2013 / 2020', label: 'Législatives', detail: 'comparaison par territoire' },
+        { year: '2013 / 2018 / 2023', label: 'Sénatoriales', detail: 'mémoire institutionnelle ELECAM' },
+    ];
+
+    const LEGAL_ITEMS = [
+        'rôle du procès-verbal',
+        'dépouillement au bureau',
+        'missions des observateurs',
+        'délais et voies de recours',
+    ];
+
+    const NEWS_ITEMS = [
+        { status: 'Officiel', title: 'Calendrier électoral', source: 'Sources institutionnelles' },
+        { status: 'Vérifié', title: 'Communiqués ELECAM', source: 'Veille datée et sourcée' },
+        { status: 'À confirmer', title: 'Alertes terrain', source: 'Signal faible avant recoupement' },
+    ];
+
+    const TRUST_METRICS = [
+        { value: '7.7M', label: 'Inscrits ELECAM' },
+        { value: '360', label: 'Arrondissements' },
+        { value: '10', label: 'Régions' },
+        { value: '5', label: 'Types de preuves' },
     ];
 
     return (
@@ -138,71 +164,132 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
                 <div className="landing-bg-grid" />
             </div>
 
-            {/* LEFT SIDE — Hero & Info */}
             <div className="landing-left">
-                {/* Top bar */}
                 <div className="landing-topbar">
                     <div className="landing-brand">
                         <img src="/icon-192.png" alt="Openvote" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
                         <span>Openvote</span>
                     </div>
-                <div className="landing-badge">
-                    <span className="landing-badge-dot" />
-                    Système opérationnel
-                </div>
+                    <div className="landing-badge">
+                        <span className="landing-badge-dot" />
+                        Preuve publique vérifiable
+                    </div>
                     {onOpenPublicVerifier && (
                         <button type="button" className="landing-public-link" onClick={onOpenPublicVerifier}>
-                            Vérifier un export
+                            Vérifier un export public
                         </button>
                     )}
                 </div>
 
-                {/* Hero */}
                 <div className="landing-hero">
-                    <div className="landing-hero-tag">🇨🇲 Cameroun · Surveillance Électorale Citoyenne</div>
+                    <div className="landing-hero-tag">Cameroun · PV électoraux · Audit citoyen</div>
                     <h1 className="landing-hero-title">
-                        Protégeons la <span className="landing-gradient-text">transparence</span> de nos élections
+                        Chaque PV doit pouvoir être <span className="landing-gradient-text">vérifié</span>
                     </h1>
                     <p className="landing-hero-desc">
-                        Openvote est une plateforme citoyenne indépendante permettant aux observateurs,
-                        coordonnateurs et citoyens de surveiller le processus électoral camerounais en temps réel.
-                        Signalez les incidents, consultez les données, défendez la démocratie.
+                        Openvote collecte les procès-verbaux terrain, scelle les preuves par hash et signature,
+                        audite les changements, puis publie un paquet vérifiable par les citoyens, journalistes,
+                        observateurs et organisations indépendantes.
                     </p>
+                    <div className="landing-hero-actions">
+                        {onOpenPublicVerifier && (
+                            <button type="button" className="landing-primary-cta" onClick={onOpenPublicVerifier}>
+                                Vérifier un paquet signé
+                            </button>
+                        )}
+                        <a className="landing-secondary-cta" href="#observer-login">
+                            Accès observateur / admin
+                        </a>
+                    </div>
                 </div>
 
-                {/* Stats */}
                 <div className="landing-stats">
-                    {STATS.map((stat, i) => (
+                    {TRUST_METRICS.map((stat, i) => (
                         <div key={i} className="landing-stat-card" style={{ animationDelay: `${0.4 + i * 0.1}s` }}>
-                            <div className="landing-stat-icon">{stat.icon}</div>
                             <div className="landing-stat-value">{stat.value}</div>
                             <div className="landing-stat-label">{stat.label}</div>
                         </div>
                     ))}
                 </div>
 
-                {/* Features */}
-                <div className="landing-features">
-                    {FEATURES.map((feat, i) => (
-                        <div key={i} className="landing-feature-card" style={{ animationDelay: `${0.6 + i * 0.08}s` }}>
-                            <div className="landing-feature-icon">{feat.icon}</div>
-                            <div>
-                                <div className="landing-feature-title">{feat.title}</div>
-                                <div className="landing-feature-desc">{feat.desc}</div>
+                <section className="landing-proof-panel" aria-labelledby="proof-flow-title">
+                    <div className="landing-section-kicker">Preuve électorale</div>
+                    <h2 id="proof-flow-title">Comment la preuve fonctionne</h2>
+                    <div className="landing-proof-flow">
+                        {PROOF_STEPS.map((step, index) => (
+                            <div key={step.label} className="landing-proof-step">
+                                <span>{index + 1}</span>
+                                <strong>{step.label}</strong>
+                                <small>{step.detail}</small>
                             </div>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="landing-public-proof">
+                    <div>
+                        <div className="landing-section-kicker">Vérification citoyenne</div>
+                        <h2>Ce que le public peut contrôler</h2>
+                        <p>
+                            La preuve publiée reste lisible localement: aucune confiance aveugle dans l’interface admin,
+                            chaque modification du paquet doit casser le hash ou la signature.
+                        </p>
+                    </div>
+                    <ul>
+                        {PUBLIC_CHECKS.map((check) => (
+                            <li key={check}>{check}</li>
+                        ))}
+                    </ul>
+                </section>
+
+                <section className="landing-memory">
+                    <div className="landing-section-kicker">Mémoire électorale officielle</div>
+                    <h2>Comparer 2025 aux scrutins passés</h2>
+                    <div className="landing-memory-list">
+                        {HISTORICAL_ELECTIONS.map((election) => (
+                            <article key={election.label}>
+                                <span>{election.year}</span>
+                                <strong>{election.label}</strong>
+                                <small>{election.detail}</small>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+
+                <div className="landing-civic-grid">
+                    <section className="landing-civic-panel">
+                        <div className="landing-section-kicker">Cadre législatif</div>
+                        <h2>Comprendre les règles du scrutin</h2>
+                        <ul>
+                            {LEGAL_ITEMS.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                    </section>
+
+                    <section className="landing-civic-panel">
+                        <div className="landing-section-kicker">Actualité électorale</div>
+                        <h2>Suivre les faits vérifiés</h2>
+                        <div className="landing-news-list">
+                            {NEWS_ITEMS.map((item) => (
+                                <article key={item.title}>
+                                    <span>{item.status}</span>
+                                    <strong>{item.title}</strong>
+                                    <small>{item.source}</small>
+                                </article>
+                            ))}
                         </div>
-                    ))}
+                    </section>
                 </div>
 
-                {/* Footer */}
                 <div className="landing-left-footer">
-                    <span>🔒 Open Source · Données souveraines · Aucun tracking</span>
-                    <span>© 2025 Openvote · Par des citoyens, pour des citoyens</span>
+                    <span>Open source · Données souveraines · Audit public</span>
+                    <span>© 2025 Openvote · Preuve, droit, mémoire</span>
                 </div>
             </div>
 
             {/* RIGHT SIDE — Login Form */}
-            <div className="landing-right">
+            <div className="landing-right" id="observer-login">
                 <div className="login-card">
                     <div className="login-header">
                         <div className="login-logo">🗳️</div>
