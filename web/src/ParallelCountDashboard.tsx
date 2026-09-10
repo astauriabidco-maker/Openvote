@@ -15,6 +15,15 @@ interface ParallelCountDashboardProps {
     refreshKey?: number;
 }
 
+function safeExportFilePart(value: string): string {
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80) || 'election';
+}
+
 export default function ParallelCountDashboard({ token, refreshKey = 0 }: ParallelCountDashboardProps) {
     const apiClient = useMemo(() => axios.create({
         baseURL: API_URL,
@@ -81,17 +90,21 @@ export default function ParallelCountDashboard({ token, refreshKey = 0 }: Parall
     const anomalousProofs = publicProofs.filter((proof) => (proof.anomalies || []).length > 0).length;
 
     const exportPublicProofs = () => {
+        if (!publicExport || !publicExportProof) return;
         const payload = {
             exported_by_client_at: new Date().toISOString(),
             election_name: selectedElection?.name || '',
+            source_endpoint: `/public/pv-proofs?election_id=${encodeURIComponent(electionId)}`,
             export: publicExport,
             export_proof: publicExportProof,
+            pv_proofs: publicExport.pv_proofs || publicProofs,
+            total: publicExport.total ?? publicProofs.length,
         };
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `openvote_pv_proofs_${electionId || 'election'}.json`;
+        a.download = `openvote-public-proof-${safeExportFilePart(selectedElection?.name || electionId)}.json`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -113,8 +126,8 @@ export default function ParallelCountDashboard({ token, refreshKey = 0 }: Parall
                     <button type="button" onClick={loadSummary} disabled={loading}>
                         {loading ? '...' : 'Actualiser'}
                     </button>
-                    <button type="button" onClick={exportPublicProofs} disabled={!publicProofs.length}>
-                        Export preuves
+                    <button type="button" onClick={exportPublicProofs} disabled={!publicExport || !publicExportProof}>
+                        Télécharger le paquet vérifiable
                     </button>
                 </div>
             </div>
