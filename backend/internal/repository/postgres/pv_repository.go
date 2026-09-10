@@ -1489,7 +1489,9 @@ func (r *pvRepo) GetPublicProofs(ctx context.Context, electionID string) ([]enti
 
 	rows, err := r.db.QueryContext(queryCtx, `
 		SELECT ps.id, ps.election_id, ps.polling_station_id,
-		       COALESCE(st.code, ''), COALESCE(st.name, ''), COALESCE(st.region_id::text, ''),
+		       COALESCE(st.code, ''), COALESCE(st.name, ''),
+		       COALESCE(reg.name, st.region_id::text, ''),
+		       COALESCE(st.region_id::text, ''), COALESCE(reg.name, ''),
 		       ps.status, ps.registered_voters, ps.voters_count, ps.null_votes,
 		       ps.blank_votes, ps.disputed_votes, COALESCE(ps.pv_hash, ''),
 		       COALESCE(ps.server_payload_hash, ''), COALESCE(ps.integrity_status, ''),
@@ -1497,6 +1499,7 @@ func (r *pvRepo) GetPublicProofs(ctx context.Context, electionID string) ([]enti
 		       ps.submitted_at, ps.updated_at
 		FROM pv_submissions ps
 		LEFT JOIN polling_stations st ON st.id = ps.polling_station_id
+		LEFT JOIN regions reg ON reg.id = st.region_id
 		WHERE ps.election_id = $1
 		  AND ps.status IN ('submitted', 'verified', 'disputed', 'rejected', 'needs_clarification')
 		ORDER BY st.code, ps.submitted_at DESC`, electionID)
@@ -1513,6 +1516,7 @@ func (r *pvRepo) GetPublicProofs(ctx context.Context, electionID string) ([]enti
 		if err := rows.Scan(
 			&proof.ID, &proof.ElectionID, &proof.PollingStationID,
 			&proof.PollingStationCode, &proof.PollingStationName, &proof.PollingStationRegion,
+			&proof.PollingStationRegionID, &proof.PollingStationRegionName,
 			&proof.Status, &pv.RegisteredVoters, &pv.VotersCount, &pv.NullVotes,
 			&pv.BlankVotes, &pv.DisputedVotes, &proof.PVHash,
 			&proof.ServerPayloadHash, &proof.IntegrityStatus, &integrityErrors,

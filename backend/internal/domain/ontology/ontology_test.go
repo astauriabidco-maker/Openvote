@@ -150,6 +150,12 @@ func TestOpenvoteOntologyV1Contract(t *testing.T) {
 	if _, ok := publicProof.Fields["polling_station_region"]; !ok {
 		t.Fatalf("PublicPVProof.polling_station_region doit documenter le champ legacy")
 	}
+	if _, ok := publicProof.Fields["polling_station_region_id"]; !ok {
+		t.Fatalf("PublicPVProof.polling_station_region_id doit documenter l'identifiant canonique")
+	}
+	if _, ok := publicProof.Fields["polling_station_region_name"]; !ok {
+		t.Fatalf("PublicPVProof.polling_station_region_name doit documenter le nom canonique")
+	}
 	if len(doc.Invariants) == 0 {
 		t.Fatalf("invariants obligatoires absents")
 	}

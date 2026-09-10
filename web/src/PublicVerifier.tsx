@@ -133,6 +133,14 @@ function normalizeSearchValue(value: string): string {
         .toLowerCase();
 }
 
+function proofRegionName(proof: PublicPVProof): string {
+    return proof.polling_station_region_name || proof.polling_station_region || '';
+}
+
+function proofRegionId(proof: PublicPVProof): string {
+    return proof.polling_station_region_id || '';
+}
+
 export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [raw, setRaw] = useState('');
     const [result, setResult] = useState<VerificationResult | null>(null);
@@ -158,7 +166,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const regionOptions = useMemo(() => {
         const values = new Map<string, string>();
         proofs.forEach((proof) => {
-            const label = proof.polling_station_region || '';
+            const label = proofRegionName(proof);
             if (label) values.set(normalizeSearchValue(label), label);
         });
         regionalRisks.forEach((risk) => {
@@ -173,7 +181,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
         const query = normalizeSearchValue(proofSearch.trim());
         const normalizedRegionFilter = normalizeSearchValue(regionFilter);
         return proofs.filter((proof) => {
-            const proofRegion = normalizeSearchValue(proof.polling_station_region || '');
+            const proofRegion = normalizeSearchValue(proofRegionName(proof));
             const matchesRegion = !regionFilter || proofRegion === normalizedRegionFilter;
             const matchesStatus = !statusFilter || proof.status === statusFilter;
             const matchesIntegrity = !integrityFilter || proof.integrity_status === integrityFilter;
@@ -183,7 +191,8 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                 proof.polling_station_id,
                 proof.polling_station_code,
                 proof.polling_station_name,
-                proof.polling_station_region,
+                proofRegionId(proof),
+                proofRegionName(proof),
                 proof.status,
                 proof.integrity_status,
                 proof.pv_hash,
@@ -198,7 +207,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
         return filteredProofs.find((proof) => proof.id === selectedProofId) || filteredProofs[0];
     }, [filteredProofs, selectedProofId]);
     const selectedRegionalRisk = selectedProof
-        ? riskByRegion.get(normalizeSearchValue(selectedProof.polling_station_region || ''))
+        ? riskByRegion.get(normalizeSearchValue(proofRegionName(selectedProof)))
         : undefined;
 
     const loadFile = async (file?: File) => {
@@ -364,7 +373,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                             <div>
                                 <span>PV sélectionné</span>
                                 <h2>{selectedProof.polling_station_code || selectedProof.polling_station_id}</h2>
-                                <p>{selectedProof.polling_station_name || selectedProof.polling_station_region || 'Bureau publié'}</p>
+                                <p>{selectedProof.polling_station_name || proofRegionName(selectedProof) || 'Bureau publié'}</p>
                             </div>
                             <mark>{selectedProof.status}</mark>
                         </div>
@@ -375,7 +384,11 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                             </div>
                             <div>
                                 <span>Région</span>
-                                <strong>{selectedProof.polling_station_region || '-'}</strong>
+                                <strong>{proofRegionName(selectedProof) || '-'}</strong>
+                            </div>
+                            <div>
+                                <span>ID région</span>
+                                <strong>{proofRegionId(selectedProof) || '-'}</strong>
                             </div>
                             <div>
                                 <span>Anomalies</span>
@@ -470,7 +483,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                         <span>Anom.</span>
                     </div>
                     {filteredProofs.slice(0, 120).map((proof) => {
-                        const regionalRisk = riskByRegion.get(normalizeSearchValue(proof.polling_station_region || ''));
+                        const regionalRisk = riskByRegion.get(normalizeSearchValue(proofRegionName(proof)));
                         const selected = selectedProof?.id === proof.id;
                         return (
                             <button
@@ -481,7 +494,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                             >
                                 <span>
                                     <strong>{proof.polling_station_code || proof.polling_station_id}</strong>
-                                    <small>{proof.polling_station_name || proof.polling_station_region || 'Bureau publié'}</small>
+                                    <small>{proof.polling_station_name || proofRegionName(proof) || 'Bureau publié'}</small>
                                 </span>
                                 <span>{proof.status}</span>
                                 <span>{proof.integrity_status || '-'}</span>

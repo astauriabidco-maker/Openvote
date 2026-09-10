@@ -467,6 +467,8 @@ export interface PublicPVProof {
     polling_station_code: string;
     polling_station_name: string;
     polling_station_region?: string;
+    polling_station_region_id?: string;
+    polling_station_region_name?: string;
     status: string;
     pv_hash: string;
     server_payload_hash: string;

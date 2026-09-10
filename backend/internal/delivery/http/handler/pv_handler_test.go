@@ -658,15 +658,18 @@ func TestListPublicPVProofsReturnsAnonymizedProofs(t *testing.T) {
 	pvRepo := &mockPVRepo{
 		publicProofs: []entity.PublicPVProof{
 			{
-				ID:                 "78c278a1-8ca1-4a37-bed4-62300d7145be",
-				ElectionID:         testElectionID,
-				PollingStationID:   testStationID,
-				PollingStationCode: "BV001",
-				Status:             entity.PVStatusVerified,
-				PVHash:             "photo-hash",
-				ServerPayloadHash:  "server-hash",
-				IntegrityStatus:    "trusted",
-				Anomalies:          []entity.PVAnomaly{},
+				ID:                       "78c278a1-8ca1-4a37-bed4-62300d7145be",
+				ElectionID:               testElectionID,
+				PollingStationID:         testStationID,
+				PollingStationCode:       "BV001",
+				PollingStationRegion:     "CENTRE",
+				PollingStationRegionID:   "region-ce",
+				PollingStationRegionName: "CENTRE",
+				Status:                   entity.PVStatusVerified,
+				PVHash:                   "photo-hash",
+				ServerPayloadHash:        "server-hash",
+				IntegrityStatus:          "trusted",
+				Anomalies:                []entity.PVAnomaly{},
 			},
 		},
 		publicRisks: []entity.RegionalRiskSnapshot{
@@ -715,6 +718,9 @@ func TestListPublicPVProofsReturnsAnonymizedProofs(t *testing.T) {
 	}
 	if payload.Total != 1 || payload.Proofs[0].PVHash != "photo-hash" {
 		t.Fatalf("preuves publiques inattendues: %+v", payload)
+	}
+	if payload.Proofs[0].PollingStationRegionID != "region-ce" || payload.Proofs[0].PollingStationRegionName != "CENTRE" {
+		t.Fatalf("région publique non clarifiée: %+v", payload.Proofs[0])
 	}
 	if payload.Export.ProofManifestVersion != 2 {
 		t.Fatalf("version manifeste inattendue: %d", payload.Export.ProofManifestVersion)

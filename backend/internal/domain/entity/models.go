@@ -544,19 +544,21 @@ type FieldCoverageSummary struct {
 
 // PublicPVProof expose une preuve vérifiable sans identité observateur.
 type PublicPVProof struct {
-	ID                   string      `json:"id" db:"id"`
-	ElectionID           string      `json:"election_id" db:"election_id"`
-	PollingStationID     string      `json:"polling_station_id" db:"polling_station_id"`
-	PollingStationCode   string      `json:"polling_station_code" db:"polling_station_code"`
-	PollingStationName   string      `json:"polling_station_name" db:"polling_station_name"`
-	PollingStationRegion string      `json:"polling_station_region,omitempty" db:"polling_station_region"`
-	Status               PVStatus    `json:"status" db:"status"`
-	PVHash               string      `json:"pv_hash" db:"pv_hash"`
-	ServerPayloadHash    string      `json:"server_payload_hash" db:"server_payload_hash"`
-	IntegrityStatus      string      `json:"integrity_status" db:"integrity_status"`
-	Anomalies            []PVAnomaly `json:"anomalies" db:"-"`
-	SubmittedAt          time.Time   `json:"submitted_at" db:"submitted_at"`
-	UpdatedAt            time.Time   `json:"updated_at" db:"updated_at"`
+	ID                       string      `json:"id" db:"id"`
+	ElectionID               string      `json:"election_id" db:"election_id"`
+	PollingStationID         string      `json:"polling_station_id" db:"polling_station_id"`
+	PollingStationCode       string      `json:"polling_station_code" db:"polling_station_code"`
+	PollingStationName       string      `json:"polling_station_name" db:"polling_station_name"`
+	PollingStationRegion     string      `json:"polling_station_region,omitempty" db:"polling_station_region"`
+	PollingStationRegionID   string      `json:"polling_station_region_id,omitempty" db:"polling_station_region_id"`
+	PollingStationRegionName string      `json:"polling_station_region_name,omitempty" db:"polling_station_region_name"`
+	Status                   PVStatus    `json:"status" db:"status"`
+	PVHash                   string      `json:"pv_hash" db:"pv_hash"`
+	ServerPayloadHash        string      `json:"server_payload_hash" db:"server_payload_hash"`
+	IntegrityStatus          string      `json:"integrity_status" db:"integrity_status"`
+	Anomalies                []PVAnomaly `json:"anomalies" db:"-"`
+	SubmittedAt              time.Time   `json:"submitted_at" db:"submitted_at"`
+	UpdatedAt                time.Time   `json:"updated_at" db:"updated_at"`
 }
 
 // PublicRegionalRiskProof expose un score régional vérifiable sans données sensibles.

@@ -344,7 +344,9 @@ entities:
       polling_station_id: { type: uuid, required: true }
       polling_station_code: { type: string, required: true }
       polling_station_name: { type: string, required: false }
-      polling_station_region: { type: string, required: false, note: legacy field; prefer explicit region_id and region_name in future }
+      polling_station_region_id: { type: uuid, required: false, meaning: stable region identifier }
+      polling_station_region_name: { type: string, required: false, meaning: readable public region name }
+      polling_station_region: { type: string, required: false, note: legacy alias; prefer polling_station_region_name }
       status: { type: vocabulary, vocabulary: pv_status, required: true }
       pv_hash: { type: sha256_hex, required: true }
       server_payload_hash: { type: sha256_hex, required: true }
@@ -520,8 +522,8 @@ invariants:
 
 known_ambiguities:
   - id: polling_station_region_legacy_field
-    description: PublicPVProof.polling_station_region may currently contain a region id instead of a readable region name.
-    recommended_resolution: Add explicit region_id and region_name fields to public proof exports.
+    description: PublicPVProof.polling_station_region is kept as a legacy alias for older clients.
+    recommended_resolution: New clients must prefer polling_station_region_id and polling_station_region_name.
   - id: pv_hash_name
     description: pv_hash means photo/file hash, not the complete PV content hash.
     recommended_resolution: Prefer photo_hash naming in future public contracts while keeping pv_hash as legacy alias.

@@ -118,6 +118,8 @@ describe('PublicVerifier', () => {
                 polling_station_code: 'BV001',
                 polling_station_name: 'ECOLE PUBLIQUE',
                 polling_station_region: 'CENTRE',
+                polling_station_region_id: 'region-ce',
+                polling_station_region_name: 'CENTRE',
                 status: 'verified',
                 pv_hash: 'photo-hash',
                 server_payload_hash: 'server-hash',
@@ -132,6 +134,8 @@ describe('PublicVerifier', () => {
                 polling_station_code: 'BV002',
                 polling_station_name: 'LYCEE CLASSIQUE',
                 polling_station_region: 'OUEST',
+                polling_station_region_id: 'region-ou',
+                polling_station_region_name: 'OUEST',
                 status: 'submitted',
                 pv_hash: 'photo-hash-ouest',
                 server_payload_hash: 'server-hash-ouest',
@@ -197,6 +201,7 @@ describe('PublicVerifier', () => {
         expect(screen.getAllByText('71/100').length).toBeGreaterThan(0);
         expect(screen.getByText('PV sélectionné')).toBeInTheDocument();
         expect(screen.getByText('station-001')).toBeInTheDocument();
+        expect(screen.getByText('region-ce')).toBeInTheDocument();
         expect(screen.getByText('photo-hash')).toBeInTheDocument();
         expect(screen.getByText('server-hash')).toBeInTheDocument();
 
@@ -213,6 +218,7 @@ describe('PublicVerifier', () => {
         await user.click(screen.getByRole('button', { name: /BV002/ }));
 
         expect(screen.getByText('station-002')).toBeInTheDocument();
+        expect(screen.getByText('region-ou')).toBeInTheDocument();
         expect(screen.getByText('photo-hash-ouest')).toBeInTheDocument();
         expect(screen.getByText('server-hash-ouest')).toBeInTheDocument();
         expect(screen.getByText('signature_missing')).toBeInTheDocument();

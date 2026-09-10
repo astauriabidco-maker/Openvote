@@ -234,7 +234,7 @@ export default function ParallelCountDashboard({ token, refreshKey = 0 }: Parall
                         <div key={proof.id} className="parallel-proof-row">
                             <span>
                                 <strong>{proof.polling_station_code || proof.polling_station_id}</strong>
-                                <small>{proof.polling_station_name || proof.polling_station_region || 'Bureau publié'}</small>
+                                <small>{proof.polling_station_name || proof.polling_station_region_name || proof.polling_station_region || 'Bureau publié'}</small>
                             </span>
                             <span>{proof.status}</span>
                             <span>{proof.integrity_status || '-'}</span>
