@@ -192,16 +192,31 @@ describe('PublicVerifier', () => {
         await user.click(screen.getByRole('button', { name: 'Charger depuis l’API publique' }));
 
         expect(await screen.findByText('Export authentique: hash global et signature serveur valides.')).toBeInTheDocument();
-        expect(screen.getByText('BV001')).toBeInTheDocument();
-        expect(screen.getByText('BV002')).toBeInTheDocument();
+        expect(screen.getAllByText('BV001').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('BV002').length).toBeGreaterThan(0);
         expect(screen.getAllByText('71/100').length).toBeGreaterThan(0);
+        expect(screen.getByText('PV sélectionné')).toBeInTheDocument();
+        expect(screen.getByText('station-001')).toBeInTheDocument();
+        expect(screen.getByText('photo-hash')).toBeInTheDocument();
+        expect(screen.getByText('server-hash')).toBeInTheDocument();
 
         await user.selectOptions(screen.getByLabelText('Région'), 'CENTRE');
-        expect(screen.getByText('BV001')).toBeInTheDocument();
+        expect(screen.getAllByText('BV001').length).toBeGreaterThan(0);
         expect(screen.queryByText('BV002')).not.toBeInTheDocument();
 
         await user.clear(screen.getByLabelText('Rechercher bureau'));
         await user.type(screen.getByLabelText('Rechercher bureau'), 'publique');
-        expect(screen.getByText('BV001')).toBeInTheDocument();
+        expect(screen.getAllByText('BV001').length).toBeGreaterThan(0);
+
+        await user.selectOptions(screen.getByLabelText('Région'), '');
+        await user.clear(screen.getByLabelText('Rechercher bureau'));
+        await user.click(screen.getByRole('button', { name: /BV002/ }));
+
+        expect(screen.getByText('station-002')).toBeInTheDocument();
+        expect(screen.getByText('photo-hash-ouest')).toBeInTheDocument();
+        expect(screen.getByText('server-hash-ouest')).toBeInTheDocument();
+        expect(screen.getByText('signature_missing')).toBeInTheDocument();
+        expect(screen.getByText('Signature absente')).toBeInTheDocument();
+        expect(screen.getByText('OUEST · 24/100 · signal faible')).toBeInTheDocument();
     });
 });

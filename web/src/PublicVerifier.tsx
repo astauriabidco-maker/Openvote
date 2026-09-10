@@ -144,6 +144,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [regionFilter, setRegionFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [integrityFilter, setIntegrityFilter] = useState('');
+    const [selectedProofId, setSelectedProofId] = useState('');
 
     const proofs = useMemo(() => extractProofs(raw), [raw]);
     const regionalRisks = useMemo(() => extractRegionalRisks(raw), [raw]);
@@ -192,6 +193,13 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
             return matchesRegion && matchesStatus && matchesIntegrity && (!query || searchable.includes(query));
         });
     }, [integrityFilter, proofSearch, proofs, regionFilter, statusFilter]);
+    const selectedProof = useMemo(() => {
+        if (filteredProofs.length === 0) return null;
+        return filteredProofs.find((proof) => proof.id === selectedProofId) || filteredProofs[0];
+    }, [filteredProofs, selectedProofId]);
+    const selectedRegionalRisk = selectedProof
+        ? riskByRegion.get(normalizeSearchValue(selectedProof.polling_station_region || ''))
+        : undefined;
 
     const loadFile = async (file?: File) => {
         if (!file) return;
@@ -350,6 +358,77 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                     </div>
                 </div>
 
+                {selectedProof && (
+                    <section className="public-verify-detail">
+                        <div className="public-verify-detail-head">
+                            <div>
+                                <span>PV sélectionné</span>
+                                <h2>{selectedProof.polling_station_code || selectedProof.polling_station_id}</h2>
+                                <p>{selectedProof.polling_station_name || selectedProof.polling_station_region || 'Bureau publié'}</p>
+                            </div>
+                            <mark>{selectedProof.status}</mark>
+                        </div>
+                        <div className="public-verify-detail-grid">
+                            <div>
+                                <span>Intégrité</span>
+                                <strong>{selectedProof.integrity_status || '-'}</strong>
+                            </div>
+                            <div>
+                                <span>Région</span>
+                                <strong>{selectedProof.polling_station_region || '-'}</strong>
+                            </div>
+                            <div>
+                                <span>Anomalies</span>
+                                <strong>{(selectedProof.anomalies || []).length}</strong>
+                            </div>
+                            <div>
+                                <span>Mis à jour</span>
+                                <strong>{selectedProof.updated_at || '-'}</strong>
+                            </div>
+                        </div>
+                        <div className="public-verify-proof-grid">
+                            <div>
+                                <span>ID PV</span>
+                                <code>{selectedProof.id}</code>
+                            </div>
+                            <div>
+                                <span>ID bureau</span>
+                                <code>{selectedProof.polling_station_id}</code>
+                            </div>
+                            <div>
+                                <span>Hash photo</span>
+                                <code>{selectedProof.pv_hash || '-'}</code>
+                            </div>
+                            <div>
+                                <span>Hash serveur</span>
+                                <code>{selectedProof.server_payload_hash || '-'}</code>
+                            </div>
+                        </div>
+                        {selectedRegionalRisk && (
+                            <div className="public-verify-region-proof">
+                                <div>
+                                    <span>Preuve régionale</span>
+                                    <strong>{selectedRegionalRisk.region_name} · {selectedRegionalRisk.risk_score}/100 · {formatRiskStatus(selectedRegionalRisk.risk_status)}</strong>
+                                    <small>{Math.round(selectedRegionalRisk.coverage_rate * 100)}% couverture · {selectedRegionalRisk.submitted_pv}/{selectedRegionalRisk.total_stations} PV</small>
+                                </div>
+                                <code>{selectedRegionalRisk.snapshot_hash || 'hash snapshot absent'}</code>
+                            </div>
+                        )}
+                        <div className="public-verify-anomaly-list">
+                            {(selectedProof.anomalies || []).map((anomaly, index) => (
+                                <div key={`${anomaly.code}-${index}`} className="public-verify-anomaly">
+                                    <strong>{anomaly.code}</strong>
+                                    <span>{anomaly.severity}</span>
+                                    <p>{anomaly.message}</p>
+                                </div>
+                            ))}
+                            {(selectedProof.anomalies || []).length === 0 && (
+                                <p>Aucune anomalie publiée pour ce PV.</p>
+                            )}
+                        </div>
+                    </section>
+                )}
+
                 <div className="public-verify-risk-table">
                     <div className="public-verify-risk-row head">
                         <span>Région</span>
@@ -392,8 +471,14 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                     </div>
                     {filteredProofs.slice(0, 120).map((proof) => {
                         const regionalRisk = riskByRegion.get(normalizeSearchValue(proof.polling_station_region || ''));
+                        const selected = selectedProof?.id === proof.id;
                         return (
-                            <div key={proof.id} className="public-verify-row">
+                            <button
+                                key={proof.id}
+                                type="button"
+                                className={`public-verify-row ${selected ? 'active' : ''}`}
+                                onClick={() => setSelectedProofId(proof.id)}
+                            >
                                 <span>
                                     <strong>{proof.polling_station_code || proof.polling_station_id}</strong>
                                     <small>{proof.polling_station_name || proof.polling_station_region || 'Bureau publié'}</small>
@@ -411,7 +496,7 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                                 <code>{proof.pv_hash ? `${proof.pv_hash.slice(0, 16)}...` : '-'}</code>
                                 <code>{proof.server_payload_hash ? `${proof.server_payload_hash.slice(0, 16)}...` : '-'}</code>
                                 <span className={(proof.anomalies || []).length > 0 ? 'public-verify-danger' : ''}>{(proof.anomalies || []).length}</span>
-                            </div>
+                            </button>
                         );
                     })}
                     {raw && proofs.length === 0 && (
