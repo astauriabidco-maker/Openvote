@@ -62,6 +62,7 @@ coverage.txt
 # Go workspace
 go.work
 go.work.sum
+backend/.cache/
 
 # ---- Node / React / Vite -------------------------------------
 node_modules/

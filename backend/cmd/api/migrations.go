@@ -63,6 +63,10 @@ var allMigrations = []migration{
 	{"migration/026_elecam_election_source_documents.sql", "Documents sources ELECAM élections et bureaux de vote"},
 	{"migration/027_pv_audit_events.sql", "Journal append-only des événements PV"},
 	{"migration/028_elecam_2025_arrondissement_reference_gaps.sql", "Compléments arrondissements ELECAM 2025"},
+	{"migration/029_polling_station_source_audit.sql", "Traçabilité documentaire des bureaux de vote"},
+	{"migration/030_historical_election_results.sql", "Résultats électoraux historiques ELECAM"},
+	{"migration/031_historical_territorial_results.sql", "Résultats historiques territoriaux ELECAM"},
+	{"migration/032_regional_risk_snapshots.sql", "Audit trail des scores régionaux"},
 }
 
 // schemaMigrationsDDL est dupliqué ici (vs lu depuis 017.sql) pour

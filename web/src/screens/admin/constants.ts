@@ -85,6 +85,7 @@ export const TAB_KEYS = [
     'map',
     'intelligence',
     'legal',
+    'sources',
 ] as const;
 
 export type TabKey = (typeof TAB_KEYS)[number];
@@ -152,6 +153,7 @@ export const NAV_GROUPS: NavGroup[] = [
         title: 'Contenu & Données',
         items: [
             { id: 'regions', label: 'Régions & Départements', icon: '🌍' },
+            { id: 'sources', label: 'Sources officielles', icon: '📚' },
             { id: 'legal', label: 'Cadre légal', icon: '⚖️' },
         ],
     },
@@ -197,6 +199,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     map: { fr: '🗺️ Carte Observateurs', en: '🗺️ Observers Map' },
     intelligence: { fr: '📊 Veille Électorale', en: '📊 Election Intel' },
     legal: { fr: '📜 Cadre Légal', en: '📜 Legal Framework' },
+    sources: { fr: '📚 Sources officielles', en: '📚 Official Sources' },
     observers_map: { fr: '🗺️ Carte Observateurs', en: '🗺️ Observers Map' },
     search_placeholder: { fr: '🔍 Rechercher par nom, rôle, ID...', en: '🔍 Search by name, role, ID...' },
     export_csv: { fr: '📥 CSV', en: '📥 CSV' },

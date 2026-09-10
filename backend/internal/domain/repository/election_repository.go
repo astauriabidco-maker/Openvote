@@ -8,6 +8,7 @@ import (
 type ElectionRepository interface {
 	GetAll(ctx context.Context) ([]entity.Election, error)
 	GetByID(ctx context.Context, id string) (*entity.Election, error)
+	GetHistoricalResults(ctx context.Context) ([]entity.HistoricalElectionResult, error)
 	Create(ctx context.Context, e *entity.Election) error
 	Update(ctx context.Context, e *entity.Election) error
 	Delete(ctx context.Context, id string) error
@@ -44,6 +45,9 @@ type PVRepository interface {
 	GetForReview(ctx context.Context, electionID, status string) ([]entity.PVSubmission, error)
 	UpdateVerificationStatus(ctx context.Context, id string, status entity.PVStatus, comment, adminID string) (*entity.PVSubmission, error)
 	GetSummary(ctx context.Context, electionID string) (*entity.ElectionResultSummary, error)
+	GetRegionSummaries(ctx context.Context, electionID string) ([]entity.RegionPVSummary, error)
+	CreateRegionalRiskSnapshot(ctx context.Context, electionID string) ([]entity.RegionalRiskSnapshot, error)
+	GetRegionalRiskSnapshots(ctx context.Context, electionID string, limit int) ([]entity.RegionalRiskSnapshot, error)
 	GetPublicProofs(ctx context.Context, electionID string) ([]entity.PublicPVProof, error)
 }
 

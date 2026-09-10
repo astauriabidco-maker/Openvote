@@ -12,7 +12,7 @@
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import axios from 'axios';
-import type { AuthState, Report, ReportLegalMatch } from '../types';
+import type { AuthState, ElectionData, HistoricalElectionResult, RegionalRiskSnapshot, RegionPVSummary, Report, ReportLegalMatch } from '../types';
 import { API_URL } from '../constants';
 import { formatDate, getRoleBadge } from '../utils/format';
 import StableAdminPanel from './admin/AdminPanel';
@@ -53,6 +53,17 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const [activeView, setActiveView] = useState<'map' | 'analytics' | 'pv' | 'admin'>('map');
   const [searchQuery, setSearchQuery] = useState('');
   const [reportLegalMatches, setReportLegalMatches] = useState<ReportLegalMatch[]>([]);
+  const [historicalResults, setHistoricalResults] = useState<HistoricalElectionResult[]>([]);
+  const [pvRegionSummaries, setPVRegionSummaries] = useState<RegionPVSummary[]>([]);
+  const [regionalRiskSnapshots, setRegionalRiskSnapshots] = useState<RegionalRiskSnapshot[]>([]);
+  const [elections, setElections] = useState<ElectionData[]>([]);
+  const [selectedComparisonElectionId, setSelectedComparisonElectionId] = useState('');
+  const [historicalLoading, setHistoricalLoading] = useState(false);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [riskSnapshotLoading, setRiskSnapshotLoading] = useState(false);
+  const [historicalYearFilter, setHistoricalYearFilter] = useState('all');
+  const [historicalContestFilter, setHistoricalContestFilter] = useState('all');
+  const [historicalRegionFilter, setHistoricalRegionFilter] = useState('all');
   const [llmAnalysis, setLlmAnalysis] = useState<{ summary: string; recommendation: string; severity_level: number; raw_response: string; violations: { article_number: string; description: string; severity: string }[] } | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showReportForm, setShowReportForm] = useState(false);
@@ -193,6 +204,316 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const topObservers = Object.entries(observerStats)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5);
+
+  const fetchHistoricalResults = useCallback(async () => {
+    setHistoricalLoading(true);
+    try {
+      const response = await apiClient.get('/historical-election-results');
+      setHistoricalResults(response.data.results || []);
+    } catch (error) {
+      console.error("Erreur lors du chargement des résultats historiques:", error);
+    } finally {
+      setHistoricalLoading(false);
+    }
+  }, [apiClient]);
+
+  const fetchElections = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/elections');
+      const list = response.data.elections || [];
+      setElections(list);
+      if (!selectedComparisonElectionId) {
+        const preferred = list.find((election: ElectionData) => election.status === 'active')
+          || list.find((election: ElectionData) => election.status === 'planned')
+          || list[0];
+        if (preferred) {
+          setSelectedComparisonElectionId(preferred.id);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des scrutins:", error);
+    }
+  }, [apiClient, selectedComparisonElectionId]);
+
+  const fetchPVRegionSummaries = useCallback(async () => {
+    if (!selectedComparisonElectionId) return;
+    setComparisonLoading(true);
+    try {
+      const response = await apiClient.get(`/pv-region-summary?election_id=${selectedComparisonElectionId}`);
+      setPVRegionSummaries(response.data.regions || []);
+    } catch (error) {
+      console.error("Erreur lors du chargement des agrégats PV régionaux:", error);
+    } finally {
+      setComparisonLoading(false);
+    }
+  }, [apiClient, selectedComparisonElectionId]);
+
+  const fetchRegionalRiskSnapshots = useCallback(async () => {
+    if (!selectedComparisonElectionId) return;
+    try {
+      const response = await apiClient.get(`/regional-risk-snapshots?election_id=${selectedComparisonElectionId}&limit=80`);
+      setRegionalRiskSnapshots(response.data.snapshots || []);
+    } catch (error) {
+      console.error("Erreur lors du chargement des snapshots de risque:", error);
+    }
+  }, [apiClient, selectedComparisonElectionId]);
+
+  const createRegionalRiskSnapshot = useCallback(async () => {
+    if (!selectedComparisonElectionId) return;
+    setRiskSnapshotLoading(true);
+    try {
+      await apiClient.post(`/regional-risk-snapshots?election_id=${selectedComparisonElectionId}`);
+      await fetchRegionalRiskSnapshots();
+    } catch (error) {
+      console.error("Erreur lors de la création du snapshot de risque:", error);
+    } finally {
+      setRiskSnapshotLoading(false);
+    }
+  }, [apiClient, fetchRegionalRiskSnapshots, selectedComparisonElectionId]);
+
+  useEffect(() => {
+    if (activeView === 'analytics' && historicalResults.length === 0) {
+      fetchHistoricalResults();
+    }
+  }, [activeView, fetchHistoricalResults, historicalResults.length]);
+
+  useEffect(() => {
+    if (activeView === 'analytics' && elections.length === 0) {
+      fetchElections();
+    }
+  }, [activeView, elections.length, fetchElections]);
+
+  useEffect(() => {
+    if (activeView === 'analytics' && selectedComparisonElectionId) {
+      fetchPVRegionSummaries();
+    }
+  }, [activeView, fetchPVRegionSummaries, selectedComparisonElectionId]);
+
+  useEffect(() => {
+    if (activeView === 'analytics' && selectedComparisonElectionId) {
+      fetchRegionalRiskSnapshots();
+    }
+  }, [activeView, fetchRegionalRiskSnapshots, selectedComparisonElectionId]);
+
+  const historicalYearOptions = Array.from(new Set(historicalResults.map((result) => result.election_year)))
+    .sort((a, b) => b - a);
+
+  const historicalContestOptions = Array.from(new Set(historicalResults.map((result) => result.contest_type)))
+    .sort((a, b) => a.localeCompare(b));
+
+  const historicalRegionOptions = Array.from(new Set(
+    historicalResults
+      .map((result) => result.region_name)
+      .filter((region): region is string => Boolean(region))
+  )).sort((a, b) => a.localeCompare(b));
+
+  const matchesHistoricalFilters = (result: HistoricalElectionResult) => (
+    (historicalYearFilter === 'all' || String(result.election_year) === historicalYearFilter) &&
+    (historicalContestFilter === 'all' || result.contest_type === historicalContestFilter) &&
+    (historicalRegionFilter === 'all' || result.region_name === historicalRegionFilter || result.result_level === 'national')
+  );
+
+  const historicalSummaries = historicalResults
+    .filter((result) => result.actor_type === 'election' && result.metric_type === 'summary' && result.result_level === 'national')
+    .filter(matchesHistoricalFilters)
+    .sort((a, b) => b.election_year - a.election_year);
+
+  const topHistoricalActors = historicalResults
+    .filter((result) => result.actor_type !== 'election' && result.result_level === 'national')
+    .reduce((acc, result) => {
+      const existing = acc.get(result.election_id);
+      const score = result.votes ?? result.seats ?? result.councils_controlled ?? 0;
+      const existingScore = existing ? (existing.votes ?? existing.seats ?? existing.councils_controlled ?? 0) : -1;
+      if (!existing || score > existingScore) {
+        acc.set(result.election_id, result);
+      }
+      return acc;
+    }, new Map<string, HistoricalElectionResult>());
+
+  const territorialSummaries = historicalResults
+    .filter((result) => result.result_level !== 'national' && result.actor_type === 'election' && result.metric_type === 'summary')
+    .filter(matchesHistoricalFilters)
+    .sort((a, b) => {
+      if (b.election_year !== a.election_year) return b.election_year - a.election_year;
+      return (a.region_name || '').localeCompare(b.region_name || '');
+    })
+    .slice(0, 24);
+
+  const territorialActorKey = (result: HistoricalElectionResult) => [
+    result.election_id,
+    result.result_level,
+    result.region_name,
+    result.department_name,
+    result.commune_name,
+  ].join('|');
+
+  const topTerritorialActors = historicalResults
+    .filter((result) => result.actor_type !== 'election' && result.result_level !== 'national')
+    .reduce((acc, result) => {
+      const key = territorialActorKey(result);
+      const existing = acc.get(key);
+      const score = result.votes ?? result.seats ?? result.councils_controlled ?? 0;
+      const existingScore = existing ? (existing.votes ?? existing.seats ?? existing.councils_controlled ?? 0) : -1;
+      if (!existing || score > existingScore) {
+        acc.set(key, result);
+      }
+      return acc;
+    }, new Map<string, HistoricalElectionResult>());
+
+  const formatNumber = (value?: number) => (
+    typeof value === 'number' ? value.toLocaleString('fr-FR') : 'n.a.'
+  );
+
+  const getHistoricalSignals = (summary: HistoricalElectionResult) => {
+    const invalidRate = summary.actual_voters && summary.blank_or_invalid_votes
+      ? (summary.blank_or_invalid_votes / summary.actual_voters) * 100
+      : undefined;
+    const abstentionRate = summary.registered_voters && summary.abstentions
+      ? (summary.abstentions / summary.registered_voters) * 100
+      : undefined;
+
+    const signals: { label: string; level: 'low' | 'medium' | 'high' }[] = [];
+    if (typeof summary.percentage === 'number' && summary.percentage >= 99) {
+      signals.push({ label: 'Participation extrême', level: 'high' });
+    } else if (typeof summary.percentage === 'number' && summary.percentage >= 95) {
+      signals.push({ label: 'Participation très haute', level: 'medium' });
+    }
+    if (typeof abstentionRate === 'number' && abstentionRate >= 10) {
+      signals.push({ label: 'Abstention élevée', level: 'medium' });
+    }
+    if (typeof invalidRate === 'number' && invalidRate >= 2) {
+      signals.push({ label: 'Invalides élevés', level: 'medium' });
+    }
+    if (signals.length === 0) {
+      signals.push({ label: 'Profil stable', level: 'low' });
+    }
+    return signals;
+  };
+
+  const territorialAnomalyRows = territorialSummaries
+    .map((summary) => ({ summary, signals: getHistoricalSignals(summary) }))
+    .filter(({ signals }) => signals.some((signal) => signal.level !== 'low'));
+
+  const normalizeRegionName = (regionName = '') => {
+    const normalized = regionName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[-\s]+/g, ' ')
+      .trim();
+    const aliases: Record<string, string> = {
+      ADAMAWA: 'ADAMAOUA',
+      ADAMAOUA: 'ADAMAOUA',
+      CENTRE: 'CENTRE',
+      CENTER: 'CENTRE',
+      EAST: 'EST',
+      EST: 'EST',
+      'FAR NORTH': 'EXTREME NORD',
+      'EXTREME NORD': 'EXTREME NORD',
+      LITTORAL: 'LITTORAL',
+      NORTH: 'NORD',
+      NORD: 'NORD',
+      'NORTH WEST': 'NORD OUEST',
+      'NORD OUEST': 'NORD OUEST',
+      WEST: 'OUEST',
+      OUEST: 'OUEST',
+      SOUTH: 'SUD',
+      SUD: 'SUD',
+      'SOUTH WEST': 'SUD OUEST',
+      'SUD OUEST': 'SUD OUEST',
+    };
+    return aliases[normalized] || normalized;
+  };
+
+  const latestHistoricalRegionByName = historicalResults
+    .filter((result) => result.result_level === 'region' && result.actor_type === 'election' && result.metric_type === 'summary')
+    .filter((result) => historicalRegionFilter === 'all' || normalizeRegionName(result.region_name) === normalizeRegionName(historicalRegionFilter))
+    .reduce((acc, result) => {
+      const key = normalizeRegionName(result.region_name);
+      const existing = acc.get(key);
+      if (!existing || result.election_year > existing.election_year) {
+        acc.set(key, result);
+      }
+      return acc;
+    }, new Map<string, HistoricalElectionResult>());
+
+  const getRiskLevel = (score: number, coverageRate: number) => {
+    if (coverageRate < 0.1) return 'signal faible';
+    if (score >= 70) return 'élevé';
+    if (score >= 40) return 'moyen';
+    return 'bas';
+  };
+
+  const getRiskClass = (riskLevel: string) => {
+    if (riskLevel === 'élevé') return 'high';
+    if (riskLevel === 'moyen') return 'medium';
+    if (riskLevel === 'signal faible') return 'weak';
+    return 'low';
+  };
+
+  const getSnapshotRiskClass = (status: string) => {
+    if (status === 'prioritaire') return 'high';
+    if (status === 'a_surveiller') return 'medium';
+    if (status === 'signal_faible') return 'weak';
+    return 'low';
+  };
+
+  const formatRiskStatus = (status: string) => {
+    const labels: Record<string, string> = {
+      signal_faible: 'signal faible',
+      a_surveiller: 'à surveiller',
+      prioritaire: 'prioritaire',
+      stable: 'stable',
+    };
+    return labels[status] || status;
+  };
+
+  const regionCoherenceRows = pvRegionSummaries
+    .filter((region) => historicalRegionFilter === 'all' || normalizeRegionName(region.region_name) === normalizeRegionName(historicalRegionFilter))
+    .map((region) => {
+      const reference = latestHistoricalRegionByName.get(normalizeRegionName(region.region_name));
+      const turnout = region.registered_voters > 0 ? (region.reported_voters / region.registered_voters) * 100 : undefined;
+      const invalidRate = region.reported_voters > 0 ? (region.blank_or_invalid_votes / region.reported_voters) * 100 : undefined;
+      const turnoutGap = typeof turnout === 'number' && typeof reference?.percentage === 'number'
+        ? turnout - reference.percentage
+        : undefined;
+      const referenceInvalidRate = reference?.actual_voters && reference.blank_or_invalid_votes
+        ? (reference.blank_or_invalid_votes / reference.actual_voters) * 100
+        : undefined;
+      const invalidGap = typeof invalidRate === 'number' && typeof referenceInvalidRate === 'number'
+        ? invalidRate - referenceInvalidRate
+        : undefined;
+      let score = 0;
+      if (typeof turnoutGap === 'number') score += Math.min(45, Math.abs(turnoutGap) * 3);
+      if (typeof invalidGap === 'number') score += Math.min(25, Math.abs(invalidGap) * 8);
+      if (region.coverage_rate < 0.1) score = Math.min(score, 25);
+      if (region.submitted_pv === 0) score = 0;
+      const evidence = [
+        typeof turnoutGap === 'number' ? `Écart participation ${turnoutGap >= 0 ? '+' : ''}${turnoutGap.toFixed(1)} pts` : 'Référence participation absente',
+        typeof invalidGap === 'number' ? `Écart invalides ${invalidGap >= 0 ? '+' : ''}${invalidGap.toFixed(1)} pts` : 'Référence invalides absente',
+        `${region.submitted_pv}/${region.total_stations} PV reçus`,
+      ];
+      return {
+        region,
+        reference,
+        turnout,
+        invalidRate,
+        score: Math.round(score),
+        riskLevel: getRiskLevel(score, region.coverage_rate),
+        evidence,
+      };
+    })
+    .sort((a, b) => b.score - a.score || a.region.region_name.localeCompare(b.region.region_name));
+
+  const latestRiskSnapshots = Array.from(regionalRiskSnapshots.reduce((acc, snapshot) => {
+    const existing = acc.get(snapshot.normalized_region_name);
+    if (!existing || new Date(snapshot.created_at).getTime() > new Date(existing.created_at).getTime()) {
+      acc.set(snapshot.normalized_region_name, snapshot);
+    }
+    return acc;
+  }, new Map<string, RegionalRiskSnapshot>()).values())
+    .filter((snapshot) => historicalRegionFilter === 'all' || normalizeRegionName(snapshot.region_name) === normalizeRegionName(historicalRegionFilter))
+    .sort((a, b) => b.risk_score - a.risk_score || a.region_name.localeCompare(b.region_name));
 
   // Filtrage par recherche
   const filteredReports = reports.filter(r => {
@@ -726,6 +1047,318 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className="analytics-card analytics-card-wide historical-filter-card">
+                  <h3>Filtres historiques</h3>
+                  <div className="historical-filter-grid">
+                    <label>
+                      <span>Année</span>
+                      <select value={historicalYearFilter} onChange={(event) => setHistoricalYearFilter(event.target.value)}>
+                        <option value="all">Toutes</option>
+                        {historicalYearOptions.map((year) => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Scrutin</span>
+                      <select value={historicalContestFilter} onChange={(event) => setHistoricalContestFilter(event.target.value)}>
+                        <option value="all">Tous</option>
+                        {historicalContestOptions.map((contest) => (
+                          <option key={contest} value={contest}>{contest}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Région</span>
+                      <select value={historicalRegionFilter} onChange={(event) => setHistoricalRegionFilter(event.target.value)}>
+                        <option value="all">Toutes</option>
+                        {historicalRegionOptions.map((region) => (
+                          <option key={region} value={region}>{region}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Terrain</span>
+                      <select value={selectedComparisonElectionId} onChange={(event) => setSelectedComparisonElectionId(event.target.value)}>
+                        <option value="">Scrutin terrain</option>
+                        {elections.map((election) => (
+                          <option key={election.id} value={election.id}>{election.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="analytics-card analytics-card-wide">
+                  <h3>📚 Comparaison historique officielle</h3>
+                  {historicalLoading ? (
+                    <p className="analytics-empty">Chargement des statistiques historiques...</p>
+                  ) : historicalSummaries.length === 0 ? (
+                    <p className="analytics-empty">Aucune statistique historique structurée.</p>
+                  ) : (
+                    <div className="historical-table-wrap">
+                      <table className="historical-table">
+                        <thead>
+                          <tr>
+                            <th>Scrutin</th>
+                            <th>Inscrits</th>
+                            <th>Votants</th>
+                            <th>Participation</th>
+                            <th>Vainqueur / premier</th>
+                            <th>Sièges</th>
+                            <th>Source</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historicalSummaries.map((summary) => {
+                            const leader = topHistoricalActors.get(summary.election_id);
+                            return (
+                              <tr key={summary.id}>
+                                <td>
+                                  <strong>{summary.election_name}</strong>
+                                  <span>{summary.contest_type}</span>
+                                </td>
+                                <td>{formatNumber(summary.registered_voters)}</td>
+                                <td>{formatNumber(summary.actual_voters)}</td>
+                                <td>{typeof summary.percentage === 'number' ? `${summary.percentage.toFixed(2)}%` : 'n.a.'}</td>
+                                <td>
+                                  {leader ? (
+                                    <>
+                                      <strong>{leader.party || leader.actor_name}</strong>
+                                      <span>
+                                        {leader.votes ? `${formatNumber(leader.votes)} voix` : ''}
+                                        {leader.seats ? `${leader.votes ? ' · ' : ''}${formatNumber(leader.seats)} sièges` : ''}
+                                      </span>
+                                    </>
+                                  ) : 'n.a.'}
+                                </td>
+                                <td>{formatNumber(summary.seats)}</td>
+                                <td>
+                                  <span className={`source-pill ${summary.status}`}>{summary.status}</span>
+                                  <small>{summary.source_document_slug}</small>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="analytics-card analytics-card-wide">
+                  <h3>🗺️ Lecture territoriale historique</h3>
+                  {historicalLoading ? (
+                    <p className="analytics-empty">Chargement des territoires historiques...</p>
+                  ) : territorialSummaries.length === 0 ? (
+                    <p className="analytics-empty">Aucune statistique territoriale structurée.</p>
+                  ) : (
+                    <div className="historical-table-wrap">
+                      <table className="historical-table">
+                        <thead>
+                          <tr>
+                            <th>Territoire</th>
+                            <th>Scrutin</th>
+                            <th>Inscrits</th>
+                            <th>Votants</th>
+                            <th>Participation</th>
+                            <th>Premier acteur</th>
+                            <th>Conseils</th>
+                            <th>Signaux</th>
+                            <th>Source</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {territorialSummaries.map((summary) => {
+                            const leader = topTerritorialActors.get(territorialActorKey(summary));
+                            return (
+                              <tr key={summary.id}>
+                                <td>
+                                  <strong>{summary.region_name || summary.department_name || summary.commune_name}</strong>
+                                  <span>{summary.result_level}</span>
+                                </td>
+                                <td>
+                                  <strong>{summary.election_name}</strong>
+                                  <span>{summary.contest_type}</span>
+                                </td>
+                                <td>{formatNumber(summary.registered_voters)}</td>
+                                <td>{formatNumber(summary.actual_voters)}</td>
+                                <td>{typeof summary.percentage === 'number' ? `${summary.percentage.toFixed(2)}%` : 'n.a.'}</td>
+                                <td>
+                                  {leader ? (
+                                    <>
+                                      <strong>{leader.party || leader.actor_name}</strong>
+                                      <span>
+                                        {leader.votes ? `${formatNumber(leader.votes)} voix` : ''}
+                                        {leader.councils_controlled ? `${leader.votes ? ' · ' : ''}${formatNumber(leader.councils_controlled)} conseils` : ''}
+                                      </span>
+                                    </>
+                                  ) : 'n.a.'}
+                                </td>
+                                <td>{formatNumber(summary.councils)}</td>
+                                <td>
+                                  <div className="historical-signal-list">
+                                    {getHistoricalSignals(summary).map((signal) => (
+                                      <span key={signal.label} className={`historical-signal signal-${signal.level}`}>
+                                        {signal.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`source-pill ${summary.status}`}>{summary.status}</span>
+                                  <small>{summary.source_document_slug}</small>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="analytics-card analytics-card-wide">
+                  <h3>Cohérence historique vs terrain</h3>
+                  {comparisonLoading ? (
+                    <p className="analytics-empty">Agrégation des PV terrain par région...</p>
+                  ) : regionCoherenceRows.length === 0 ? (
+                    <p className="analytics-empty">Aucun PV régional disponible pour le scrutin terrain sélectionné.</p>
+                  ) : (
+                    <div className="historical-table-wrap">
+                      <table className="historical-table coherence-table">
+                        <thead>
+                          <tr>
+                            <th>Région</th>
+                            <th>Couverture</th>
+                            <th>Participation terrain</th>
+                            <th>Référence</th>
+                            <th>Leader terrain</th>
+                            <th>Risque</th>
+                            <th>Preuves</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {regionCoherenceRows.map(({ region, reference, turnout, invalidRate, score, riskLevel, evidence }) => (
+                            <tr key={region.region_id || region.region_name}>
+                              <td>
+                                <strong>{region.region_name}</strong>
+                                <span>{formatNumber(region.registered_voters)} inscrits couverts</span>
+                              </td>
+                              <td>
+                                <strong>{Math.round(region.coverage_rate * 100)}%</strong>
+                                <span>{region.submitted_pv}/{region.total_stations} PV</span>
+                              </td>
+                              <td>
+                                <strong>{typeof turnout === 'number' ? `${turnout.toFixed(2)}%` : 'n.a.'}</strong>
+                                <span>{formatNumber(region.reported_voters)} votants · {typeof invalidRate === 'number' ? `${invalidRate.toFixed(2)}% invalides` : 'n.a.'}</span>
+                              </td>
+                              <td>
+                                <strong>{reference ? `${reference.election_year} ${reference.contest_type}` : 'n.a.'}</strong>
+                                <span>{reference && typeof reference.percentage === 'number' ? `${reference.percentage.toFixed(2)}% participation` : 'Référence incomplète'}</span>
+                              </td>
+                              <td>
+                                <strong>{region.leader_party || region.leader_name || 'n.a.'}</strong>
+                                <span>{region.leader_votes ? `${formatNumber(region.leader_votes)} voix` : 'Aucune voix consolidée'}</span>
+                              </td>
+                              <td>
+                                <span className={`risk-pill risk-${getRiskClass(riskLevel)}`}>{riskLevel}</span>
+                                <small>Score {score}/100</small>
+                              </td>
+                              <td>
+                                {evidence.map((item) => (
+                                  <span key={item}>{item}</span>
+                                ))}
+                                {reference && <small>{reference.source_document_slug}</small>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="analytics-card analytics-card-wide">
+                  <div className="historical-card-head">
+                    <h3>Audit trail des scores régionaux</h3>
+                    {isAdmin && (
+                      <button type="button" onClick={createRegionalRiskSnapshot} disabled={!selectedComparisonElectionId || riskSnapshotLoading}>
+                        {riskSnapshotLoading ? 'Snapshot...' : 'Créer snapshot'}
+                      </button>
+                    )}
+                  </div>
+                  {latestRiskSnapshots.length === 0 ? (
+                    <p className="analytics-empty">Aucun snapshot régional enregistré pour ce scrutin.</p>
+                  ) : (
+                    <div className="historical-anomaly-grid">
+                      {latestRiskSnapshots.map((snapshot) => (
+                        <div key={snapshot.id} className="risk-snapshot-row">
+                          <div>
+                            <strong>{snapshot.region_name}</strong>
+                            <span>{formatDate(snapshot.created_at)}</span>
+                          </div>
+                          <div>
+                            <span className={`risk-pill risk-${getSnapshotRiskClass(snapshot.risk_status)}`}>
+                              {formatRiskStatus(snapshot.risk_status)}
+                            </span>
+                            <small>Score {snapshot.risk_score}/100 · {Math.round(snapshot.coverage_rate * 100)}% couverture</small>
+                          </div>
+                          <div className="historical-signal-list">
+                            {(snapshot.rules || []).slice(0, 3).map((rule) => (
+                              <span key={rule.code} className={`historical-signal signal-${rule.severity === 'high' ? 'high' : rule.severity === 'medium' ? 'medium' : 'low'}`}>
+                                {rule.code}
+                              </span>
+                            ))}
+                          </div>
+                          <div>
+                            {(snapshot.evidence || []).slice(0, 3).map((item) => (
+                              <span key={item}>{item}</span>
+                            ))}
+                            <small>{snapshot.snapshot_hash ? `${snapshot.snapshot_hash.slice(0, 18)}...` : 'hash absent'}</small>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="analytics-card analytics-card-wide">
+                  <h3>Indicateurs d’anomalies historiques</h3>
+                  {historicalLoading ? (
+                    <p className="analytics-empty">Calcul des indicateurs historiques...</p>
+                  ) : territorialAnomalyRows.length === 0 ? (
+                    <p className="analytics-empty">Aucun signal territorial dans les filtres actifs.</p>
+                  ) : (
+                    <div className="historical-anomaly-grid">
+                      {territorialAnomalyRows.map(({ summary, signals }) => (
+                        <div key={summary.id} className="historical-anomaly-row">
+                          <div>
+                            <strong>{summary.region_name}</strong>
+                            <span>{summary.election_name}</span>
+                          </div>
+                          <div className="historical-anomaly-metrics">
+                            <span>{typeof summary.percentage === 'number' ? `${summary.percentage.toFixed(2)}% participation` : `${formatNumber(summary.councils)} conseils`}</span>
+                            {typeof summary.blank_or_invalid_votes === 'number' && (
+                              <span>{formatNumber(summary.blank_or_invalid_votes)} invalides</span>
+                            )}
+                            {typeof summary.abstentions === 'number' && (
+                              <span>{formatNumber(summary.abstentions)} abstentions</span>
+                            )}
+                          </div>
+                          <div className="historical-signal-list">
+                            {signals.map((signal) => (
+                              <span key={signal.label} className={`historical-signal signal-${signal.level}`}>
+                                {signal.label}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

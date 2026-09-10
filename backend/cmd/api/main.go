@@ -321,6 +321,7 @@ func main() {
 		api.GET("/departments", authMiddleware, regionHandler.ListDepartments)
 		api.GET("/incident-types", authMiddleware, incidentTypeHandler.List)
 		api.GET("/elections", authMiddleware, electionHandler.List)
+		api.GET("/historical-election-results", authMiddleware, electionHandler.ListHistoricalResults)
 		api.GET("/polling-stations", authMiddleware, pvHandler.ListPollingStations)
 		api.GET("/my-polling-stations", authMiddleware, middleware.ObserverAndAbove(), pvHandler.ListMyPollingStations)
 		api.GET("/my-assignments", authMiddleware, middleware.ObserverAndAbove(), pvHandler.ListMyAssignments)
@@ -328,6 +329,9 @@ func main() {
 		api.GET("/pv", authMiddleware, pvHandler.ListPVs)
 		api.GET("/pv/:id", authMiddleware, middleware.RequireUUIDParam("id"), pvHandler.GetPV)
 		api.GET("/pv-summary", authMiddleware, pvHandler.GetSummary)
+		api.GET("/pv-region-summary", authMiddleware, pvHandler.GetRegionSummary)
+		api.GET("/regional-risk-snapshots", authMiddleware, pvHandler.ListRegionalRiskSnapshots)
+		api.POST("/regional-risk-snapshots", authMiddleware, middleware.AdminOnly(), pvHandler.CreateRegionalRiskSnapshot)
 		api.POST("/device-keys", authMiddleware, middleware.ObserverAndAbove(), pvHandler.RegisterDeviceKey)
 		api.GET("/pv-photos/upload-url", authMiddleware, middleware.ObserverAndAbove(), pvHandler.GetPVUploadURL)
 
@@ -386,6 +390,7 @@ func main() {
 			admin.GET("/legal-documents", legalHandler.GetLegalDocuments)
 			admin.POST("/legal-documents", legalHandler.CreateLegalDocument)
 			admin.DELETE("/legal-documents/:id", middleware.RequireUUIDParam("id"), legalHandler.DeleteLegalDocument)
+			admin.GET("/source-documents", legalHandler.GetSourceDocuments)
 
 			// Base de Connaissance Juridique (RAG) — split rag_handler (M1)
 			admin.POST("/legal/search", ragHandler.SemanticSearchArticles)

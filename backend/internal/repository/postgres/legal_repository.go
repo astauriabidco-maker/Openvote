@@ -48,6 +48,42 @@ func (r *legalRepo) CreateDocument(ctx context.Context, d *entity.LegalDocument)
 	return r.db.QueryRowContext(queryCtx, query, d.Title, d.Description, d.Type, d.Version, d.FullText, d.FilePath).Scan(&d.ID, &d.CreatedAt)
 }
 
+func (r *legalRepo) GetAllSourceDocuments(ctx context.Context) ([]entity.SourceDocument, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+	query := `
+		SELECT
+			id, slug, title, publisher, source_url, document_type,
+			COALESCE(language, ''), published_date, retrieved_at, local_path,
+			COALESCE(extracted_text_path, ''), COALESCE(sha256_checksum, ''),
+			COALESCE(mime_type, ''), COALESCE(file_size_bytes, 0),
+			COALESCE(granularity, ''), reference_year, confidence, status,
+			COALESCE(notes, ''), created_at, updated_at
+		FROM source_documents
+		ORDER BY publisher, reference_year NULLS LAST, document_type, title`
+	rows, err := r.db.QueryContext(queryCtx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var docs []entity.SourceDocument
+	for rows.Next() {
+		var doc entity.SourceDocument
+		if err := rows.Scan(
+			&doc.ID, &doc.Slug, &doc.Title, &doc.Publisher, &doc.SourceURL, &doc.DocumentType,
+			&doc.Language, &doc.PublishedDate, &doc.RetrievedAt, &doc.LocalPath,
+			&doc.ExtractedTextPath, &doc.SHA256Checksum, &doc.MimeType, &doc.FileSizeBytes,
+			&doc.Granularity, &doc.ReferenceYear, &doc.Confidence, &doc.Status,
+			&doc.Notes, &doc.CreatedAt, &doc.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		docs = append(docs, doc)
+	}
+	return docs, rows.Err()
+}
+
 func (r *legalRepo) UpdateDocumentFullText(ctx context.Context, docID string, text string) error {
 	queryCtx, cancel := database.WithQueryTimeout(ctx)
 	defer cancel()

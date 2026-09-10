@@ -44,6 +44,7 @@ import MFATab from './tabs/MFATab';
 import MapTab from './tabs/MapTab';
 import IntelligenceTab from './tabs/IntelligenceTab';
 import LegalTab from './tabs/LegalTab';
+import SourcesTab from './tabs/SourcesTab';
 
 interface AdminPanelProps {
     auth: AuthState;
@@ -276,6 +277,7 @@ const ActiveTabContent = memo(function ActiveTabContent({
         case 'map': return <MapTab state={state} />;
         case 'intelligence': return <IntelligenceTab state={state} />;
         case 'legal': return <LegalTab state={state} />;
+        case 'sources': return <SourcesTab state={state} />;
         default: return null;
     }
 });

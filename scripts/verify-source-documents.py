@@ -56,6 +56,9 @@ def main() -> int:
         local_path = ROOT / doc["local_path"]
 
         if not local_path.exists():
+            if doc.get("status") == "catalog_tracked":
+                print(f"CATALOG {slug}: {doc['source_url']} (no local archive required)")
+                continue
             print(f"MISSING {slug}: {doc['local_path']}")
             if doc.get("status") not in {"planned"}:
                 failures += 1
@@ -88,4 +91,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

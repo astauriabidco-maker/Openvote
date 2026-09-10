@@ -220,6 +220,10 @@ def main() -> int:
             ),
             "latitude": "",
             "longitude": "",
+            "source_document_slug": row.get("source_document_slug", ""),
+            "source_sha256": row.get("source_sha256", ""),
+            "source_position": row.get("source_position", ""),
+            "source_confidence": row.get("confidence", ""),
         }
         output_rows.append(out)
         if match_status != "matched":
@@ -237,6 +241,10 @@ def main() -> int:
             "location_name",
             "latitude",
             "longitude",
+            "source_document_slug",
+            "source_sha256",
+            "source_position",
+            "source_confidence",
         ],
         output_rows,
     )

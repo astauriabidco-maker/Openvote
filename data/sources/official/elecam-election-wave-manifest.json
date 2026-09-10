@@ -131,12 +131,12 @@
       "reference_year": 2025,
       "granularity": "diaspora,polling_station",
       "confidence": "official",
-      "status": "downloaded",
+      "status": "ocr_extracted",
       "local_path": "data/sources/official/pdfs/elecam-bv-2025-diaspora.pdf",
       "extracted_text_path": "data/sources/official/extracted/elecam-bv-2025-diaspora.txt",
       "sha256_checksum": "c239884a103d816fd9d3d58962d7a04053659cac8cb5164ff6d2c4127c398eff",
       "file_size_bytes": 947859,
-      "notes": "PDF officiel ELECAM telecharge le 2026-09-09. Checksum verifie, mais extraction texte vide; OCR requis avant exploitation."
+      "notes": "PDF officiel ELECAM telecharge le 2026-09-09. OCR texte généré localement avec pdftoppm + tesseract."
     },
     {
       "slug": "elecam-bv-2025-est",

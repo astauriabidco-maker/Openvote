@@ -26,6 +26,15 @@ func (h *ElectionHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"elections": elections, "total": len(elections)})
 }
 
+func (h *ElectionHandler) ListHistoricalResults(c *gin.Context) {
+	results, err := h.electionRepo.GetHistoricalResults(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"results": results, "total": len(results)})
+}
+
 func (h *ElectionHandler) Create(c *gin.Context) {
 	var input struct {
 		Name        string `json:"name" binding:"required"`

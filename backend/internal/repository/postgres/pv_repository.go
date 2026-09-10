@@ -2,9 +2,14 @@ package postgres
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
+	"strings"
 
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
@@ -77,6 +82,8 @@ func (r *pollingStationRepo) GetByElection(ctx context.Context, electionID strin
 		       COALESCE(arrondissement_id::text, ''), registered_voters,
 		       COALESCE(location_name, ''), COALESCE(ST_AsText(gps_location), ''),
 		       COALESCE(h3_index, ''), COALESCE(source_name, ''),
+		       COALESCE(source_document_id::text, ''), COALESCE(source_document_slug, ''),
+		       COALESCE(source_sha256, ''), source_position, COALESCE(source_confidence, ''),
 		       created_at, updated_at
 		FROM polling_stations
 		WHERE election_id = $1
@@ -93,7 +100,8 @@ func (r *pollingStationRepo) GetByElection(ctx context.Context, electionID strin
 		if err := rows.Scan(
 			&s.ID, &s.ElectionID, &s.Code, &s.Name, &s.RegionID, &s.DepartmentID,
 			&s.ArrondissementID, &s.RegisteredVoters, &s.LocationName, &s.GPSLocation,
-			&s.H3Index, &s.SourceName, &s.CreatedAt, &s.UpdatedAt,
+			&s.H3Index, &s.SourceName, &s.SourceDocumentID, &s.SourceDocumentSlug,
+			&s.SourceSHA256, &s.SourcePosition, &s.SourceConfidence, &s.CreatedAt, &s.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -111,6 +119,8 @@ func (r *pollingStationRepo) GetAssignedToObserver(ctx context.Context, election
 		       COALESCE(ps.arrondissement_id::text, ''), ps.registered_voters,
 		       COALESCE(ps.location_name, ''), COALESCE(ST_AsText(ps.gps_location), ''),
 		       COALESCE(ps.h3_index, ''), COALESCE(ps.source_name, ''),
+		       COALESCE(ps.source_document_id::text, ''), COALESCE(ps.source_document_slug, ''),
+		       COALESCE(ps.source_sha256, ''), ps.source_position, COALESCE(ps.source_confidence, ''),
 		       ps.created_at, ps.updated_at
 		FROM polling_stations ps
 		JOIN polling_station_assignments a ON a.polling_station_id = ps.id
@@ -128,7 +138,8 @@ func (r *pollingStationRepo) GetAssignedToObserver(ctx context.Context, election
 		if err := rows.Scan(
 			&s.ID, &s.ElectionID, &s.Code, &s.Name, &s.RegionID, &s.DepartmentID,
 			&s.ArrondissementID, &s.RegisteredVoters, &s.LocationName, &s.GPSLocation,
-			&s.H3Index, &s.SourceName, &s.CreatedAt, &s.UpdatedAt,
+			&s.H3Index, &s.SourceName, &s.SourceDocumentID, &s.SourceDocumentSlug,
+			&s.SourceSHA256, &s.SourcePosition, &s.SourceConfidence, &s.CreatedAt, &s.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -143,11 +154,13 @@ func (r *pollingStationRepo) Create(ctx context.Context, station *entity.Polling
 	query := `
 		INSERT INTO polling_stations (
 			election_id, code, name, region_id, department_id, arrondissement_id,
-			registered_voters, location_name, gps_location, h3_index, source_name
+			registered_voters, location_name, gps_location, h3_index, source_name,
+			source_document_id, source_document_slug, source_sha256, source_position, source_confidence
 		)
 		VALUES (
 			$1, $2, $3, NULLIF($4, '')::uuid, NULLIF($5, '')::uuid, NULLIF($6, '')::uuid,
-			$7, $8, CASE WHEN $9 = '' THEN NULL ELSE ST_GeomFromText($9, 4326) END, $10, $11
+			$7, $8, CASE WHEN $9 = '' THEN NULL ELSE ST_GeomFromText($9, 4326) END, $10, $11,
+			NULLIF($12, '')::uuid, $13, $14, $15, $16
 		)
 		RETURNING id, created_at, updated_at`
 	return r.db.QueryRowContext(
@@ -155,7 +168,8 @@ func (r *pollingStationRepo) Create(ctx context.Context, station *entity.Polling
 		query,
 		station.ElectionID, station.Code, station.Name, station.RegionID, station.DepartmentID,
 		station.ArrondissementID, station.RegisteredVoters, station.LocationName,
-		station.GPSLocation, station.H3Index, station.SourceName,
+		station.GPSLocation, station.H3Index, station.SourceName, station.SourceDocumentID,
+		station.SourceDocumentSlug, station.SourceSHA256, station.SourcePosition, station.SourceConfidence,
 	).Scan(&station.ID, &station.CreatedAt, &station.UpdatedAt)
 }
 
@@ -242,8 +256,25 @@ func (r *pollingStationAssignmentRepo) GetCoverage(ctx context.Context, election
 	if err != nil {
 		return nil, err
 	}
+	priorityZones, err := r.coveragePriorityZones(queryCtx, electionID)
+	if err != nil {
+		return nil, err
+	}
 	summary.Regions = regions
 	summary.Observers = observers
+	summary.PriorityZones = priorityZones
+	for _, zone := range priorityZones {
+		if zone.Silent {
+			summary.SilentZones = append(summary.SilentZones, zone)
+			summary.SilentZoneCount++
+		}
+		if zone.PriorityLabel == "critique" {
+			summary.CriticalZoneCount++
+		}
+	}
+	if summary.SilentZones == nil {
+		summary.SilentZones = []entity.FieldCoverageZone{}
+	}
 	return summary, nil
 }
 
@@ -330,6 +361,146 @@ func (r *pollingStationAssignmentRepo) coverageByObserver(ctx context.Context, e
 		observers = []entity.FieldCoverageObserver{}
 	}
 	return observers, rows.Err()
+}
+
+func (r *pollingStationAssignmentRepo) coveragePriorityZones(ctx context.Context, electionID string) ([]entity.FieldCoverageZone, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		WITH zone_stats AS (
+			SELECT
+				'region' AS zone_type,
+				COALESCE(reg.id::text, '') AS region_id,
+				COALESCE(reg.name, 'Sans région') AS region_name,
+				'' AS department_id,
+				'' AS department_name,
+				'' AS arrondissement_id,
+				'' AS arrondissement_name,
+				COUNT(DISTINCT ps.id) AS total_stations,
+				COUNT(DISTINCT a.polling_station_id) AS assigned_stations,
+				COUNT(DISTINCT pv.polling_station_id) AS submitted_pv,
+				COUNT(DISTINCT a.observer_id) AS observer_count
+			FROM polling_stations ps
+			LEFT JOIN regions reg ON reg.id = ps.region_id
+			LEFT JOIN polling_station_assignments a ON a.polling_station_id = ps.id AND a.election_id = ps.election_id
+			LEFT JOIN pv_submissions pv ON pv.polling_station_id = ps.id AND pv.election_id = ps.election_id AND pv.status IN ('submitted', 'verified', 'disputed')
+			WHERE ps.election_id = $1
+			GROUP BY reg.id, reg.name
+
+			UNION ALL
+
+			SELECT
+				'department' AS zone_type,
+				COALESCE(reg.id::text, '') AS region_id,
+				COALESCE(reg.name, 'Sans région') AS region_name,
+				COALESCE(dep.id::text, '') AS department_id,
+				COALESCE(dep.name, 'Sans département') AS department_name,
+				'' AS arrondissement_id,
+				'' AS arrondissement_name,
+				COUNT(DISTINCT ps.id) AS total_stations,
+				COUNT(DISTINCT a.polling_station_id) AS assigned_stations,
+				COUNT(DISTINCT pv.polling_station_id) AS submitted_pv,
+				COUNT(DISTINCT a.observer_id) AS observer_count
+			FROM polling_stations ps
+			LEFT JOIN regions reg ON reg.id = ps.region_id
+			LEFT JOIN departments dep ON dep.id = ps.department_id
+			LEFT JOIN polling_station_assignments a ON a.polling_station_id = ps.id AND a.election_id = ps.election_id
+			LEFT JOIN pv_submissions pv ON pv.polling_station_id = ps.id AND pv.election_id = ps.election_id AND pv.status IN ('submitted', 'verified', 'disputed')
+			WHERE ps.election_id = $1
+			GROUP BY reg.id, reg.name, dep.id, dep.name
+
+			UNION ALL
+
+			SELECT
+				'arrondissement' AS zone_type,
+				COALESCE(reg.id::text, '') AS region_id,
+				COALESCE(reg.name, 'Sans région') AS region_name,
+				COALESCE(dep.id::text, '') AS department_id,
+				COALESCE(dep.name, 'Sans département') AS department_name,
+				COALESCE(arr.id::text, '') AS arrondissement_id,
+				COALESCE(arr.name, 'Sans arrondissement') AS arrondissement_name,
+				COUNT(DISTINCT ps.id) AS total_stations,
+				COUNT(DISTINCT a.polling_station_id) AS assigned_stations,
+				COUNT(DISTINCT pv.polling_station_id) AS submitted_pv,
+				COUNT(DISTINCT a.observer_id) AS observer_count
+			FROM polling_stations ps
+			LEFT JOIN regions reg ON reg.id = ps.region_id
+			LEFT JOIN departments dep ON dep.id = ps.department_id
+			LEFT JOIN arrondissements arr ON arr.id = ps.arrondissement_id
+			LEFT JOIN polling_station_assignments a ON a.polling_station_id = ps.id AND a.election_id = ps.election_id
+			LEFT JOIN pv_submissions pv ON pv.polling_station_id = ps.id AND pv.election_id = ps.election_id AND pv.status IN ('submitted', 'verified', 'disputed')
+			WHERE ps.election_id = $1
+			GROUP BY reg.id, reg.name, dep.id, dep.name, arr.id, arr.name
+		)
+		SELECT
+			zone_type,
+			region_id,
+			region_name,
+			department_id,
+			department_name,
+			arrondissement_id,
+			arrondissement_name,
+			total_stations,
+			assigned_stations,
+			submitted_pv,
+			observer_count
+		FROM zone_stats
+		WHERE total_stations > 0
+		ORDER BY
+			CASE WHEN submitted_pv = 0 THEN 0 ELSE 1 END,
+			((total_stations - submitted_pv) + ((total_stations - assigned_stations) * 0.5)) DESC,
+			total_stations DESC,
+			assigned_stations ASC,
+			region_name,
+			department_name,
+			arrondissement_name
+		LIMIT 80
+	`, electionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	zones := []entity.FieldCoverageZone{}
+	for rows.Next() {
+		var zone entity.FieldCoverageZone
+		if err := rows.Scan(
+			&zone.ZoneType, &zone.RegionID, &zone.RegionName,
+			&zone.DepartmentID, &zone.DepartmentName, &zone.ArrondissementID,
+			&zone.ArrondissementName, &zone.TotalStations, &zone.AssignedStations,
+			&zone.SubmittedPV, &zone.ObserverCount,
+		); err != nil {
+			return nil, err
+		}
+		if zone.TotalStations > 0 {
+			zone.AssignmentRate = roundCoverageRate(float64(zone.AssignedStations) / float64(zone.TotalStations))
+			zone.CoverageRate = roundCoverageRate(float64(zone.SubmittedPV) / float64(zone.TotalStations))
+		}
+		zone.UnassignedStations = zone.TotalStations - zone.AssignedStations
+		if zone.UnassignedStations < 0 {
+			zone.UnassignedStations = 0
+		}
+		zone.MissingPV = zone.TotalStations - zone.SubmittedPV
+		if zone.MissingPV < 0 {
+			zone.MissingPV = 0
+		}
+		zone.Silent = zone.TotalStations > 0 && zone.SubmittedPV == 0
+		zone.PriorityScore = float64(zone.MissingPV) + float64(zone.UnassignedStations)*0.5
+		switch {
+		case zone.Silent && zone.TotalStations >= 100:
+			zone.PriorityLabel = "critique"
+		case zone.Silent:
+			zone.PriorityLabel = "silencieuse"
+		case zone.CoverageRate < 0.05:
+			zone.PriorityLabel = "haute"
+		default:
+			zone.PriorityLabel = "à surveiller"
+		}
+		zones = append(zones, zone)
+	}
+	return zones, rows.Err()
+}
+
+func roundCoverageRate(value float64) float64 {
+	return math.Round(value*10000) / 10000
 }
 
 type candidateRepo struct{ db *sql.DB }
@@ -531,8 +702,11 @@ func (r *pvRepo) Create(ctx context.Context, pv *entity.PVSubmission) error {
 		result.PVSubmissionID = pv.ID
 	}
 
-	err = tx.Commit()
-	return err
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	r.createRegionalRiskSnapshotBestEffort(ctx, pv.ElectionID)
+	return nil
 }
 
 func (r *pvRepo) GetByID(ctx context.Context, id string) (*entity.PVSubmission, error) {
@@ -728,7 +902,12 @@ func (r *pvRepo) UpdateVerificationStatus(ctx context.Context, id string, status
 	if err != nil {
 		return nil, err
 	}
-	return r.GetByID(ctx, id)
+	pv, err := r.GetByID(ctx, id)
+	if err != nil || pv == nil {
+		return pv, err
+	}
+	r.createRegionalRiskSnapshotBestEffort(ctx, pv.ElectionID)
+	return pv, nil
 }
 
 func (r *pvRepo) GetSummary(ctx context.Context, electionID string) (*entity.ElectionResultSummary, error) {
@@ -780,6 +959,528 @@ func (r *pvRepo) GetSummary(ctx context.Context, electionID string) (*entity.Ele
 		summary.Results = []entity.CandidateResultSummary{}
 	}
 	return summary, nil
+}
+
+func (r *pvRepo) GetRegionSummaries(ctx context.Context, electionID string) ([]entity.RegionPVSummary, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+
+	rows, err := r.db.QueryContext(queryCtx, `
+		WITH station_regions AS (
+			SELECT
+				ps.id AS station_id,
+				ps.election_id,
+				COALESCE(rg.id::text, '') AS region_id,
+				COALESCE(rg.name, 'Non renseignée') AS region_name,
+				ps.registered_voters
+			FROM polling_stations ps
+			LEFT JOIN regions rg ON rg.id = ps.region_id
+			WHERE ps.election_id = $1
+		),
+		pv_base AS (
+			SELECT
+				sr.election_id,
+				sr.region_id,
+				sr.region_name,
+				COUNT(DISTINCT sr.station_id) AS total_stations,
+				COUNT(DISTINCT pv.id) FILTER (WHERE pv.status IN ('submitted', 'verified', 'disputed')) AS submitted_pv,
+				COALESCE(SUM(sr.registered_voters) FILTER (WHERE pv.status IN ('submitted', 'verified')), 0) AS registered_voters,
+				COALESCE(SUM(pv.voters_count) FILTER (WHERE pv.status IN ('submitted', 'verified')), 0) AS reported_voters,
+				COALESCE(SUM(pv.null_votes + pv.blank_votes) FILTER (WHERE pv.status IN ('submitted', 'verified')), 0) AS blank_or_invalid_votes
+			FROM station_regions sr
+			LEFT JOIN pv_submissions pv ON pv.polling_station_id = sr.station_id
+			GROUP BY sr.election_id, sr.region_id, sr.region_name
+		),
+		candidate_totals AS (
+			SELECT
+				sr.region_id,
+				c.id::text AS candidate_id,
+				c.name AS candidate_name,
+				COALESCE(c.party, '') AS party,
+				SUM(pr.votes) AS votes,
+				ROW_NUMBER() OVER (PARTITION BY sr.region_id ORDER BY SUM(pr.votes) DESC, c.name) AS rank
+			FROM station_regions sr
+			JOIN pv_submissions pv ON pv.polling_station_id = sr.station_id AND pv.status IN ('submitted', 'verified')
+			JOIN pv_results pr ON pr.pv_submission_id = pv.id
+			JOIN candidates c ON c.id = pr.candidate_id
+			GROUP BY sr.region_id, c.id, c.name, c.party
+		),
+		candidate_region_sum AS (
+			SELECT sr.region_id, COALESCE(SUM(pr.votes), 0) AS total_candidate_votes
+			FROM station_regions sr
+			JOIN pv_submissions pv ON pv.polling_station_id = sr.station_id AND pv.status IN ('submitted', 'verified')
+			JOIN pv_results pr ON pr.pv_submission_id = pv.id
+			GROUP BY sr.region_id
+		)
+		SELECT
+			pb.election_id::text,
+			pb.region_id,
+			pb.region_name,
+			pb.total_stations,
+			pb.submitted_pv,
+			CASE WHEN pb.total_stations > 0 THEN pb.submitted_pv::float / pb.total_stations::float ELSE 0 END AS coverage_rate,
+			pb.registered_voters,
+			pb.reported_voters,
+			pb.blank_or_invalid_votes,
+			COALESCE(crs.total_candidate_votes, 0) AS total_candidate_votes,
+			COALESCE(ct.candidate_id, '') AS leader_candidate_id,
+			COALESCE(ct.candidate_name, '') AS leader_name,
+			COALESCE(ct.party, '') AS leader_party,
+			COALESCE(ct.votes, 0) AS leader_votes
+		FROM pv_base pb
+		LEFT JOIN candidate_region_sum crs ON crs.region_id = pb.region_id
+		LEFT JOIN candidate_totals ct ON ct.region_id = pb.region_id AND ct.rank = 1
+		ORDER BY coverage_rate ASC, pb.region_name
+	`, electionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	summaries := []entity.RegionPVSummary{}
+	for rows.Next() {
+		var item entity.RegionPVSummary
+		if err := rows.Scan(
+			&item.ElectionID, &item.RegionID, &item.RegionName, &item.TotalStations,
+			&item.SubmittedPV, &item.CoverageRate, &item.RegisteredVoters,
+			&item.ReportedVoters, &item.BlankOrInvalidVotes, &item.TotalCandidateVotes,
+			&item.LeaderCandidateID, &item.LeaderName, &item.LeaderParty, &item.LeaderVotes,
+		); err != nil {
+			return nil, err
+		}
+		summaries = append(summaries, item)
+	}
+	return summaries, rows.Err()
+}
+
+type historicalRegionReference struct {
+	ElectionID          string
+	ElectionYear        int
+	ContestType         string
+	SourceDocumentSlug  string
+	TurnoutRate         *float64
+	InvalidRate         *float64
+	NormalizedRegionKey string
+}
+
+func (r *pvRepo) CreateRegionalRiskSnapshot(ctx context.Context, electionID string) ([]entity.RegionalRiskSnapshot, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+
+	regions, err := r.GetRegionSummaries(queryCtx, electionID)
+	if err != nil {
+		return nil, err
+	}
+	references, err := r.latestHistoricalRegionReferences(queryCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshots := make([]entity.RegionalRiskSnapshot, 0, len(regions))
+	for _, region := range regions {
+		snapshot := buildRegionalRiskSnapshot(electionID, region, references[normalizeCameroonRegion(region.RegionName)])
+		inserted, err := r.insertRegionalRiskSnapshot(queryCtx, &snapshot)
+		if err != nil {
+			return nil, err
+		}
+		if inserted {
+			snapshots = append(snapshots, snapshot)
+		}
+	}
+	return snapshots, nil
+}
+
+func (r *pvRepo) createRegionalRiskSnapshotBestEffort(ctx context.Context, electionID string) {
+	if electionID == "" {
+		return
+	}
+	if _, err := r.CreateRegionalRiskSnapshot(context.WithoutCancel(ctx), electionID); err != nil {
+		log.Printf("[REGIONAL_RISK] snapshot automatique échoué election_id=%s: %v", electionID, err)
+	}
+}
+
+func (r *pvRepo) GetRegionalRiskSnapshots(ctx context.Context, electionID string, limit int) ([]entity.RegionalRiskSnapshot, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+	if limit <= 0 || limit > 500 {
+		limit = 120
+	}
+
+	rows, err := r.db.QueryContext(queryCtx, `
+		SELECT id::text, election_id::text, COALESCE(region_id::text, ''), region_name,
+		       normalized_region_name, COALESCE(reference_election_id::text, ''),
+		       reference_election_year, reference_contest_type, reference_source_document_slug,
+		       total_stations, submitted_pv, coverage_rate::float, registered_voters,
+		       reported_voters, blank_or_invalid_votes, turnout_rate::float,
+		       reference_turnout_rate::float, turnout_gap_points::float, invalid_rate::float,
+		       reference_invalid_rate::float, invalid_gap_points::float,
+		       COALESCE(leader_candidate_id::text, ''), leader_name, leader_party,
+		       leader_votes, risk_score, risk_status, rules, evidence, snapshot_hash, created_at
+		FROM regional_risk_snapshots
+		WHERE election_id = $1
+		ORDER BY created_at DESC, risk_score DESC, region_name
+		LIMIT $2
+	`, electionID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	snapshots := []entity.RegionalRiskSnapshot{}
+	for rows.Next() {
+		snapshot, err := scanRegionalRiskSnapshot(rows)
+		if err != nil {
+			return nil, err
+		}
+		snapshots = append(snapshots, snapshot)
+	}
+	return snapshots, rows.Err()
+}
+
+func (r *pvRepo) latestHistoricalRegionReferences(ctx context.Context) (map[string]historicalRegionReference, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT election_id::text, election_year, contest_type, source_document_slug,
+		       percentage::float,
+		       CASE WHEN actual_voters > 0 AND blank_or_invalid_votes IS NOT NULL
+		            THEN (blank_or_invalid_votes::float / actual_voters::float) * 100
+		            ELSE NULL
+		       END AS invalid_rate,
+		       region_name
+		FROM historical_election_results
+		WHERE result_level = 'region'
+		  AND actor_type = 'election'
+		  AND metric_type = 'summary'
+		ORDER BY election_year DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	references := map[string]historicalRegionReference{}
+	for rows.Next() {
+		var ref historicalRegionReference
+		var turnout, invalid sql.NullFloat64
+		var regionName string
+		if err := rows.Scan(
+			&ref.ElectionID, &ref.ElectionYear, &ref.ContestType, &ref.SourceDocumentSlug,
+			&turnout, &invalid, &regionName,
+		); err != nil {
+			return nil, err
+		}
+		ref.TurnoutRate = floatPtrFromNull(turnout)
+		ref.InvalidRate = floatPtrFromNull(invalid)
+		ref.NormalizedRegionKey = normalizeCameroonRegion(regionName)
+		if _, exists := references[ref.NormalizedRegionKey]; !exists {
+			references[ref.NormalizedRegionKey] = ref
+		}
+	}
+	return references, rows.Err()
+}
+
+type regionalRiskScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanRegionalRiskSnapshot(scanner regionalRiskScanner) (entity.RegionalRiskSnapshot, error) {
+	var snapshot entity.RegionalRiskSnapshot
+	var referenceYear sql.NullInt64
+	var turnoutRate, referenceTurnoutRate, turnoutGap sql.NullFloat64
+	var invalidRate, referenceInvalidRate, invalidGap sql.NullFloat64
+	var rulesJSON, evidenceJSON []byte
+
+	if err := scanner.Scan(
+		&snapshot.ID, &snapshot.ElectionID, &snapshot.RegionID, &snapshot.RegionName,
+		&snapshot.NormalizedRegionName, &snapshot.ReferenceElectionID, &referenceYear,
+		&snapshot.ReferenceContestType, &snapshot.ReferenceSourceDocumentSlug,
+		&snapshot.TotalStations, &snapshot.SubmittedPV, &snapshot.CoverageRate,
+		&snapshot.RegisteredVoters, &snapshot.ReportedVoters, &snapshot.BlankOrInvalidVotes,
+		&turnoutRate, &referenceTurnoutRate, &turnoutGap, &invalidRate,
+		&referenceInvalidRate, &invalidGap, &snapshot.LeaderCandidateID,
+		&snapshot.LeaderName, &snapshot.LeaderParty, &snapshot.LeaderVotes,
+		&snapshot.RiskScore, &snapshot.RiskStatus, &rulesJSON, &evidenceJSON,
+		&snapshot.SnapshotHash, &snapshot.CreatedAt,
+	); err != nil {
+		return snapshot, err
+	}
+
+	if referenceYear.Valid {
+		year := int(referenceYear.Int64)
+		snapshot.ReferenceElectionYear = &year
+	}
+	snapshot.TurnoutRate = floatPtrFromNull(turnoutRate)
+	snapshot.ReferenceTurnoutRate = floatPtrFromNull(referenceTurnoutRate)
+	snapshot.TurnoutGapPoints = floatPtrFromNull(turnoutGap)
+	snapshot.InvalidRate = floatPtrFromNull(invalidRate)
+	snapshot.ReferenceInvalidRate = floatPtrFromNull(referenceInvalidRate)
+	snapshot.InvalidGapPoints = floatPtrFromNull(invalidGap)
+	if err := json.Unmarshal(rulesJSON, &snapshot.Rules); err != nil {
+		return snapshot, err
+	}
+	if err := json.Unmarshal(evidenceJSON, &snapshot.Evidence); err != nil {
+		return snapshot, err
+	}
+	return snapshot, nil
+}
+
+func (r *pvRepo) insertRegionalRiskSnapshot(ctx context.Context, snapshot *entity.RegionalRiskSnapshot) (bool, error) {
+	rulesJSON, err := json.Marshal(snapshot.Rules)
+	if err != nil {
+		return false, err
+	}
+	evidenceJSON, err := json.Marshal(snapshot.Evidence)
+	if err != nil {
+		return false, err
+	}
+
+	var regionID any
+	if snapshot.RegionID != "" {
+		regionID = snapshot.RegionID
+	}
+	var referenceElectionID any
+	if snapshot.ReferenceElectionID != "" {
+		referenceElectionID = snapshot.ReferenceElectionID
+	}
+	var leaderCandidateID any
+	if snapshot.LeaderCandidateID != "" {
+		leaderCandidateID = snapshot.LeaderCandidateID
+	}
+
+	err = r.db.QueryRowContext(ctx, `
+		WITH latest AS (
+			SELECT snapshot_hash
+			FROM regional_risk_snapshots
+			WHERE election_id = $1
+			  AND normalized_region_name = $4
+			ORDER BY created_at DESC
+			LIMIT 1
+		),
+		inserted AS (
+			INSERT INTO regional_risk_snapshots (
+			election_id, region_id, region_name, normalized_region_name, reference_election_id,
+			reference_election_year, reference_contest_type, reference_source_document_slug,
+			total_stations, submitted_pv, coverage_rate, registered_voters, reported_voters,
+			blank_or_invalid_votes, turnout_rate, reference_turnout_rate, turnout_gap_points,
+			invalid_rate, reference_invalid_rate, invalid_gap_points, leader_candidate_id,
+			leader_name, leader_party, leader_votes, risk_score, risk_status, rules, evidence,
+			snapshot_hash
+			)
+			SELECT
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+			$15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+			$27::jsonb, $28::jsonb, $29
+			WHERE NOT EXISTS (SELECT 1 FROM latest WHERE snapshot_hash = $29)
+			RETURNING id::text, created_at
+		)
+		SELECT id, created_at FROM inserted
+	`, snapshot.ElectionID, regionID, snapshot.RegionName, snapshot.NormalizedRegionName,
+		referenceElectionID, snapshot.ReferenceElectionYear, snapshot.ReferenceContestType,
+		snapshot.ReferenceSourceDocumentSlug, snapshot.TotalStations, snapshot.SubmittedPV,
+		snapshot.CoverageRate, snapshot.RegisteredVoters, snapshot.ReportedVoters,
+		snapshot.BlankOrInvalidVotes, snapshot.TurnoutRate, snapshot.ReferenceTurnoutRate,
+		snapshot.TurnoutGapPoints, snapshot.InvalidRate, snapshot.ReferenceInvalidRate,
+		snapshot.InvalidGapPoints, leaderCandidateID, snapshot.LeaderName, snapshot.LeaderParty,
+		snapshot.LeaderVotes, snapshot.RiskScore, snapshot.RiskStatus, string(rulesJSON),
+		string(evidenceJSON), snapshot.SnapshotHash,
+	).Scan(&snapshot.ID, &snapshot.CreatedAt)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func buildRegionalRiskSnapshot(electionID string, region entity.RegionPVSummary, ref historicalRegionReference) entity.RegionalRiskSnapshot {
+	turnout := percent(region.ReportedVoters, region.RegisteredVoters)
+	invalid := percent(region.BlankOrInvalidVotes, region.ReportedVoters)
+	turnoutGap := diffPtr(turnout, ref.TurnoutRate)
+	invalidGap := diffPtr(invalid, ref.InvalidRate)
+	rules := regionalRiskRules(region, turnoutGap, invalidGap)
+	score := 0
+	for _, rule := range rules {
+		score += rule.Weight
+	}
+	if score > 100 {
+		score = 100
+	}
+	status := regionalRiskStatus(score, region.CoverageRate)
+	evidence := []string{
+		fmt.Sprintf("%d/%d PV reçus", region.SubmittedPV, region.TotalStations),
+		fmt.Sprintf("Couverture %.1f%%", region.CoverageRate*100),
+	}
+	if turnoutGap != nil {
+		evidence = append(evidence, fmt.Sprintf("Écart participation %+.1f pts", *turnoutGap))
+	}
+	if invalidGap != nil {
+		evidence = append(evidence, fmt.Sprintf("Écart invalides %+.1f pts", *invalidGap))
+	}
+	if ref.SourceDocumentSlug != "" {
+		evidence = append(evidence, "Source historique "+ref.SourceDocumentSlug)
+	}
+
+	snapshot := entity.RegionalRiskSnapshot{
+		ElectionID:                  electionID,
+		RegionID:                    region.RegionID,
+		RegionName:                  region.RegionName,
+		NormalizedRegionName:        normalizeCameroonRegion(region.RegionName),
+		ReferenceElectionID:         ref.ElectionID,
+		ReferenceElectionYear:       intPtrIfNonZero(ref.ElectionYear),
+		ReferenceContestType:        ref.ContestType,
+		ReferenceSourceDocumentSlug: ref.SourceDocumentSlug,
+		TotalStations:               region.TotalStations,
+		SubmittedPV:                 region.SubmittedPV,
+		CoverageRate:                roundFloat(region.CoverageRate, 6),
+		RegisteredVoters:            region.RegisteredVoters,
+		ReportedVoters:              region.ReportedVoters,
+		BlankOrInvalidVotes:         region.BlankOrInvalidVotes,
+		TurnoutRate:                 roundFloatPtr(turnout, 3),
+		ReferenceTurnoutRate:        roundFloatPtr(ref.TurnoutRate, 3),
+		TurnoutGapPoints:            roundFloatPtr(turnoutGap, 3),
+		InvalidRate:                 roundFloatPtr(invalid, 3),
+		ReferenceInvalidRate:        roundFloatPtr(ref.InvalidRate, 3),
+		InvalidGapPoints:            roundFloatPtr(invalidGap, 3),
+		LeaderCandidateID:           region.LeaderCandidateID,
+		LeaderName:                  region.LeaderName,
+		LeaderParty:                 region.LeaderParty,
+		LeaderVotes:                 region.LeaderVotes,
+		RiskScore:                   score,
+		RiskStatus:                  status,
+		Rules:                       rules,
+		Evidence:                    evidence,
+	}
+	snapshot.SnapshotHash = hashRegionalRiskSnapshot(snapshot)
+	return snapshot
+}
+
+func regionalRiskRules(region entity.RegionPVSummary, turnoutGap, invalidGap *float64) []entity.RegionalRiskRule {
+	rules := []entity.RegionalRiskRule{}
+	if region.CoverageRate < 0.1 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "coverage_low", Label: "Couverture PV trop faible pour conclure", Severity: "weak", Weight: 5, Value: region.CoverageRate * 100})
+	}
+	if turnoutGap != nil && math.Abs(*turnoutGap) >= 15 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "turnout_gap_high", Label: "Écart de participation très élevé", Severity: "high", Weight: 45, Value: *turnoutGap})
+	} else if turnoutGap != nil && math.Abs(*turnoutGap) >= 8 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "turnout_gap_medium", Label: "Écart de participation notable", Severity: "medium", Weight: 25, Value: *turnoutGap})
+	}
+	if invalidGap != nil && math.Abs(*invalidGap) >= 3 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "invalid_gap_high", Label: "Écart de bulletins blancs/invalides élevé", Severity: "high", Weight: 30, Value: *invalidGap})
+	} else if invalidGap != nil && math.Abs(*invalidGap) >= 1.5 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "invalid_gap_medium", Label: "Écart de bulletins blancs/invalides notable", Severity: "medium", Weight: 15, Value: *invalidGap})
+	}
+	if region.LeaderVotes == 0 && region.SubmittedPV > 0 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "leader_missing", Label: "PV reçus sans leader candidat consolidé", Severity: "medium", Weight: 10})
+	}
+	if len(rules) == 0 {
+		rules = append(rules, entity.RegionalRiskRule{Code: "within_expected_range", Label: "Aucun écart majeur détecté", Severity: "low", Weight: 0})
+	}
+	return rules
+}
+
+func regionalRiskStatus(score int, coverageRate float64) string {
+	if coverageRate < 0.1 {
+		return "signal_faible"
+	}
+	if score >= 70 {
+		return "prioritaire"
+	}
+	if score >= 35 {
+		return "a_surveiller"
+	}
+	return "stable"
+}
+
+func normalizeCameroonRegion(regionName string) string {
+	normalized := strings.ToUpper(strings.TrimSpace(regionName))
+	replacer := strings.NewReplacer("É", "E", "È", "E", "Ê", "E", "-", " ")
+	normalized = replacer.Replace(normalized)
+	normalized = strings.Join(strings.Fields(normalized), " ")
+	aliases := map[string]string{
+		"ADAMAWA":      "ADAMAOUA",
+		"ADAMAOUA":     "ADAMAOUA",
+		"CENTER":       "CENTRE",
+		"CENTRE":       "CENTRE",
+		"EAST":         "EST",
+		"EST":          "EST",
+		"FAR NORTH":    "EXTREME NORD",
+		"EXTREME NORD": "EXTREME NORD",
+		"LITTORAL":     "LITTORAL",
+		"NORTH":        "NORD",
+		"NORD":         "NORD",
+		"NORTH WEST":   "NORD OUEST",
+		"NORD OUEST":   "NORD OUEST",
+		"WEST":         "OUEST",
+		"OUEST":        "OUEST",
+		"SOUTH":        "SUD",
+		"SUD":          "SUD",
+		"SOUTH WEST":   "SUD OUEST",
+		"SUD OUEST":    "SUD OUEST",
+	}
+	if alias, ok := aliases[normalized]; ok {
+		return alias
+	}
+	return normalized
+}
+
+func percent(value, total int) *float64 {
+	if total <= 0 {
+		return nil
+	}
+	rate := (float64(value) / float64(total)) * 100
+	return &rate
+}
+
+func diffPtr(value, reference *float64) *float64 {
+	if value == nil || reference == nil {
+		return nil
+	}
+	diff := *value - *reference
+	return &diff
+}
+
+func roundFloat(value float64, decimals int) float64 {
+	factor := math.Pow(10, float64(decimals))
+	return math.Round(value*factor) / factor
+}
+
+func roundFloatPtr(value *float64, decimals int) *float64 {
+	if value == nil {
+		return nil
+	}
+	rounded := roundFloat(*value, decimals)
+	return &rounded
+}
+
+func intPtrIfNonZero(value int) *int {
+	if value == 0 {
+		return nil
+	}
+	return &value
+}
+
+func floatPtrFromNull(value sql.NullFloat64) *float64 {
+	if !value.Valid {
+		return nil
+	}
+	return &value.Float64
+}
+
+func hashRegionalRiskSnapshot(snapshot entity.RegionalRiskSnapshot) string {
+	payload := fmt.Sprintf("%s|%s|%s|%d|%d|%.6f|%d|%d|%d|%d",
+		snapshot.ElectionID,
+		snapshot.NormalizedRegionName,
+		snapshot.ReferenceElectionID,
+		snapshot.TotalStations,
+		snapshot.SubmittedPV,
+		snapshot.CoverageRate,
+		snapshot.ReportedVoters,
+		snapshot.BlankOrInvalidVotes,
+		snapshot.LeaderVotes,
+		snapshot.RiskScore,
+	)
+	sum := sha256.Sum256([]byte(payload))
+	return hex.EncodeToString(sum[:])
 }
 
 func (r *pvRepo) GetPublicProofs(ctx context.Context, electionID string) ([]entity.PublicPVProof, error) {

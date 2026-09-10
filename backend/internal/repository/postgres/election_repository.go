@@ -1,14 +1,12 @@
 package postgres
 
 import (
-
 	"context"
 	"database/sql"
 
 	"github.com/openvote/backend/internal/domain/entity"
 	"github.com/openvote/backend/internal/domain/repository"
 	"github.com/openvote/backend/internal/platform/database"
-
 )
 
 // ========================================
@@ -50,6 +48,91 @@ func (r *electionRepo) GetByID(ctx context.Context, id string) (*entity.Election
 		return nil, nil
 	}
 	return e, err
+}
+
+func (r *electionRepo) GetHistoricalResults(ctx context.Context) ([]entity.HistoricalElectionResult, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+
+	query := `
+		SELECT h.id, h.election_id, e.name, e.type, e.date,
+		       COALESCE(h.source_document_id::text, ''), h.source_document_slug,
+		       h.election_year, h.contest_type, h.result_level, h.region_name,
+		       h.department_name, h.commune_name, h.actor_type, h.actor_name,
+		       h.party, h.metric_type, h.registered_voters,
+		       h.actual_voters, h.valid_votes, h.blank_or_invalid_votes,
+		       h.abstentions, h.polling_stations, h.councils, h.lists_presented,
+		       h.votes, h.percentage, h.seats, h.women_seats,
+		       h.councils_controlled, h.source_line_start, h.source_line_end,
+		       h.confidence, h.status, h.notes, h.created_at, h.updated_at
+		FROM historical_election_results h
+		JOIN elections e ON e.id = h.election_id
+		ORDER BY h.election_year DESC, h.contest_type, h.metric_type, COALESCE(h.seats, h.votes, h.councils_controlled, 0) DESC, h.actor_name`
+
+	rows, err := r.db.QueryContext(queryCtx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []entity.HistoricalElectionResult
+	for rows.Next() {
+		var item entity.HistoricalElectionResult
+		var registeredVoters, actualVoters, validVotes, blankOrInvalidVotes sql.NullInt64
+		var abstentions, pollingStations, councils, listsPresented sql.NullInt64
+		var votes, seats, womenSeats, councilsControlled sql.NullInt64
+		var sourceLineStart, sourceLineEnd sql.NullInt64
+		var percentage sql.NullFloat64
+
+		if err := rows.Scan(
+			&item.ID, &item.ElectionID, &item.ElectionName, &item.ElectionType,
+			&item.ElectionDate, &item.SourceDocumentID, &item.SourceDocumentSlug,
+			&item.ElectionYear, &item.ContestType, &item.ResultLevel,
+			&item.RegionName, &item.DepartmentName, &item.CommuneName,
+			&item.ActorType, &item.ActorName, &item.Party, &item.MetricType,
+			&registeredVoters, &actualVoters, &validVotes, &blankOrInvalidVotes,
+			&abstentions, &pollingStations, &councils, &listsPresented, &votes,
+			&percentage, &seats, &womenSeats, &councilsControlled, &sourceLineStart,
+			&sourceLineEnd, &item.Confidence, &item.Status, &item.Notes, &item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		item.RegisteredVoters = nullableInt(registeredVoters)
+		item.ActualVoters = nullableInt(actualVoters)
+		item.ValidVotes = nullableInt(validVotes)
+		item.BlankOrInvalidVotes = nullableInt(blankOrInvalidVotes)
+		item.Abstentions = nullableInt(abstentions)
+		item.PollingStations = nullableInt(pollingStations)
+		item.Councils = nullableInt(councils)
+		item.ListsPresented = nullableInt(listsPresented)
+		item.Votes = nullableInt(votes)
+		item.Percentage = nullableFloat(percentage)
+		item.Seats = nullableInt(seats)
+		item.WomenSeats = nullableInt(womenSeats)
+		item.CouncilsControlled = nullableInt(councilsControlled)
+		item.SourceLineStart = nullableInt(sourceLineStart)
+		item.SourceLineEnd = nullableInt(sourceLineEnd)
+		results = append(results, item)
+	}
+	return results, rows.Err()
+}
+
+func nullableInt(v sql.NullInt64) *int {
+	if !v.Valid {
+		return nil
+	}
+	n := int(v.Int64)
+	return &n
+}
+
+func nullableFloat(v sql.NullFloat64) *float64 {
+	if !v.Valid {
+		return nil
+	}
+	n := v.Float64
+	return &n
 }
 
 func (r *electionRepo) Create(ctx context.Context, e *entity.Election) error {

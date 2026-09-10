@@ -9,6 +9,7 @@ type LegalRepository interface {
 	// Documents
 	GetAllDocuments(ctx context.Context) ([]entity.LegalDocument, error)
 	CreateDocument(ctx context.Context, doc *entity.LegalDocument) error
+	GetAllSourceDocuments(ctx context.Context) ([]entity.SourceDocument, error)
 	
 	// Articles
 	GetAllArticles(ctx context.Context) ([]entity.LegalArticle, error)

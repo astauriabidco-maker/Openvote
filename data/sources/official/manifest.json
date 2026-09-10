@@ -49,11 +49,11 @@
       "reference_year": null,
       "granularity": "election,region,polling_station",
       "confidence": "official",
-      "status": "planned",
-      "local_path": "data/sources/official/pdfs/elecam-documentation.pdf",
+      "status": "catalog_tracked",
+      "local_path": "data/sources/official/html/elecam-documentation.html",
       "extracted_text_path": "data/sources/official/extracted/elecam-documentation.txt",
       "sha256_checksum": null,
-      "notes": "Catalogue officiel. Les rapports et listes BV doivent etre archives comme documents separes."
+      "notes": "Catalogue officiel parent. Ce n'est pas un PDF source; les rapports et listes BV utiles sont archives comme documents separes. Curl local ne valide pas la chaine TLS du portail ELECAM pour cette page catalogue, donc elle n'est pas archivée sans contournement TLS."
     },
     {
       "slug": "elecam-loi-2026-003-code-electoral",
@@ -246,12 +246,12 @@
       "reference_year": 2025,
       "granularity": "diaspora,polling_station",
       "confidence": "official",
-      "status": "downloaded",
+      "status": "ocr_extracted",
       "local_path": "data/sources/official/pdfs/elecam-bv-2025-diaspora.pdf",
       "extracted_text_path": "data/sources/official/extracted/elecam-bv-2025-diaspora.txt",
       "sha256_checksum": "c239884a103d816fd9d3d58962d7a04053659cac8cb5164ff6d2c4127c398eff",
       "file_size_bytes": 947859,
-      "notes": "PDF officiel ELECAM telecharge le 2026-09-09."
+      "notes": "PDF officiel ELECAM telecharge le 2026-09-09. OCR texte généré localement avec pdftoppm + tesseract."
     },
     {
       "slug": "elecam-bv-2025-est",
@@ -390,11 +390,12 @@
       "reference_year": 2025,
       "granularity": "election",
       "confidence": "official",
-      "status": "planned",
-      "local_path": "data/sources/official/pdfs/prc-decret-2025-305-convocation-presidentielle.pdf",
+      "status": "extracted",
+      "local_path": "data/sources/official/html/prc-decret-2025-305-convocation-presidentielle.html",
       "extracted_text_path": "data/sources/official/extracted/prc-decret-2025-305-convocation-presidentielle.txt",
-      "sha256_checksum": null,
-      "notes": "Source primaire pour la date officielle de la presidentielle 2025."
+      "sha256_checksum": "73e7fef2fca060dfab0347fc7c0a95350370ecaf9c4cf6fe8d3bfafc19313820",
+      "notes": "Source primaire PRC archivée en HTML officiel; la page ne fournit pas de PDF direct.",
+      "file_size_bytes": 28156
     }
   ]
 }

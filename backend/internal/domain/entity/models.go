@@ -188,6 +188,52 @@ func (Election) TableName() string {
 	return "elections"
 }
 
+// HistoricalElectionResult représente une statistique officielle passée
+// extraite d'un rapport ELECAM archivé.
+type HistoricalElectionResult struct {
+	ID                  string    `json:"id" db:"id"`
+	ElectionID          string    `json:"election_id" db:"election_id"`
+	ElectionName        string    `json:"election_name" db:"election_name"`
+	ElectionType        string    `json:"election_type" db:"election_type"`
+	ElectionDate        time.Time `json:"election_date" db:"election_date"`
+	SourceDocumentID    string    `json:"source_document_id" db:"source_document_id"`
+	SourceDocumentSlug  string    `json:"source_document_slug" db:"source_document_slug"`
+	ElectionYear        int       `json:"election_year" db:"election_year"`
+	ContestType         string    `json:"contest_type" db:"contest_type"`
+	ResultLevel         string    `json:"result_level" db:"result_level"`
+	RegionName          string    `json:"region_name" db:"region_name"`
+	DepartmentName      string    `json:"department_name" db:"department_name"`
+	CommuneName         string    `json:"commune_name" db:"commune_name"`
+	ActorType           string    `json:"actor_type" db:"actor_type"`
+	ActorName           string    `json:"actor_name" db:"actor_name"`
+	Party               string    `json:"party" db:"party"`
+	MetricType          string    `json:"metric_type" db:"metric_type"`
+	RegisteredVoters    *int      `json:"registered_voters,omitempty" db:"registered_voters"`
+	ActualVoters        *int      `json:"actual_voters,omitempty" db:"actual_voters"`
+	ValidVotes          *int      `json:"valid_votes,omitempty" db:"valid_votes"`
+	BlankOrInvalidVotes *int      `json:"blank_or_invalid_votes,omitempty" db:"blank_or_invalid_votes"`
+	Abstentions         *int      `json:"abstentions,omitempty" db:"abstentions"`
+	PollingStations     *int      `json:"polling_stations,omitempty" db:"polling_stations"`
+	Councils            *int      `json:"councils,omitempty" db:"councils"`
+	ListsPresented      *int      `json:"lists_presented,omitempty" db:"lists_presented"`
+	Votes               *int      `json:"votes,omitempty" db:"votes"`
+	Percentage          *float64  `json:"percentage,omitempty" db:"percentage"`
+	Seats               *int      `json:"seats,omitempty" db:"seats"`
+	WomenSeats          *int      `json:"women_seats,omitempty" db:"women_seats"`
+	CouncilsControlled  *int      `json:"councils_controlled,omitempty" db:"councils_controlled"`
+	SourceLineStart     *int      `json:"source_line_start,omitempty" db:"source_line_start"`
+	SourceLineEnd       *int      `json:"source_line_end,omitempty" db:"source_line_end"`
+	Confidence          string    `json:"confidence" db:"confidence"`
+	Status              string    `json:"status" db:"status"`
+	Notes               string    `json:"notes" db:"notes"`
+	CreatedAt           time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at" db:"updated_at"`
+}
+
+func (HistoricalElectionResult) TableName() string {
+	return "historical_election_results"
+}
+
 // PVStatus définit l'état d'un procès-verbal terrain.
 type PVStatus string
 
@@ -202,20 +248,25 @@ const (
 
 // PollingStation représente un bureau de vote rattaché à un scrutin.
 type PollingStation struct {
-	ID               string    `json:"id" db:"id"`
-	ElectionID       string    `json:"election_id" db:"election_id"`
-	Code             string    `json:"code" db:"code"`
-	Name             string    `json:"name" db:"name"`
-	RegionID         string    `json:"region_id" db:"region_id"`
-	DepartmentID     string    `json:"department_id" db:"department_id"`
-	ArrondissementID string    `json:"arrondissement_id" db:"arrondissement_id"`
-	RegisteredVoters int       `json:"registered_voters" db:"registered_voters"`
-	LocationName     string    `json:"location_name" db:"location_name"`
-	GPSLocation      string    `json:"gps_location" db:"gps_location"`
-	H3Index          string    `json:"h3_index" db:"h3_index"`
-	SourceName       string    `json:"source_name" db:"source_name"`
-	CreatedAt        time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
+	ID                 string    `json:"id" db:"id"`
+	ElectionID         string    `json:"election_id" db:"election_id"`
+	Code               string    `json:"code" db:"code"`
+	Name               string    `json:"name" db:"name"`
+	RegionID           string    `json:"region_id" db:"region_id"`
+	DepartmentID       string    `json:"department_id" db:"department_id"`
+	ArrondissementID   string    `json:"arrondissement_id" db:"arrondissement_id"`
+	RegisteredVoters   int       `json:"registered_voters" db:"registered_voters"`
+	LocationName       string    `json:"location_name" db:"location_name"`
+	GPSLocation        string    `json:"gps_location" db:"gps_location"`
+	H3Index            string    `json:"h3_index" db:"h3_index"`
+	SourceName         string    `json:"source_name" db:"source_name"`
+	SourceDocumentID   string    `json:"source_document_id" db:"source_document_id"`
+	SourceDocumentSlug string    `json:"source_document_slug" db:"source_document_slug"`
+	SourceSHA256       string    `json:"source_sha256" db:"source_sha256"`
+	SourcePosition     *int      `json:"source_position,omitempty" db:"source_position"`
+	SourceConfidence   string    `json:"source_confidence" db:"source_confidence"`
+	CreatedAt          time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
 }
 
 func (PollingStation) TableName() string {
@@ -369,6 +420,68 @@ type ElectionResultSummary struct {
 	Results            []CandidateResultSummary `json:"results"`
 }
 
+// RegionPVSummary agrège le comptage parallèle par région.
+type RegionPVSummary struct {
+	ElectionID          string  `json:"election_id" db:"election_id"`
+	RegionID            string  `json:"region_id" db:"region_id"`
+	RegionName          string  `json:"region_name" db:"region_name"`
+	TotalStations       int     `json:"total_stations" db:"total_stations"`
+	SubmittedPV         int     `json:"submitted_pv" db:"submitted_pv"`
+	CoverageRate        float64 `json:"coverage_rate" db:"coverage_rate"`
+	RegisteredVoters    int     `json:"registered_voters" db:"registered_voters"`
+	ReportedVoters      int     `json:"reported_voters" db:"reported_voters"`
+	BlankOrInvalidVotes int     `json:"blank_or_invalid_votes" db:"blank_or_invalid_votes"`
+	TotalCandidateVotes int     `json:"total_candidate_votes" db:"total_candidate_votes"`
+	LeaderCandidateID   string  `json:"leader_candidate_id" db:"leader_candidate_id"`
+	LeaderName          string  `json:"leader_name" db:"leader_name"`
+	LeaderParty         string  `json:"leader_party" db:"leader_party"`
+	LeaderVotes         int     `json:"leader_votes" db:"leader_votes"`
+}
+
+// RegionalRiskRule décrit une règle ayant contribué au score régional.
+type RegionalRiskRule struct {
+	Code     string  `json:"code"`
+	Label    string  `json:"label"`
+	Severity string  `json:"severity"`
+	Weight   int     `json:"weight"`
+	Value    float64 `json:"value,omitempty"`
+}
+
+// RegionalRiskSnapshot journalise un calcul de risque régional.
+type RegionalRiskSnapshot struct {
+	ID                          string             `json:"id" db:"id"`
+	ElectionID                  string             `json:"election_id" db:"election_id"`
+	RegionID                    string             `json:"region_id" db:"region_id"`
+	RegionName                  string             `json:"region_name" db:"region_name"`
+	NormalizedRegionName        string             `json:"normalized_region_name" db:"normalized_region_name"`
+	ReferenceElectionID         string             `json:"reference_election_id" db:"reference_election_id"`
+	ReferenceElectionYear       *int               `json:"reference_election_year,omitempty" db:"reference_election_year"`
+	ReferenceContestType        string             `json:"reference_contest_type" db:"reference_contest_type"`
+	ReferenceSourceDocumentSlug string             `json:"reference_source_document_slug" db:"reference_source_document_slug"`
+	TotalStations               int                `json:"total_stations" db:"total_stations"`
+	SubmittedPV                 int                `json:"submitted_pv" db:"submitted_pv"`
+	CoverageRate                float64            `json:"coverage_rate" db:"coverage_rate"`
+	RegisteredVoters            int                `json:"registered_voters" db:"registered_voters"`
+	ReportedVoters              int                `json:"reported_voters" db:"reported_voters"`
+	BlankOrInvalidVotes         int                `json:"blank_or_invalid_votes" db:"blank_or_invalid_votes"`
+	TurnoutRate                 *float64           `json:"turnout_rate,omitempty" db:"turnout_rate"`
+	ReferenceTurnoutRate        *float64           `json:"reference_turnout_rate,omitempty" db:"reference_turnout_rate"`
+	TurnoutGapPoints            *float64           `json:"turnout_gap_points,omitempty" db:"turnout_gap_points"`
+	InvalidRate                 *float64           `json:"invalid_rate,omitempty" db:"invalid_rate"`
+	ReferenceInvalidRate        *float64           `json:"reference_invalid_rate,omitempty" db:"reference_invalid_rate"`
+	InvalidGapPoints            *float64           `json:"invalid_gap_points,omitempty" db:"invalid_gap_points"`
+	LeaderCandidateID           string             `json:"leader_candidate_id" db:"leader_candidate_id"`
+	LeaderName                  string             `json:"leader_name" db:"leader_name"`
+	LeaderParty                 string             `json:"leader_party" db:"leader_party"`
+	LeaderVotes                 int                `json:"leader_votes" db:"leader_votes"`
+	RiskScore                   int                `json:"risk_score" db:"risk_score"`
+	RiskStatus                  string             `json:"risk_status" db:"risk_status"`
+	Rules                       []RegionalRiskRule `json:"rules" db:"rules"`
+	Evidence                    []string           `json:"evidence" db:"evidence"`
+	SnapshotHash                string             `json:"snapshot_hash" db:"snapshot_hash"`
+	CreatedAt                   time.Time          `json:"created_at" db:"created_at"`
+}
+
 // FieldCoverageRegion synthétise la couverture opérationnelle d'une région.
 type FieldCoverageRegion struct {
 	RegionID         string  `json:"region_id" db:"region_id"`
@@ -390,6 +503,28 @@ type FieldCoverageObserver struct {
 	CompletionRate   float64 `json:"completion_rate" db:"completion_rate"`
 }
 
+// FieldCoverageZone identifie une zone silencieuse ou prioritaire.
+type FieldCoverageZone struct {
+	ZoneType           string  `json:"zone_type" db:"zone_type"`
+	RegionID           string  `json:"region_id" db:"region_id"`
+	RegionName         string  `json:"region_name" db:"region_name"`
+	DepartmentID       string  `json:"department_id" db:"department_id"`
+	DepartmentName     string  `json:"department_name" db:"department_name"`
+	ArrondissementID   string  `json:"arrondissement_id" db:"arrondissement_id"`
+	ArrondissementName string  `json:"arrondissement_name" db:"arrondissement_name"`
+	TotalStations      int     `json:"total_stations" db:"total_stations"`
+	AssignedStations   int     `json:"assigned_stations" db:"assigned_stations"`
+	UnassignedStations int     `json:"unassigned_stations" db:"unassigned_stations"`
+	SubmittedPV        int     `json:"submitted_pv" db:"submitted_pv"`
+	MissingPV          int     `json:"missing_pv" db:"missing_pv"`
+	ObserverCount      int     `json:"observer_count" db:"observer_count"`
+	AssignmentRate     float64 `json:"assignment_rate" db:"assignment_rate"`
+	CoverageRate       float64 `json:"coverage_rate" db:"coverage_rate"`
+	PriorityScore      float64 `json:"priority_score" db:"priority_score"`
+	PriorityLabel      string  `json:"priority_label" db:"priority_label"`
+	Silent             bool    `json:"silent" db:"silent"`
+}
+
 // FieldCoverageSummary regroupe la couverture terrain d'un scrutin.
 type FieldCoverageSummary struct {
 	ElectionID         string                  `json:"election_id"`
@@ -398,9 +533,13 @@ type FieldCoverageSummary struct {
 	UnassignedStations int                     `json:"unassigned_stations"`
 	SubmittedPV        int                     `json:"submitted_pv"`
 	ObserverCount      int                     `json:"observer_count"`
+	SilentZoneCount    int                     `json:"silent_zone_count"`
+	CriticalZoneCount  int                     `json:"critical_zone_count"`
 	CoverageRate       float64                 `json:"coverage_rate"`
 	Regions            []FieldCoverageRegion   `json:"regions"`
 	Observers          []FieldCoverageObserver `json:"observers"`
+	SilentZones        []FieldCoverageZone     `json:"silent_zones"`
+	PriorityZones      []FieldCoverageZone     `json:"priority_zones"`
 }
 
 // PublicPVProof expose une preuve vérifiable sans identité observateur.
@@ -483,6 +622,35 @@ type LegalDocument struct {
 
 func (LegalDocument) TableName() string {
 	return "legal_documents"
+}
+
+// SourceDocument représente un document officiel archivé et vérifiable.
+type SourceDocument struct {
+	ID                string     `json:"id" db:"id"`
+	Slug              string     `json:"slug" db:"slug"`
+	Title             string     `json:"title" db:"title"`
+	Publisher         string     `json:"publisher" db:"publisher"`
+	SourceURL         string     `json:"source_url" db:"source_url"`
+	DocumentType      string     `json:"document_type" db:"document_type"`
+	Language          string     `json:"language" db:"language"`
+	PublishedDate     *time.Time `json:"published_date,omitempty" db:"published_date"`
+	RetrievedAt       *time.Time `json:"retrieved_at,omitempty" db:"retrieved_at"`
+	LocalPath         string     `json:"local_path" db:"local_path"`
+	ExtractedTextPath string     `json:"extracted_text_path" db:"extracted_text_path"`
+	SHA256Checksum    string     `json:"sha256_checksum" db:"sha256_checksum"`
+	MimeType          string     `json:"mime_type" db:"mime_type"`
+	FileSizeBytes     int64      `json:"file_size_bytes" db:"file_size_bytes"`
+	Granularity       string     `json:"granularity" db:"granularity"`
+	ReferenceYear     *int       `json:"reference_year,omitempty" db:"reference_year"`
+	Confidence        string     `json:"confidence" db:"confidence"`
+	Status            string     `json:"status" db:"status"`
+	Notes             string     `json:"notes" db:"notes"`
+	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+func (SourceDocument) TableName() string {
+	return "source_documents"
 }
 
 // LegalArticle représente un article au sein d'un document

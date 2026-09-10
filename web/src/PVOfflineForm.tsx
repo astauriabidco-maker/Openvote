@@ -36,6 +36,19 @@ async function fileToDataURL(file: File): Promise<string> {
     });
 }
 
+function splitLocation(locationName: string): { region: string; department: string; arrondissement: string; locality: string } {
+    const [region = '', department = '', arrondissement = '', ...localityParts] = locationName
+        .split('/')
+        .map((part) => part.trim())
+        .filter(Boolean);
+    return { region, department, arrondissement, locality: localityParts.join(' / ') };
+}
+
+function shortHash(value: string): string {
+    if (!value) return '-';
+    return `${value.slice(0, 10)}...${value.slice(-8)}`;
+}
+
 export default function PVOfflineForm({ token, isOnline, onPVSubmitted }: PVOfflineFormProps) {
     const apiClient = useMemo(() => axios.create({
         baseURL: API_URL,
@@ -66,6 +79,8 @@ export default function PVOfflineForm({ token, isOnline, onPVSubmitted }: PVOffl
     const candidateVotesTotal = candidates.reduce((sum, c) => sum + (votesByCandidate[c.id] || 0), 0);
     const ballotTotal = candidateVotesTotal + nullVotes + blankVotes + disputedVotes;
     const isOverTotal = ballotTotal > votersCount;
+    const votersExceedRegistered = votersCount > registeredVoters;
+    const selectedStationLocation = selectedStation ? splitLocation(selectedStation.location_name || '') : null;
 
     const refreshPending = async () => {
         try {
@@ -176,6 +191,10 @@ export default function PVOfflineForm({ token, isOnline, onPVSubmitted }: PVOffl
         }
         if (isOverTotal) {
             setMessage({ type: 'error', text: 'La somme des bulletins dépasse le nombre de votants.' });
+            return;
+        }
+        if (votersExceedRegistered) {
+            setMessage({ type: 'error', text: 'Le nombre de votants dépasse les inscrits officiels du bureau.' });
             return;
         }
 
@@ -307,9 +326,31 @@ export default function PVOfflineForm({ token, isOnline, onPVSubmitted }: PVOffl
                     </p>
                 )}
 
+                {selectedStation && (
+                    <div className="pv-station-card">
+                        <div>
+                            <strong>{selectedStation.code}</strong>
+                            <span>{selectedStation.name}</span>
+                        </div>
+                        <dl>
+                            <div><dt>Région</dt><dd>{selectedStationLocation?.region || '-'}</dd></div>
+                            <div><dt>Département</dt><dd>{selectedStationLocation?.department || '-'}</dd></div>
+                            <div><dt>Arrond.</dt><dd>{selectedStationLocation?.arrondissement || '-'}</dd></div>
+                            <div><dt>Inscrits</dt><dd>{selectedStation.registered_voters.toLocaleString('fr-FR')}</dd></div>
+                        </dl>
+                        <p>
+                            Source: <strong>{selectedStation.source_document_slug || selectedStation.source_name || '-'}</strong>
+                            {' · '}
+                            ligne {selectedStation.source_position || '-'}
+                            {' · '}
+                            {shortHash(selectedStation.source_sha256 || '')}
+                        </p>
+                    </div>
+                )}
+
                 <label>
                     Inscrits
-                    <input type="number" min="0" value={registeredVoters} onChange={(e) => setRegisteredVoters(Number(e.target.value))} />
+                    <input type="number" min="0" value={registeredVoters} readOnly />
                 </label>
 
                 <label>
@@ -341,10 +382,13 @@ export default function PVOfflineForm({ token, isOnline, onPVSubmitted }: PVOffl
             <div className="pv-results-entry">
                 <div className="pv-section-header">
                     <h3>Résultats candidats</h3>
-                    <span className={isOverTotal ? 'pv-total danger' : 'pv-total'}>
+                    <span className={isOverTotal || votersExceedRegistered ? 'pv-total danger' : 'pv-total'}>
                         Total bulletins: {ballotTotal} / {votersCount}
                     </span>
                 </div>
+                {votersExceedRegistered && (
+                    <p className="pv-validation-warning">Les votants dépassent les inscrits officiels du bureau.</p>
+                )}
                 {candidates.map((candidate) => (
                     <label key={candidate.id} className="pv-candidate-row">
                         <span>
@@ -369,7 +413,7 @@ export default function PVOfflineForm({ token, isOnline, onPVSubmitted }: PVOffl
 
             {pvHash && <p className="pv-hash">Hash photo: {pvHash.slice(0, 18)}...</p>}
 
-            <button type="button" className="pv-primary-btn" onClick={submit} disabled={loading || isOverTotal}>
+            <button type="button" className="pv-primary-btn" onClick={submit} disabled={loading || isOverTotal || votersExceedRegistered}>
                 {loading ? 'Sauvegarde...' : 'Sauvegarder le PV'}
             </button>
         </section>

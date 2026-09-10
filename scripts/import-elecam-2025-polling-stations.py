@@ -65,7 +65,11 @@ CREATE TEMP TABLE elecam_2025_polling_stations_stage (
     registered_voters TEXT,
     location_name TEXT,
     latitude TEXT,
-    longitude TEXT
+    longitude TEXT,
+    source_document_slug TEXT,
+    source_sha256 TEXT,
+    source_position TEXT,
+    source_confidence TEXT
 ) ON COMMIT DROP;
 
 COPY elecam_2025_polling_stations_stage (
@@ -77,7 +81,11 @@ COPY elecam_2025_polling_stations_stage (
     registered_voters,
     location_name,
     latitude,
-    longitude
+    longitude,
+    source_document_slug,
+    source_sha256,
+    source_position,
+    source_confidence
 ) FROM STDIN WITH (FORMAT csv, HEADER true);
 {csv_text}\\.
 
@@ -111,6 +119,22 @@ BEGIN
     WHERE registered_voters !~ '^[0-9]+$';
     IF bad_rows > 0 THEN
         RAISE EXCEPTION 'ELECAM 2025 import aborted: % rows have invalid registered_voters', bad_rows;
+    END IF;
+
+    SELECT COUNT(*) INTO bad_rows
+    FROM elecam_2025_polling_stations_stage
+    WHERE COALESCE(NULLIF(BTRIM(source_position), ''), '') <> ''
+      AND source_position !~ '^[0-9]+$';
+    IF bad_rows > 0 THEN
+        RAISE EXCEPTION 'ELECAM 2025 import aborted: % rows have invalid source_position', bad_rows;
+    END IF;
+
+    SELECT COUNT(*) INTO bad_rows
+    FROM elecam_2025_polling_stations_stage
+    WHERE COALESCE(NULLIF(BTRIM(source_sha256), ''), '') <> ''
+      AND source_sha256 !~ '^[0-9a-fA-F]{{64}}$';
+    IF bad_rows > 0 THEN
+        RAISE EXCEPTION 'ELECAM 2025 import aborted: % rows have invalid source_sha256', bad_rows;
     END IF;
 
     SELECT COUNT(*) INTO bad_rows
@@ -199,6 +223,24 @@ BEGIN
     IF bad_rows > 0 THEN
         RAISE EXCEPTION 'ELECAM 2025 import aborted: % rows reference unknown arrondissement_id', bad_rows;
     END IF;
+
+    SELECT COUNT(*) INTO bad_rows
+    FROM elecam_2025_polling_stations_stage s
+    LEFT JOIN source_documents sd ON sd.slug = BTRIM(s.source_document_slug)
+    WHERE COALESCE(NULLIF(BTRIM(s.source_document_slug), ''), '') <> ''
+      AND sd.id IS NULL;
+    IF bad_rows > 0 THEN
+        RAISE EXCEPTION 'ELECAM 2025 import aborted: % rows reference unknown source_document_slug', bad_rows;
+    END IF;
+
+    SELECT COUNT(*) INTO bad_rows
+    FROM elecam_2025_polling_stations_stage s
+    JOIN source_documents sd ON sd.slug = BTRIM(s.source_document_slug)
+    WHERE COALESCE(NULLIF(BTRIM(s.source_sha256), ''), '') <> ''
+      AND LOWER(BTRIM(s.source_sha256)) <> LOWER(COALESCE(sd.sha256_checksum, ''));
+    IF bad_rows > 0 THEN
+        RAISE EXCEPTION 'ELECAM 2025 import aborted: % rows have source_sha256 mismatching source_documents', bad_rows;
+    END IF;
 END $$;
 
 INSERT INTO polling_stations (
@@ -212,7 +254,12 @@ INSERT INTO polling_stations (
     location_name,
     gps_location,
     h3_index,
-    source_name
+    source_name,
+    source_document_id,
+    source_document_slug,
+    source_sha256,
+    source_position,
+    source_confidence
 )
 SELECT
     {election_id}::uuid,
@@ -228,8 +275,14 @@ SELECT
         ELSE ST_SetSRID(ST_MakePoint(longitude::double precision, latitude::double precision), 4326)
     END,
     NULL,
-    {source_name}
-FROM elecam_2025_polling_stations_stage
+    {source_name},
+    sd.id,
+    COALESCE(BTRIM(s.source_document_slug), ''),
+    LOWER(COALESCE(BTRIM(s.source_sha256), '')),
+    NULLIF(BTRIM(s.source_position), '')::int,
+    COALESCE(BTRIM(s.source_confidence), '')
+FROM elecam_2025_polling_stations_stage s
+LEFT JOIN source_documents sd ON sd.slug = BTRIM(s.source_document_slug)
 ON CONFLICT (election_id, code) DO UPDATE
 SET name = EXCLUDED.name,
     region_id = EXCLUDED.region_id,
@@ -240,6 +293,11 @@ SET name = EXCLUDED.name,
     gps_location = EXCLUDED.gps_location,
     h3_index = EXCLUDED.h3_index,
     source_name = EXCLUDED.source_name,
+    source_document_id = EXCLUDED.source_document_id,
+    source_document_slug = EXCLUDED.source_document_slug,
+    source_sha256 = EXCLUDED.source_sha256,
+    source_position = EXCLUDED.source_position,
+    source_confidence = EXCLUDED.source_confidence,
     updated_at = NOW();
 
 DO $$

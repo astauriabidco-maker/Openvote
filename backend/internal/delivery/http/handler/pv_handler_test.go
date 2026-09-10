@@ -102,8 +102,9 @@ func (m *mockPVAuditRepo) GetByPV(ctx context.Context, pvID string) ([]entity.PV
 
 type mockStationRepo struct {
 	repository.PollingStationRepository
-	createCalls int
-	failCodes   map[string]error
+	createCalls      int
+	failCodes        map[string]error
+	assignedStations []entity.PollingStation
 }
 
 func (m *mockStationRepo) Create(ctx context.Context, station *entity.PollingStation) error {
@@ -113,6 +114,10 @@ func (m *mockStationRepo) Create(ctx context.Context, station *entity.PollingSta
 	}
 	station.ID = testStationID
 	return nil
+}
+
+func (m *mockStationRepo) GetAssignedToObserver(ctx context.Context, electionID, observerID string) ([]entity.PollingStation, error) {
+	return m.assignedStations, nil
 }
 
 type mockCandidateRepo struct {
@@ -134,6 +139,8 @@ type mockAssignmentRepo struct {
 	repository.PollingStationAssignmentRepository
 	createCalls int
 	failIDs     map[string]error
+	coverage    *entity.FieldCoverageSummary
+	coverageErr error
 }
 
 func (m *mockAssignmentRepo) Create(ctx context.Context, assignment *entity.PollingStationAssignment) error {
@@ -143,6 +150,13 @@ func (m *mockAssignmentRepo) Create(ctx context.Context, assignment *entity.Poll
 	}
 	assignment.ID = assignment.PollingStationID + "-assignment"
 	return nil
+}
+
+func (m *mockAssignmentRepo) GetCoverage(ctx context.Context, electionID string) (*entity.FieldCoverageSummary, error) {
+	if m.coverageErr != nil {
+		return nil, m.coverageErr
+	}
+	return m.coverage, nil
 }
 
 func setupPVRouter(h *PVHandler) *gin.Engine {
@@ -187,6 +201,11 @@ func setupAdminPVRouter(h *PVHandler) *gin.Engine {
 		c.Set("userID", testAdminID)
 		c.Set("role", string(entity.RoleRegionAdmin))
 		h.ListPVAuditEvents(c)
+	})
+	r.GET("/admin/field-coverage", func(c *gin.Context) {
+		c.Set("userID", testAdminID)
+		c.Set("role", string(entity.RoleRegionAdmin))
+		h.GetFieldCoverage(c)
 	})
 	return r
 }
@@ -238,6 +257,68 @@ func TestSubmitPVRejectsDuplicatedCandidate(t *testing.T) {
 	}
 	if pvRepo.createCalls != 0 {
 		t.Fatalf("le repo ne doit pas être appelé pour un PV invalide")
+	}
+}
+
+func TestSubmitPVRejectsUnassignedStation(t *testing.T) {
+	pvRepo := &mockPVRepo{}
+	stationRepo := &mockStationRepo{assignedStations: []entity.PollingStation{}}
+	h := NewPVHandler(stationRepo, nil, pvRepo, nil, nil, nil, nil)
+	r := setupPVRouter(h)
+
+	body := `{
+		"election_id":"78c278a1-8ca1-4a37-bed4-62300d7145ba",
+		"polling_station_id":"78c278a1-8ca1-4a37-bed4-62300d7145bb",
+		"registered_voters":100,
+		"voters_count":90,
+		"results":[
+			{"candidate_id":"78c278a1-8ca1-4a37-bed4-62300d7145bc","votes":80}
+		]
+	}`
+	req := httptest.NewRequest("POST", "/pv", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("attendu 403, obtenu %d (body: %s)", rec.Code, rec.Body.String())
+	}
+	if pvRepo.createCalls != 0 {
+		t.Fatalf("le repo ne doit pas être appelé pour un bureau non assigné")
+	}
+}
+
+func TestSubmitPVRejectsVotersAboveOfficialRegisteredVoters(t *testing.T) {
+	pvRepo := &mockPVRepo{}
+	stationRepo := &mockStationRepo{assignedStations: []entity.PollingStation{{
+		ID:               testStationID,
+		ElectionID:       testElectionID,
+		RegisteredVoters: 100,
+	}}}
+	h := NewPVHandler(stationRepo, nil, pvRepo, nil, nil, nil, nil)
+	r := setupPVRouter(h)
+
+	body := `{
+		"election_id":"78c278a1-8ca1-4a37-bed4-62300d7145ba",
+		"polling_station_id":"78c278a1-8ca1-4a37-bed4-62300d7145bb",
+		"registered_voters":100,
+		"voters_count":101,
+		"results":[
+			{"candidate_id":"78c278a1-8ca1-4a37-bed4-62300d7145bc","votes":90}
+		]
+	}`
+	req := httptest.NewRequest("POST", "/pv", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("attendu 400, obtenu %d (body: %s)", rec.Code, rec.Body.String())
+	}
+	if pvRepo.createCalls != 0 {
+		t.Fatalf("le repo ne doit pas être appelé quand les votants dépassent les inscrits")
 	}
 }
 
@@ -708,6 +789,76 @@ func TestListPVAuditEventsReturnsEvents(t *testing.T) {
 	}
 	if payload.Total != 1 || len(payload.Events) != 1 || payload.Events[0].EventType != "submitted" {
 		t.Fatalf("historique audit inattendu: %+v", payload)
+	}
+}
+
+func TestGetFieldCoverageReturnsPriorityZones(t *testing.T) {
+	assignmentRepo := &mockAssignmentRepo{coverage: &entity.FieldCoverageSummary{
+		ElectionID:         testElectionID,
+		TotalStations:      250,
+		AssignedStations:   140,
+		UnassignedStations: 110,
+		SubmittedPV:        20,
+		ObserverCount:      12,
+		SilentZoneCount:    1,
+		CriticalZoneCount:  1,
+		CoverageRate:       0.08,
+		PriorityZones: []entity.FieldCoverageZone{
+			{
+				ZoneType:           "department",
+				RegionName:         "Nord",
+				DepartmentName:     "Bénoué",
+				TotalStations:      120,
+				AssignedStations:   35,
+				UnassignedStations: 85,
+				SubmittedPV:        0,
+				MissingPV:          120,
+				ObserverCount:      5,
+				AssignmentRate:     0.2917,
+				CoverageRate:       0,
+				PriorityScore:      162.5,
+				PriorityLabel:      "critique",
+				Silent:             true,
+			},
+		},
+		SilentZones: []entity.FieldCoverageZone{
+			{
+				ZoneType:       "department",
+				RegionName:     "Nord",
+				DepartmentName: "Bénoué",
+				TotalStations:  120,
+				SubmittedPV:    0,
+				PriorityLabel:  "critique",
+				Silent:         true,
+			},
+		},
+	}}
+	h := NewPVHandler(nil, nil, nil, assignmentRepo, nil, nil, nil)
+	r := setupAdminPVRouter(h)
+
+	req := httptest.NewRequest("GET", "/admin/field-coverage?election_id="+testElectionID, nil)
+	rec := httptest.NewRecorder()
+
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("attendu 200, obtenu %d (body: %s)", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		Coverage entity.FieldCoverageSummary `json:"coverage"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("JSON invalide: %v", err)
+	}
+	if payload.Coverage.SilentZoneCount != 1 || payload.Coverage.CriticalZoneCount != 1 {
+		t.Fatalf("compteurs zones inattendus: %+v", payload.Coverage)
+	}
+	if len(payload.Coverage.PriorityZones) != 1 {
+		t.Fatalf("attendu 1 zone prioritaire, obtenu %d", len(payload.Coverage.PriorityZones))
+	}
+	zone := payload.Coverage.PriorityZones[0]
+	if !zone.Silent || zone.PriorityLabel != "critique" || zone.MissingPV != 120 || zone.UnassignedStations != 85 {
+		t.Fatalf("zone prioritaire incomplète: %+v", zone)
 	}
 }
 

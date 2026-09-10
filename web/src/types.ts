@@ -114,6 +114,30 @@ export interface LegalDocument {
     created_at: string;
 }
 
+export interface SourceDocument {
+    id: string;
+    slug: string;
+    title: string;
+    publisher: string;
+    source_url: string;
+    document_type: string;
+    language: string;
+    published_date?: string;
+    retrieved_at?: string;
+    local_path: string;
+    extracted_text_path: string;
+    sha256_checksum: string;
+    mime_type: string;
+    file_size_bytes: number;
+    granularity: string;
+    reference_year?: number;
+    confidence: string;
+    status: string;
+    notes: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface LegalArticle {
     id: string;
     document_id: string;
@@ -144,6 +168,43 @@ export interface ElectionData {
     created_at: string;
 }
 
+export interface HistoricalElectionResult {
+    id: string;
+    election_id: string;
+    election_name: string;
+    election_type: string;
+    election_date: string;
+    source_document_slug: string;
+    election_year: number;
+    contest_type: string;
+    result_level: string;
+    region_name: string;
+    department_name: string;
+    commune_name: string;
+    actor_type: string;
+    actor_name: string;
+    party: string;
+    metric_type: string;
+    registered_voters?: number;
+    actual_voters?: number;
+    valid_votes?: number;
+    blank_or_invalid_votes?: number;
+    abstentions?: number;
+    polling_stations?: number;
+    councils?: number;
+    lists_presented?: number;
+    votes?: number;
+    percentage?: number;
+    seats?: number;
+    women_seats?: number;
+    councils_controlled?: number;
+    source_line_start?: number;
+    source_line_end?: number;
+    confidence: string;
+    status: string;
+    notes: string;
+}
+
 export interface IncidentTypeData {
     id: string;
     name: string;
@@ -170,6 +231,11 @@ export interface PollingStation {
     gps_location: string;
     h3_index: string;
     source_name: string;
+    source_document_id: string;
+    source_document_slug: string;
+    source_sha256: string;
+    source_position?: number;
+    source_confidence: string;
     created_at: string;
     updated_at: string;
 }
@@ -262,6 +328,65 @@ export interface ElectionResultSummary {
     results: CandidateResultSummary[];
 }
 
+export interface RegionPVSummary {
+    election_id: string;
+    region_id: string;
+    region_name: string;
+    total_stations: number;
+    submitted_pv: number;
+    coverage_rate: number;
+    registered_voters: number;
+    reported_voters: number;
+    blank_or_invalid_votes: number;
+    total_candidate_votes: number;
+    leader_candidate_id: string;
+    leader_name: string;
+    leader_party: string;
+    leader_votes: number;
+}
+
+export interface RegionalRiskRule {
+    code: string;
+    label: string;
+    severity: string;
+    weight: number;
+    value?: number;
+}
+
+export interface RegionalRiskSnapshot {
+    id: string;
+    election_id: string;
+    region_id: string;
+    region_name: string;
+    normalized_region_name: string;
+    reference_election_id: string;
+    reference_election_year?: number;
+    reference_contest_type: string;
+    reference_source_document_slug: string;
+    total_stations: number;
+    submitted_pv: number;
+    coverage_rate: number;
+    registered_voters: number;
+    reported_voters: number;
+    blank_or_invalid_votes: number;
+    turnout_rate?: number;
+    reference_turnout_rate?: number;
+    turnout_gap_points?: number;
+    invalid_rate?: number;
+    reference_invalid_rate?: number;
+    invalid_gap_points?: number;
+    leader_candidate_id: string;
+    leader_name: string;
+    leader_party: string;
+    leader_votes: number;
+    risk_score: number;
+    risk_status: string;
+    rules: RegionalRiskRule[];
+    evidence: string[];
+    snapshot_hash: string;
+    created_at: string;
+}
+
 export interface FieldCoverageRegion {
     region_id: string;
     region_name: string;
@@ -281,6 +406,23 @@ export interface FieldCoverageObserver {
     completion_rate: number;
 }
 
+export interface FieldCoverageZone {
+    zone_type: string;
+    region_id: string;
+    region_name: string;
+    department_id: string;
+    department_name: string;
+    arrondissement_id: string;
+    arrondissement_name: string;
+    total_stations: number;
+    assigned_stations: number;
+    submitted_pv: number;
+    observer_count: number;
+    coverage_rate: number;
+    priority_score: number;
+    priority_label: string;
+}
+
 export interface FieldCoverageSummary {
     election_id: string;
     total_stations: number;
@@ -291,6 +433,7 @@ export interface FieldCoverageSummary {
     coverage_rate: number;
     regions: FieldCoverageRegion[];
     observers: FieldCoverageObserver[];
+    silent_zones?: FieldCoverageZone[];
 }
 
 export type PVVerificationStatus = 'submitted' | 'pending' | 'verified' | 'rejected' | 'needs_clarification' | string;

@@ -49,6 +49,15 @@ func (h *LegalHandler) CreateLegalDocument(c *gin.Context) {
 	c.JSON(http.StatusCreated, input)
 }
 
+func (h *LegalHandler) GetSourceDocuments(c *gin.Context) {
+	docs, err := h.legalRepo.GetAllSourceDocuments(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"source_documents": docs, "total": len(docs)})
+}
+
 func (h *LegalHandler) DeleteLegalDocument(c *gin.Context) {
 	docID := c.Param("id")
 	if err := h.legalRepo.DeleteDocument(c.Request.Context(), docID); err != nil {

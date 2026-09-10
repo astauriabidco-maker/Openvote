@@ -6,10 +6,17 @@ Workflow:
 
 1. Add each source to `manifest.json`, or to a focused manifest such as
    `elecam-election-wave-manifest.json` for a large acquisition batch.
-2. Download the official PDF into `pdfs/`.
+2. Download the official PDF into `pdfs/`, or archive official HTML pages into `html/`
+   when the source institution does not provide a PDF.
 3. Run `scripts/verify-source-documents.py --manifest <manifest>` to compute or verify SHA-256 checksums.
-4. Run `scripts/extract-source-pdfs.py --manifest <manifest>` to create text files in `extracted/`.
-5. Import structured CSV/JSON only after the PDF and extracted text are reproducible.
+4. Run `scripts/extract-source-pdfs.py --manifest <manifest>` or
+   `scripts/extract-source-html.py --manifest <manifest>` to create text files
+   in `extracted/`.
+5. Import structured CSV/JSON only after the source file and extracted text are reproducible.
+
+`elecam-documentation` is kept as a tracked parent catalog URL. It is not counted
+as an official PDF source because the useful child documents are archived as
+separate manifest entries.
 
 The manifest is the human-readable registry. The database table `source_documents`
 is the application registry.
@@ -53,6 +60,17 @@ record, loads the CSV into a temporary staging table, verifies required
 fields, UUID foreign keys, duplicate station codes, and the exact row count,
 then upserts into `polling_stations`. The transaction aborts unless the final
 imported count is exactly `28 170`.
+
+Run the guard integration check against a local or staging database:
+
+```bash
+DATABASE_URL='postgres://user:password@host:5432/openvote?sslmode=disable' \
+  python3 scripts/test-elecam-2025-import-guard.py
+```
+
+The test performs an idempotent good import, then intentionally uses
+`28 169` as the expected count and verifies that PostgreSQL aborts before
+commit and preserves the existing `28 170` rows.
 
 For a non-default file or election UUID:
 

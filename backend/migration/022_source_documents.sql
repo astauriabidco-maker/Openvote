@@ -25,11 +25,15 @@ CREATE TABLE IF NOT EXISTS source_documents (
     confidence VARCHAR(30) NOT NULL DEFAULT 'official'
         CHECK (confidence IN ('official', 'official_estimate', 'secondary_check', 'unverified')),
     status VARCHAR(30) NOT NULL DEFAULT 'planned'
-        CHECK (status IN ('planned', 'downloaded', 'extracted', 'verified', 'rejected')),
+        CHECK (status IN ('planned', 'downloaded', 'extracted', 'ocr_extracted', 'catalog_tracked', 'verified', 'rejected')),
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE source_documents DROP CONSTRAINT IF EXISTS source_documents_status_check;
+ALTER TABLE source_documents ADD CONSTRAINT source_documents_status_check
+    CHECK (status IN ('planned', 'downloaded', 'extracted', 'ocr_extracted', 'catalog_tracked', 'verified', 'rejected'));
 
 CREATE INDEX IF NOT EXISTS idx_source_documents_publisher
     ON source_documents (publisher);
@@ -197,15 +201,15 @@ VALUES
         'https://prc.cm/fr/actualites/actes/decrets/7865-decret-n-2025-305-du-11-juillet-2025-portant-convocation-du-corps-electoral-en-vue-de-l-election-du-president-de-la-republique',
         'decree',
         'fr',
-        'data/sources/official/pdfs/prc-decret-2025-305-convocation-presidentielle.pdf',
+        'data/sources/official/html/prc-decret-2025-305-convocation-presidentielle.html',
         'data/sources/official/extracted/prc-decret-2025-305-convocation-presidentielle.txt',
-        NULL,
-        NULL,
-        NULL,
+        '73e7fef2fca060dfab0347fc7c0a95350370ecaf9c4cf6fe8d3bfafc19313820',
+        28156,
+        '2026-09-10T00:00:00+02:00',
         'election',
         2025,
         'official',
-        'planned',
-        'Source primaire pour la date officielle de la presidentielle 2025.'
+        'extracted',
+        'Source primaire PRC archivée en HTML officiel; la page ne fournit pas de PDF direct.'
     )
 ON CONFLICT (slug) DO NOTHING;

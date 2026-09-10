@@ -776,6 +776,33 @@ func (h *PVHandler) SubmitPV(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "observateur non identifié"})
 		return
 	}
+	if h.stationRepo != nil {
+		assignedStations, err := h.stationRepo.GetAssignedToObserver(c.Request.Context(), req.ElectionID, observerID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "contrôle affectation impossible: " + err.Error()})
+			return
+		}
+		var assignedStation *entity.PollingStation
+		for i := range assignedStations {
+			if assignedStations[i].ID == req.PollingStationID {
+				assignedStation = &assignedStations[i]
+				break
+			}
+		}
+		if assignedStation == nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": "ce bureau de vote n'est pas assigné à cet observateur"})
+			return
+		}
+		if req.RegisteredVoters != assignedStation.RegisteredVoters {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "le nombre d'inscrits ne correspond pas au référentiel officiel du bureau"})
+			return
+		}
+		if req.VotersCount > assignedStation.RegisteredVoters {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "le nombre de votants dépasse les inscrits officiels du bureau"})
+			return
+		}
+	}
+
 	canonicalPayload, serverPayloadHash, err := buildCanonicalPVProof(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "empreinte PV impossible"})
@@ -991,6 +1018,54 @@ func (h *PVHandler) GetSummary(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"summary": summary})
+}
+
+func (h *PVHandler) GetRegionSummary(c *gin.Context) {
+	electionID := c.Query("election_id")
+	if electionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "election_id est requis"})
+		return
+	}
+	summaries, err := h.pvRepo.GetRegionSummaries(c.Request.Context(), electionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"regions": summaries, "total": len(summaries)})
+}
+
+func (h *PVHandler) CreateRegionalRiskSnapshot(c *gin.Context) {
+	electionID := c.Query("election_id")
+	if electionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "election_id est requis"})
+		return
+	}
+	snapshots, err := h.pvRepo.CreateRegionalRiskSnapshot(c.Request.Context(), electionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"snapshots": snapshots, "total": len(snapshots)})
+}
+
+func (h *PVHandler) ListRegionalRiskSnapshots(c *gin.Context) {
+	electionID := c.Query("election_id")
+	if electionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "election_id est requis"})
+		return
+	}
+	limit := 120
+	if rawLimit := c.Query("limit"); rawLimit != "" {
+		if parsed, err := strconv.Atoi(rawLimit); err == nil {
+			limit = parsed
+		}
+	}
+	snapshots, err := h.pvRepo.GetRegionalRiskSnapshots(c.Request.Context(), electionID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"snapshots": snapshots, "total": len(snapshots)})
 }
 
 func (h *PVHandler) ListPublicPVProofs(c *gin.Context) {
