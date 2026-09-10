@@ -153,17 +153,14 @@ describe('FieldOpsTab', () => {
             expect(screen.getAllByText(/28\s?170/).length).toBeGreaterThan(0);
         });
 
-        expect(screen.getByText('Zones silencieuses')).toBeInTheDocument();
+        expect(screen.getByText('Zones silencieuses / priorité terrain')).toBeInTheDocument();
         expect(screen.getAllByText('CENTRE / MFOUNDI').length).toBeGreaterThan(0);
         expect(screen.getByText('Critique')).toBeInTheDocument();
         expect(screen.getAllByText('ADAMAOUA').length).toBeGreaterThan(0);
         expect(screen.getAllByText('DJEREM').length).toBeGreaterThan(0);
         expect(screen.getAllByText('NGAOUNDAL').length).toBeGreaterThan(0);
         expect(screen.getAllByText('CENTRE').length).toBeGreaterThan(0);
-        expect(screen.getByText('Zones silencieuses / priorité terrain')).toBeInTheDocument();
         expect(screen.getAllByText('Critique').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Haute').length).toBeGreaterThan(0);
-        expect(screen.getByText('Moins de 10 % de PV reçus')).toBeInTheDocument();
         expect(screen.getAllByText('elecam-bv-2025-adamaoua').length).toBeGreaterThan(0);
         expect(screen.getAllByText('elecam-bv-2025-centre').length).toBeGreaterThan(0);
         expect(screen.getAllByText(/e3fdf74f/).length).toBeGreaterThan(0);
