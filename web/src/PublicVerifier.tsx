@@ -126,6 +126,13 @@ function formatRiskStatus(status: string): string {
     }
 }
 
+function normalizeSearchValue(value: string): string {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+}
+
 export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [raw, setRaw] = useState('');
     const [result, setResult] = useState<VerificationResult | null>(null);
@@ -133,12 +140,58 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
     const [checking, setChecking] = useState(false);
     const [publicElectionId, setPublicElectionId] = useState('');
     const [loadingPublicExport, setLoadingPublicExport] = useState(false);
+    const [proofSearch, setProofSearch] = useState('');
+    const [regionFilter, setRegionFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [integrityFilter, setIntegrityFilter] = useState('');
 
     const proofs = useMemo(() => extractProofs(raw), [raw]);
     const regionalRisks = useMemo(() => extractRegionalRisks(raw), [raw]);
     const trusted = proofs.filter((proof) => proof.integrity_status === 'trusted').length;
     const anomalous = proofs.filter((proof) => (proof.anomalies || []).length > 0).length;
     const priorityRegions = regionalRisks.filter((risk) => risk.risk_status === 'prioritaire').length;
+    const riskByRegion = useMemo(() => new Map(regionalRisks.map((risk) => [
+        normalizeSearchValue(risk.region_name || risk.normalized_region_name),
+        risk,
+    ])), [regionalRisks]);
+    const regionOptions = useMemo(() => {
+        const values = new Map<string, string>();
+        proofs.forEach((proof) => {
+            const label = proof.polling_station_region || '';
+            if (label) values.set(normalizeSearchValue(label), label);
+        });
+        regionalRisks.forEach((risk) => {
+            const label = risk.region_name || risk.normalized_region_name || '';
+            if (label) values.set(normalizeSearchValue(label), label);
+        });
+        return Array.from(values.values()).sort((a, b) => a.localeCompare(b));
+    }, [proofs, regionalRisks]);
+    const statusOptions = useMemo(() => Array.from(new Set(proofs.map((proof) => proof.status).filter(Boolean))).sort(), [proofs]);
+    const integrityOptions = useMemo(() => Array.from(new Set(proofs.map((proof) => proof.integrity_status).filter(Boolean))).sort(), [proofs]);
+    const filteredProofs = useMemo(() => {
+        const query = normalizeSearchValue(proofSearch.trim());
+        const normalizedRegionFilter = normalizeSearchValue(regionFilter);
+        return proofs.filter((proof) => {
+            const proofRegion = normalizeSearchValue(proof.polling_station_region || '');
+            const matchesRegion = !regionFilter || proofRegion === normalizedRegionFilter;
+            const matchesStatus = !statusFilter || proof.status === statusFilter;
+            const matchesIntegrity = !integrityFilter || proof.integrity_status === integrityFilter;
+            const anomalyText = (proof.anomalies || []).map((anomaly) => `${anomaly.code} ${anomaly.severity} ${anomaly.message}`).join(' ');
+            const searchable = normalizeSearchValue([
+                proof.id,
+                proof.polling_station_id,
+                proof.polling_station_code,
+                proof.polling_station_name,
+                proof.polling_station_region,
+                proof.status,
+                proof.integrity_status,
+                proof.pv_hash,
+                proof.server_payload_hash,
+                anomalyText,
+            ].filter(Boolean).join(' '));
+            return matchesRegion && matchesStatus && matchesIntegrity && (!query || searchable.includes(query));
+        });
+    }, [integrityFilter, proofSearch, proofs, regionFilter, statusFilter]);
 
     const loadFile = async (file?: File) => {
         if (!file) return;
@@ -255,6 +308,48 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                     <div><strong>{priorityRegions}</strong><span>Prioritaires</span></div>
                 </div>
 
+                <div className="public-verify-consult">
+                    <label>
+                        Rechercher bureau
+                        <input
+                            value={proofSearch}
+                            onChange={(event) => setProofSearch(event.target.value)}
+                            placeholder="Code, nom, hash, anomalie..."
+                        />
+                    </label>
+                    <label>
+                        Région
+                        <select value={regionFilter} onChange={(event) => setRegionFilter(event.target.value)}>
+                            <option value="">Toutes</option>
+                            {regionOptions.map((region) => (
+                                <option key={region} value={region}>{region}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Statut PV
+                        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                            <option value="">Tous</option>
+                            {statusOptions.map((status) => (
+                                <option key={status} value={status}>{status}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Intégrité
+                        <select value={integrityFilter} onChange={(event) => setIntegrityFilter(event.target.value)}>
+                            <option value="">Toutes</option>
+                            {integrityOptions.map((status) => (
+                                <option key={status} value={status}>{status}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <div className="public-verify-consult-count">
+                        <strong>{filteredProofs.length}</strong>
+                        <span>PV affiché(s)</span>
+                    </div>
+                </div>
+
                 <div className="public-verify-risk-table">
                     <div className="public-verify-risk-row head">
                         <span>Région</span>
@@ -290,25 +385,40 @@ export default function PublicVerifier({ onBack }: PublicVerifierProps) {
                         <span>Bureau</span>
                         <span>Statut</span>
                         <span>Intégrité</span>
+                        <span>Risque régional</span>
                         <span>Hash photo</span>
                         <span>Hash serveur</span>
                         <span>Anom.</span>
                     </div>
-                    {proofs.slice(0, 120).map((proof) => (
-                        <div key={proof.id} className="public-verify-row">
-                            <span>
-                                <strong>{proof.polling_station_code || proof.polling_station_id}</strong>
-                                <small>{proof.polling_station_name || proof.polling_station_region || 'Bureau publié'}</small>
-                            </span>
-                            <span>{proof.status}</span>
-                            <span>{proof.integrity_status || '-'}</span>
-                            <code>{proof.pv_hash ? `${proof.pv_hash.slice(0, 16)}...` : '-'}</code>
-                            <code>{proof.server_payload_hash ? `${proof.server_payload_hash.slice(0, 16)}...` : '-'}</code>
-                            <span className={(proof.anomalies || []).length > 0 ? 'public-verify-danger' : ''}>{(proof.anomalies || []).length}</span>
-                        </div>
-                    ))}
+                    {filteredProofs.slice(0, 120).map((proof) => {
+                        const regionalRisk = riskByRegion.get(normalizeSearchValue(proof.polling_station_region || ''));
+                        return (
+                            <div key={proof.id} className="public-verify-row">
+                                <span>
+                                    <strong>{proof.polling_station_code || proof.polling_station_id}</strong>
+                                    <small>{proof.polling_station_name || proof.polling_station_region || 'Bureau publié'}</small>
+                                </span>
+                                <span>{proof.status}</span>
+                                <span>{proof.integrity_status || '-'}</span>
+                                <span>
+                                    {regionalRisk ? (
+                                        <>
+                                            <strong>{regionalRisk.risk_score}/100</strong>
+                                            <small>{formatRiskStatus(regionalRisk.risk_status)}</small>
+                                        </>
+                                    ) : '-'}
+                                </span>
+                                <code>{proof.pv_hash ? `${proof.pv_hash.slice(0, 16)}...` : '-'}</code>
+                                <code>{proof.server_payload_hash ? `${proof.server_payload_hash.slice(0, 16)}...` : '-'}</code>
+                                <span className={(proof.anomalies || []).length > 0 ? 'public-verify-danger' : ''}>{(proof.anomalies || []).length}</span>
+                            </div>
+                        );
+                    })}
                     {raw && proofs.length === 0 && (
                         <p>Aucun PV public lisible dans ce fichier.</p>
+                    )}
+                    {raw && proofs.length > 0 && filteredProofs.length === 0 && (
+                        <p>Aucun PV ne correspond aux filtres de consultation.</p>
                     )}
                 </div>
             </section>

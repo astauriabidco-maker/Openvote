@@ -146,6 +146,55 @@
   color: var(--color-text-secondary);
 }
 
+.public-verify-consult {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 1fr)) 110px;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  padding: 12px;
+}
+
+.public-verify-consult label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.public-verify-consult input,
+.public-verify-consult select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font: inherit;
+  padding: 10px;
+}
+
+.public-verify-consult-count {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  padding: 10px;
+}
+
+.public-verify-consult-count strong,
+.public-verify-consult-count span {
+  display: block;
+}
+
+.public-verify-consult-count span {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
 .public-verify-table {
   display: grid;
   gap: 6px;
@@ -218,10 +267,10 @@
 
 .public-verify-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.3fr) 110px 150px 170px 170px 70px;
+  grid-template-columns: minmax(180px, 1.3fr) 110px 150px 130px 170px 170px 70px;
   gap: 10px;
   align-items: center;
-  min-width: 900px;
+  min-width: 1040px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg-surface);
@@ -284,5 +333,9 @@
 
   .public-verify-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-verify-consult {
+    grid-template-columns: 1fr;
   }
 }

@@ -110,18 +110,33 @@ describe('PublicVerifier', () => {
             proof_manifest_version: 2,
             election_id: 'election-001',
             generated_at: '2026-09-10T00:00:00Z',
-            total: 1,
+            total: 2,
             pv_proofs: [{
                 id: 'pv-001',
                 election_id: 'election-001',
                 polling_station_id: 'station-001',
                 polling_station_code: 'BV001',
                 polling_station_name: 'ECOLE PUBLIQUE',
+                polling_station_region: 'CENTRE',
                 status: 'verified',
                 pv_hash: 'photo-hash',
                 server_payload_hash: 'server-hash',
                 integrity_status: 'trusted',
                 anomalies: [],
+                submitted_at: '2026-09-10T00:00:00Z',
+                updated_at: '2026-09-10T00:00:00Z',
+            }, {
+                id: 'pv-002',
+                election_id: 'election-001',
+                polling_station_id: 'station-002',
+                polling_station_code: 'BV002',
+                polling_station_name: 'LYCEE CLASSIQUE',
+                polling_station_region: 'OUEST',
+                status: 'submitted',
+                pv_hash: 'photo-hash-ouest',
+                server_payload_hash: 'server-hash-ouest',
+                integrity_status: 'hash_verified_unsigned',
+                anomalies: [{ code: 'signature_missing', severity: 'medium', message: 'Signature absente' }],
                 submitted_at: '2026-09-10T00:00:00Z',
                 updated_at: '2026-09-10T00:00:00Z',
             }],
@@ -137,6 +152,19 @@ describe('PublicVerifier', () => {
                 total_stations: 100,
                 evidence: ['couverture faible'],
                 snapshot_hash: 'risk-hash-centre',
+                created_at: '2026-09-10T00:00:00Z',
+            }, {
+                region_id: 'region-ou',
+                region_name: 'OUEST',
+                normalized_region_name: 'OUEST',
+                risk_score: 24,
+                risk_status: 'signal_faible',
+                rules: [],
+                coverage_rate: 0.52,
+                submitted_pv: 52,
+                total_stations: 100,
+                evidence: [],
+                snapshot_hash: 'risk-hash-ouest',
                 created_at: '2026-09-10T00:00:00Z',
             }],
         });
@@ -165,7 +193,15 @@ describe('PublicVerifier', () => {
 
         expect(await screen.findByText('Export authentique: hash global et signature serveur valides.')).toBeInTheDocument();
         expect(screen.getByText('BV001')).toBeInTheDocument();
-        expect(screen.getByText('CENTRE')).toBeInTheDocument();
-        expect(screen.getByText('71/100')).toBeInTheDocument();
+        expect(screen.getByText('BV002')).toBeInTheDocument();
+        expect(screen.getAllByText('71/100').length).toBeGreaterThan(0);
+
+        await user.selectOptions(screen.getByLabelText('Région'), 'CENTRE');
+        expect(screen.getByText('BV001')).toBeInTheDocument();
+        expect(screen.queryByText('BV002')).not.toBeInTheDocument();
+
+        await user.clear(screen.getByLabelText('Rechercher bureau'));
+        await user.type(screen.getByLabelText('Rechercher bureau'), 'publique');
+        expect(screen.getByText('BV001')).toBeInTheDocument();
     });
 });
