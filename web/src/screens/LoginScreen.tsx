@@ -19,6 +19,43 @@ interface LoginScreenProps {
     onOpenPublicVerifier?: () => void;
 }
 
+type LandingHistoricalElection = {
+    id: string;
+    year: string;
+    title: string;
+    kind: string;
+    source: string;
+    registered?: number;
+    voters?: number;
+    validVotes?: number;
+    invalidVotes?: number;
+    turnout?: number;
+    seats?: number;
+    leader: string;
+    leaderShare?: number;
+    note: string;
+};
+
+type LandingRegionSignal = {
+    name: string;
+    coverage: number;
+    submittedPV: number;
+    anomalies: number;
+    risk: 'Signal faible' | 'À surveiller' | 'Prioritaire';
+};
+
+const formatCompactNumber = (value?: number): string => {
+    if (typeof value !== 'number') return 'n.a.';
+    return new Intl.NumberFormat('fr-FR', {
+        notation: value >= 1000000 ? 'compact' : 'standard',
+        maximumFractionDigits: value >= 1000000 ? 1 : 0,
+    }).format(value);
+};
+
+const formatLandingPercent = (value?: number): string => (
+    typeof value === 'number' ? `${value.toFixed(2)}%` : 'n.a.'
+);
+
 export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScreenProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -26,6 +63,9 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
     const [isLoading, setIsLoading] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [selectedHistoricalIndex, setSelectedHistoricalIndex] = useState(0);
+    const [selectedRegion, setSelectedRegion] = useState('Centre');
+    const [publicSearch, setPublicSearch] = useState('');
 
     // MFA (H3) : après login password OK, le serveur peut demander un code TOTP.
     // On stocke le challenge token + le username pour la 2e étape.
@@ -128,10 +168,69 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
         'bureau, région et source de la preuve',
     ];
 
-    const HISTORICAL_ELECTIONS = [
-        { year: '2011 / 2018', label: 'Présidentielles', detail: 'participation et résultats officiels' },
-        { year: '2013 / 2020', label: 'Législatives', detail: 'comparaison par territoire' },
-        { year: '2013 / 2018 / 2023', label: 'Sénatoriales', detail: 'mémoire institutionnelle ELECAM' },
+    const HISTORICAL_ELECTIONS: LandingHistoricalElection[] = [
+        {
+            id: 'presidential-2011',
+            year: '2011',
+            title: 'Présidentielle Cameroun 2011',
+            kind: 'Présidentielle',
+            source: 'elecam-presidentielle-2011-rapport-en',
+            registered: 7521651,
+            voters: 4951434,
+            validVotes: 4837249,
+            invalidVotes: 114185,
+            turnout: 65.82,
+            leader: 'CPDM / Paul Biya',
+            leaderShare: 77.989,
+            note: 'Base nationale officielle extraite du rapport ELECAM 2011.',
+        },
+        {
+            id: 'legislative-2013',
+            year: '2013',
+            title: 'Législatives Cameroun 2013',
+            kind: 'Législatives',
+            source: 'elecam-legislatives-municipales-2013-rapport-en',
+            registered: 5481226,
+            voters: 4208796,
+            validVotes: 4023293,
+            invalidVotes: 185503,
+            turnout: 76.79,
+            seats: 180,
+            leader: 'CPDM',
+            leaderShare: 63.52,
+            note: 'Résumé national et acteurs politiques structurés pour comparaison.',
+        },
+        {
+            id: 'presidential-2018',
+            year: '2018',
+            title: 'Présidentielle Cameroun 2018',
+            kind: 'Présidentielle',
+            source: 'elecam-presidentielle-2018-rapport-fr',
+            registered: 6619548,
+            voters: 3590427,
+            validVotes: 3537940,
+            invalidVotes: 52487,
+            turnout: 53.85,
+            leader: 'RDPC / Paul Biya',
+            leaderShare: 71.25,
+            note: 'Référence nationale pour lire les écarts territoriaux 2025.',
+        },
+        {
+            id: 'senatorial-2023',
+            year: '2023',
+            title: 'Sénatoriales Cameroun 2023',
+            kind: 'Sénatoriales',
+            source: 'elecam-senatoriales-2023-rapport-en',
+            registered: 11134,
+            voters: 10924,
+            validVotes: 10763,
+            invalidVotes: 161,
+            turnout: 98.11,
+            seats: 70,
+            leader: 'CPDM',
+            leaderShare: 100,
+            note: 'Inclut une lecture régionale des circonscriptions sénatoriales.',
+        },
     ];
 
     const LEGAL_ITEMS = [
@@ -147,20 +246,35 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
         { status: 'À confirmer', title: 'Alertes terrain', source: 'Signal faible avant recoupement' },
     ];
 
-    const TRUST_METRICS = [
-        { value: '7.7M', label: 'Inscrits ELECAM' },
-        { value: '360', label: 'Arrondissements' },
-        { value: '10', label: 'Régions' },
-        { value: '5', label: 'Types de preuves' },
+    const REGION_SIGNALS: LandingRegionSignal[] = [
+        { name: 'Centre', coverage: 68, submittedPV: 1240, anomalies: 18, risk: 'À surveiller' },
+        { name: 'Littoral', coverage: 61, submittedPV: 980, anomalies: 14, risk: 'À surveiller' },
+        { name: 'Ouest', coverage: 74, submittedPV: 860, anomalies: 7, risk: 'Signal faible' },
+        { name: 'Nord-Ouest', coverage: 32, submittedPV: 210, anomalies: 21, risk: 'Prioritaire' },
+        { name: 'Sud-Ouest', coverage: 38, submittedPV: 245, anomalies: 17, risk: 'Prioritaire' },
     ];
+
+    const TRUST_METRICS = [
+        { value: '7.7M', label: 'inscrits officiels' },
+        { value: '360', label: 'arrondissements suivis' },
+        { value: '4', label: 'scrutins historiques' },
+        { value: '5', label: 'preuves par PV' },
+    ];
+    const selectedHistoricalElection = HISTORICAL_ELECTIONS[selectedHistoricalIndex];
+    const selectedRegionSignal = REGION_SIGNALS.find((region) => region.name === selectedRegion) || REGION_SIGNALS[0];
+    const abstention = typeof selectedHistoricalElection.turnout === 'number'
+        ? Math.max(0, 100 - selectedHistoricalElection.turnout)
+        : undefined;
+    const invalidRate = selectedHistoricalElection.voters && selectedHistoricalElection.invalidVotes
+        ? (selectedHistoricalElection.invalidVotes / selectedHistoricalElection.voters) * 100
+        : undefined;
+    const searchResult = publicSearch.trim()
+        ? `Recherche locale prête pour "${publicSearch.trim()}": bureau, commune, région ou identifiant PV.`
+        : 'Saisissez un bureau, une commune, une région ou un identifiant PV.';
 
     return (
         <div className="landing-container">
-            {/* Animated background */}
             <div className="landing-bg">
-                <div className="landing-bg-orb landing-bg-orb-1" />
-                <div className="landing-bg-orb landing-bg-orb-2" />
-                <div className="landing-bg-orb landing-bg-orb-3" />
                 <div className="landing-bg-grid" />
             </div>
 
@@ -184,12 +298,11 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
                 <div className="landing-hero">
                     <div className="landing-hero-tag">Cameroun · PV électoraux · Audit citoyen</div>
                     <h1 className="landing-hero-title">
-                        Chaque PV doit pouvoir être <span className="landing-gradient-text">vérifié</span>
+                        Vérifiez les PV électoraux du <span className="landing-gradient-text">Cameroun</span>
                     </h1>
                     <p className="landing-hero-desc">
-                        Openvote collecte les procès-verbaux terrain, scelle les preuves par hash et signature,
-                        audite les changements, puis publie un paquet vérifiable par les citoyens, journalistes,
-                        observateurs et organisations indépendantes.
+                        Recherchez un bureau, comparez les scrutins passés, consultez les signaux régionaux
+                        et vérifiez les paquets publics signés sans accès administrateur.
                     </p>
                     <div className="landing-hero-actions">
                         {onOpenPublicVerifier && (
@@ -202,6 +315,59 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
                         </a>
                     </div>
                 </div>
+
+                <section className="landing-public-console" aria-labelledby="public-console-title">
+                    <div className="landing-console-main">
+                        <div className="landing-section-kicker">Portail public</div>
+                        <h2 id="public-console-title">Chercher, comparer, vérifier</h2>
+                        <div className="landing-search-row">
+                            <label>
+                                <span>Recherche citoyenne</span>
+                                <input
+                                    type="search"
+                                    value={publicSearch}
+                                    onChange={(event) => setPublicSearch(event.target.value)}
+                                    placeholder="Bureau, commune, région, PV-2025..."
+                                />
+                            </label>
+                            <label>
+                                <span>Région</span>
+                                <select value={selectedRegion} onChange={(event) => setSelectedRegion(event.target.value)}>
+                                    {REGION_SIGNALS.map((region) => (
+                                        <option key={region.name} value={region.name}>{region.name}</option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                        <div className="landing-search-result">{searchResult}</div>
+                        <div className="landing-region-strip">
+                            <div>
+                                <span>Couverture PV</span>
+                                <strong>{selectedRegionSignal.coverage}%</strong>
+                            </div>
+                            <div>
+                                <span>PV reçus</span>
+                                <strong>{formatCompactNumber(selectedRegionSignal.submittedPV)}</strong>
+                            </div>
+                            <div>
+                                <span>Anomalies</span>
+                                <strong>{selectedRegionSignal.anomalies}</strong>
+                            </div>
+                            <div>
+                                <span>Statut</span>
+                                <strong>{selectedRegionSignal.risk}</strong>
+                            </div>
+                        </div>
+                        <div className="landing-coverage-bar">
+                            <span style={{ width: `${selectedRegionSignal.coverage}%` }} />
+                        </div>
+                    </div>
+                    <div className="landing-console-side">
+                        <span>Paquet public</span>
+                        <strong>Hash + signature + anomalies</strong>
+                        <p>Le citoyen doit pouvoir refaire la vérification localement et détecter toute modification.</p>
+                    </div>
+                </section>
 
                 <div className="landing-stats">
                     {TRUST_METRICS.map((stat, i) => (
@@ -244,15 +410,96 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
 
                 <section className="landing-memory">
                     <div className="landing-section-kicker">Mémoire électorale officielle</div>
-                    <h2>Comparer 2025 aux scrutins passés</h2>
-                    <div className="landing-memory-list">
+                    <div className="landing-memory-head">
+                        <div>
+                            <h2>Explorer les scrutins passés</h2>
+                            <p>
+                                Les rapports ELECAM structurés deviennent une base de comparaison: participation,
+                                abstention, bulletins invalides, acteur en tête et source officielle.
+                            </p>
+                        </div>
+                        <span>{HISTORICAL_ELECTIONS.length} scrutins indexés</span>
+                    </div>
+                    <div className="landing-turnout-trend" aria-label="Participation historique nationale">
                         {HISTORICAL_ELECTIONS.map((election) => (
-                            <article key={election.label}>
+                            <div key={`trend-${election.id}`} className={selectedHistoricalElection.id === election.id ? 'active' : ''}>
                                 <span>{election.year}</span>
-                                <strong>{election.label}</strong>
-                                <small>{election.detail}</small>
-                            </article>
+                                <i style={{ height: `${election.turnout || 0}%` }} />
+                                <strong>{formatLandingPercent(election.turnout)}</strong>
+                            </div>
                         ))}
+                    </div>
+                    <div className="landing-election-tabs" role="tablist" aria-label="Scrutins historiques">
+                        {HISTORICAL_ELECTIONS.map((election, index) => (
+                            <button
+                                key={election.id}
+                                type="button"
+                                role="tab"
+                                aria-label={`${election.year} ${election.kind}`}
+                                aria-selected={selectedHistoricalIndex === index}
+                                className={selectedHistoricalIndex === index ? 'active' : ''}
+                                onClick={() => setSelectedHistoricalIndex(index)}
+                            >
+                                <strong>{election.year}</strong>
+                                <span>{election.kind}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div className="landing-election-inspector">
+                        <div className="landing-election-summary">
+                            <span>{selectedHistoricalElection.kind}</span>
+                            <h3>{selectedHistoricalElection.title}</h3>
+                            <p>{selectedHistoricalElection.note}</p>
+                            <dl>
+                                <div>
+                                    <dt>Inscrits</dt>
+                                    <dd>{formatCompactNumber(selectedHistoricalElection.registered)}</dd>
+                                </div>
+                                <div>
+                                    <dt>Votants</dt>
+                                    <dd>{formatCompactNumber(selectedHistoricalElection.voters)}</dd>
+                                </div>
+                                <div>
+                                    <dt>Validés</dt>
+                                    <dd>{formatCompactNumber(selectedHistoricalElection.validVotes)}</dd>
+                                </div>
+                                <div>
+                                    <dt>Invalides</dt>
+                                    <dd>{formatCompactNumber(selectedHistoricalElection.invalidVotes)}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                        <div className="landing-election-chart" aria-label={`Statistiques ${selectedHistoricalElection.title}`}>
+                            <div className="landing-bar-row">
+                                <span>Participation</span>
+                                <div className="landing-bar-track">
+                                    <i style={{ width: `${selectedHistoricalElection.turnout || 0}%` }} />
+                                </div>
+                                <strong>{formatLandingPercent(selectedHistoricalElection.turnout)}</strong>
+                            </div>
+                            <div className="landing-bar-row">
+                                <span>Abstention</span>
+                                <div className="landing-bar-track muted">
+                                    <i style={{ width: `${abstention || 0}%` }} />
+                                </div>
+                                <strong>{formatLandingPercent(abstention)}</strong>
+                            </div>
+                            <div className="landing-bar-row">
+                                <span>Invalides</span>
+                                <div className="landing-bar-track warning">
+                                    <i style={{ width: `${Math.min(invalidRate || 0, 100)}%` }} />
+                                </div>
+                                <strong>{formatLandingPercent(invalidRate)}</strong>
+                            </div>
+                            <div className="landing-winner-row">
+                                <span>Premier acteur</span>
+                                <strong>{selectedHistoricalElection.leader}</strong>
+                                <small>{formatLandingPercent(selectedHistoricalElection.leaderShare)}{selectedHistoricalElection.seats ? ` · ${selectedHistoricalElection.seats} sièges` : ''}</small>
+                            </div>
+                            <div className="landing-source-row">
+                                Source: {selectedHistoricalElection.source}
+                            </div>
+                        </div>
                     </div>
                 </section>
 

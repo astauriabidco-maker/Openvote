@@ -20,17 +20,42 @@ describe('LoginScreen', () => {
         const onOpenPublicVerifier = vi.fn();
         render(<LoginScreen onLogin={vi.fn()} onOpenPublicVerifier={onOpenPublicVerifier} />);
 
-        expect(screen.getByRole('heading', { name: /Chaque PV doit pouvoir être vérifié/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /Vérifiez les PV électoraux du Cameroun/i })).toBeInTheDocument();
         expect(screen.getByText('Preuve publique vérifiable')).toBeInTheDocument();
+        expect(screen.getByText('Chercher, comparer, vérifier')).toBeInTheDocument();
         expect(screen.getByText('Comment la preuve fonctionne')).toBeInTheDocument();
         expect(screen.getByText('Ce que le public peut contrôler')).toBeInTheDocument();
         expect(screen.getByText('Mémoire électorale officielle')).toBeInTheDocument();
+        expect(screen.getByText('Explorer les scrutins passés')).toBeInTheDocument();
         expect(screen.getByText('Cadre législatif')).toBeInTheDocument();
         expect(screen.getByText('Actualité électorale')).toBeInTheDocument();
+        expect(screen.getByText('Présidentielle Cameroun 2011')).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole('button', { name: 'Vérifier un paquet signé' }));
 
         expect(onOpenPublicVerifier).toHaveBeenCalledTimes(1);
+    });
+
+    it('rend le portail public interactif par recherche et région', async () => {
+        render(<LoginScreen onLogin={vi.fn()} onOpenPublicVerifier={vi.fn()} />);
+
+        await userEvent.type(screen.getByLabelText(/Recherche citoyenne/i), 'Mfoundi 01');
+        await userEvent.selectOptions(screen.getByLabelText(/Région/i), 'Nord-Ouest');
+
+        expect(screen.getByText('Recherche locale prête pour "Mfoundi 01": bureau, commune, région ou identifiant PV.')).toBeInTheDocument();
+        expect(screen.getByText('210')).toBeInTheDocument();
+        expect(screen.getByText('Prioritaire')).toBeInTheDocument();
+    });
+
+    it('permet de consulter les statistiques des scrutins passés', async () => {
+        render(<LoginScreen onLogin={vi.fn()} onOpenPublicVerifier={vi.fn()} />);
+
+        await userEvent.click(screen.getByRole('tab', { name: /2018 Présidentielle/i }));
+
+        expect(screen.getByText('Présidentielle Cameroun 2018')).toBeInTheDocument();
+        expect(screen.getByText('RDPC / Paul Biya')).toBeInTheDocument();
+        expect(screen.getAllByText('53.85%').length).toBeGreaterThan(0);
+        expect(screen.getByText('elecam-presidentielle-2018-rapport-fr', { exact: false })).toBeInTheDocument();
     });
 
     it('conserve le formulaire de connexion observateur', async () => {
