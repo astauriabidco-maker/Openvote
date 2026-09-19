@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "retrieved_at": "2026-09-19",
+  "documents": [
+    {
+      "slug": "conseil-constitutionnel-presidentielle-2025-resultats",
+      "title": "Decision no 54/CC/SRCER du 27 octobre 2025 portant proclamation des resultats de l'election du President de la Republique",
+      "publisher": "Conseil constitutionnel du Cameroun",
+      "source_url": "local-user-supplied:/Users/user/Downloads/Conseil-Constitutionnel-Cameroun-decision-du-27-octobre-2025-de-proclamation-des-esultats-Election-Presidentielle-12-octobe-2025.pdf",
+      "document_type": "election_result_proclamation",
+      "language": "fr",
+      "published_date": "2025-10-27",
+      "reference_year": 2025,
+      "granularity": "national,region,candidate",
+      "confidence": "official",
+      "status": "ocr_extracted",
+      "local_path": "data/sources/official/pdfs/conseil-constitutionnel-presidentielle-2025-proclamation-resultats.pdf",
+      "extracted_text_path": "data/sources/official/extracted/conseil-constitutionnel-presidentielle-2025-proclamation-resultats-ocr.txt",
+      "sha256_checksum": "6a055a0e6356fa093e0169ec212ff7b428436c8483e141ec18067440ab0dde38",
+      "extracted_text_sha256_checksum": "ed82ebc9de29bee02bf4680a9fb94cc9635ddae2ec5b49483a9663afe59ef02f",
+      "file_size_bytes": 12678853,
+      "notes": "PDF scanne fourni localement le 2026-09-19. OCR local genere avec pdftoppm + tesseract; les chiffres importes proviennent des pages 33, 36 et 37 et ont ete verifies visuellement."
+    }
+  ]
+}

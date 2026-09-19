@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "retrieved_at": "2026-09-19",
+  "source_page": "https://www.lesafriquesdanslemonde.fr/cameroun-presidentielle-2025/",
+  "publisher": "Les Afriques dans le Monde - LAMencartes",
+  "confidence": "secondary_check",
+  "status": "verified",
+  "documents": [
+    {
+      "slug": "lam-2025-participation-par-departement",
+      "title": "Cameroun presidentielle 2025 - Participation par departement",
+      "document_type": "analytical_map",
+      "language": "fr",
+      "reference_year": 2025,
+      "granularity": "department",
+      "local_path": "data/sources/analysis/lam-2025/images/lam-2025-participation-par-departement.jpg",
+      "sha256_checksum": "4afffd667ce3913e59ec1a9f9edf642350c2e41b9ace77c81197b1727f871f98",
+      "file_size_bytes": 382296
+    },
+    {
+      "slug": "lam-2025-suffrages-rapport-inscrits",
+      "title": "Cameroun presidentielle 2025 - Suffrages obtenus par rapport aux inscrits",
+      "document_type": "analytical_map",
+      "language": "fr",
+      "reference_year": 2025,
+      "granularity": "department",
+      "local_path": "data/sources/analysis/lam-2025/images/lam-2025-suffrages-rapport-inscrits.jpeg",
+      "sha256_checksum": "d70795b83f1d113f864452b5b64ba3e228e4107b08747adb17a8329046f50d0c",
+      "file_size_bytes": 401085
+    },
+    {
+      "slug": "lam-2025-vote-biya-par-departement",
+      "title": "Cameroun presidentielle 2025 - Repartition du vote Biya par departement",
+      "document_type": "analytical_map",
+      "language": "fr",
+      "reference_year": 2025,
+      "granularity": "department",
+      "local_path": "data/sources/analysis/lam-2025/images/lam-2025-vote-biya-par-departement.jpeg",
+      "sha256_checksum": "83452132a69c6021e66436f5de917846559e6b24114d0b658c51fdc3896fa46c",
+      "file_size_bytes": 402099
+    },
+    {
+      "slug": "lam-2025-vote-tchiroma-par-departement",
+      "title": "Cameroun presidentielle 2025 - Repartition du vote Tchiroma par departement",
+      "document_type": "analytical_map",
+      "language": "fr",
+      "reference_year": 2025,
+      "granularity": "department",
+      "local_path": "data/sources/analysis/lam-2025/images/lam-2025-vote-tchiroma-par-departement.jpg",
+      "sha256_checksum": "2045c7254d0e3fbb6cf0b30121b6efc0b0bb6dff9f2477557be102391e894a31",
+      "file_size_bytes": 415985
+    }
+  ]
+}

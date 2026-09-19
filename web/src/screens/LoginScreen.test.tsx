@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginScreen from './LoginScreen';
 
 vi.mock('axios', () => ({
     default: {
+        get: vi.fn(),
         post: vi.fn(),
         isAxiosError: vi.fn(() => false),
     },
@@ -16,6 +17,12 @@ function tokenWithRole(role: string): string {
 }
 
 describe('LoginScreen', () => {
+    beforeEach(() => {
+        vi.mocked(axios.get).mockResolvedValue({ data: { results: [] } });
+        vi.mocked(axios.post).mockReset();
+        vi.mocked(axios.isAxiosError).mockReturnValue(false);
+    });
+
     it('présente la landing comme une porte de preuve publique', async () => {
         const onOpenPublicVerifier = vi.fn();
         render(<LoginScreen onLogin={vi.fn()} onOpenPublicVerifier={onOpenPublicVerifier} />);
@@ -30,6 +37,9 @@ describe('LoginScreen', () => {
         expect(screen.getByText('Cadre législatif')).toBeInTheDocument();
         expect(screen.getByText('Actualité électorale')).toBeInTheDocument();
         expect(screen.getByText('Présidentielle Cameroun 2011')).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('tab', { name: /2025 Présidentielle/i }));
+        expect(screen.getByText('Présidentielle Cameroun 2025')).toBeInTheDocument();
+        expect(screen.getByText('conseil-constitutionnel-presidentielle-2025-resultats', { exact: false })).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole('button', { name: 'Vérifier un paquet signé' }));
 
@@ -56,6 +66,71 @@ describe('LoginScreen', () => {
         expect(screen.getByText('RDPC / Paul Biya')).toBeInTheDocument();
         expect(screen.getAllByText('53.85%').length).toBeGreaterThan(0);
         expect(screen.getByText('elecam-presidentielle-2018-rapport-fr', { exact: false })).toBeInTheDocument();
+    });
+
+    it('alimente la mémoire électorale depuis l’API publique quand elle répond', async () => {
+        vi.mocked(axios.get).mockResolvedValueOnce({
+            data: {
+                results: [
+                    {
+                        id: 'summary-2026',
+                        election_id: 'election-2026',
+                        election_name: 'Présidentielle Test 2026',
+                        election_type: 'presidential',
+                        election_date: '2026-10-12T00:00:00Z',
+                        source_document_slug: 'elecam-test-2026',
+                        election_year: 2026,
+                        contest_type: 'presidential',
+                        result_level: 'national',
+                        region_name: '',
+                        department_name: '',
+                        commune_name: '',
+                        actor_type: 'election',
+                        actor_name: '',
+                        party: '',
+                        metric_type: 'summary',
+                        registered_voters: 1000000,
+                        actual_voters: 620000,
+                        valid_votes: 600000,
+                        blank_or_invalid_votes: 20000,
+                        percentage: 62,
+                        confidence: 'official_report',
+                        status: 'verified',
+                        notes: 'Résumé public chargé depuis le backend.',
+                    },
+                    {
+                        id: 'leader-2026',
+                        election_id: 'election-2026',
+                        election_name: 'Présidentielle Test 2026',
+                        election_type: 'presidential',
+                        election_date: '2026-10-12T00:00:00Z',
+                        source_document_slug: 'elecam-test-2026',
+                        election_year: 2026,
+                        contest_type: 'presidential',
+                        result_level: 'national',
+                        region_name: '',
+                        department_name: '',
+                        commune_name: '',
+                        actor_type: 'candidate',
+                        actor_name: 'Amina Demo',
+                        party: 'OVT',
+                        metric_type: 'result',
+                        votes: 420000,
+                        percentage: 70,
+                        confidence: 'official_report',
+                        status: 'verified',
+                        notes: '',
+                    },
+                ],
+            },
+        });
+
+        render(<LoginScreen onLogin={vi.fn()} onOpenPublicVerifier={vi.fn()} />);
+
+        expect(await screen.findByText('Données chargées depuis l’API publique')).toBeInTheDocument();
+        expect(screen.getByText('Présidentielle Test 2026')).toBeInTheDocument();
+        expect(screen.getByText('OVT / Amina Demo')).toBeInTheDocument();
+        expect(screen.getByText('elecam-test-2026', { exact: false })).toBeInTheDocument();
     });
 
     it('conserve le formulaire de connexion observateur', async () => {

@@ -21,6 +21,26 @@ separate manifest entries.
 The manifest is the human-readable registry. The database table `source_documents`
 is the application registry.
 
+## Conseil constitutionnel 2025 proclamation
+
+The user-supplied Conseil constitutionnel decision of 27 October 2025 is archived as:
+
+- `pdfs/conseil-constitutionnel-presidentielle-2025-proclamation-resultats.pdf`
+- `extracted/conseil-constitutionnel-presidentielle-2025-proclamation-resultats-ocr.txt`
+- `cc-2025-results-manifest.json`
+
+The PDF is scanned. The extracted text was produced locally with `pdftoppm` and
+Tesseract OCR, then the imported totals were checked visually against the source
+pages:
+
+- page 33: national, regional, and diaspora summary totals;
+- page 36: candidate ranking and vote shares;
+- page 37: proclamation of the elected candidate.
+
+The 2025 numerical baseline in the application must come from this official
+proclamation. Analytical maps, including the LAM 2025 maps archived under
+`data/sources/analysis`, are secondary checks and visual interpretation aids.
+
 ## ELECAM 2025 polling-station CSVs
 
 Generate reproducible CSV extracts from the verified ELECAM polling-station PDFs:

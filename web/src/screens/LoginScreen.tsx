@@ -9,9 +9,9 @@
  * à dériver la clé de chiffrement (cf. session.unlock).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import type { AuthState } from '../types';
+import type { AuthState, HistoricalElectionResult } from '../types';
 import { API_URL } from '../constants';
 
 interface LoginScreenProps {
@@ -56,6 +56,143 @@ const formatLandingPercent = (value?: number): string => (
     typeof value === 'number' ? `${value.toFixed(2)}%` : 'n.a.'
 );
 
+const FALLBACK_HISTORICAL_ELECTIONS: LandingHistoricalElection[] = [
+    {
+        id: 'presidential-2011',
+        year: '2011',
+        title: 'Présidentielle Cameroun 2011',
+        kind: 'Présidentielle',
+        source: 'elecam-presidentielle-2011-rapport-en',
+        registered: 7521651,
+        voters: 4951434,
+        validVotes: 4837249,
+        invalidVotes: 114185,
+        turnout: 65.82,
+        leader: 'CPDM / Paul Biya',
+        leaderShare: 77.989,
+        note: 'Base nationale officielle extraite du rapport ELECAM 2011.',
+    },
+    {
+        id: 'legislative-2013',
+        year: '2013',
+        title: 'Législatives Cameroun 2013',
+        kind: 'Législatives',
+        source: 'elecam-legislatives-municipales-2013-rapport-en',
+        registered: 5481226,
+        voters: 4208796,
+        validVotes: 4023293,
+        invalidVotes: 185503,
+        turnout: 76.79,
+        seats: 180,
+        leader: 'CPDM',
+        leaderShare: 63.52,
+        note: 'Résumé national et acteurs politiques structurés pour comparaison.',
+    },
+    {
+        id: 'presidential-2018',
+        year: '2018',
+        title: 'Présidentielle Cameroun 2018',
+        kind: 'Présidentielle',
+        source: 'elecam-presidentielle-2018-rapport-fr',
+        registered: 6619548,
+        voters: 3590427,
+        validVotes: 3537940,
+        invalidVotes: 52487,
+        turnout: 53.85,
+        leader: 'RDPC / Paul Biya',
+        leaderShare: 71.25,
+        note: 'Référence nationale pour lire les écarts territoriaux 2025.',
+    },
+    {
+        id: 'senatorial-2023',
+        year: '2023',
+        title: 'Sénatoriales Cameroun 2023',
+        kind: 'Sénatoriales',
+        source: 'elecam-senatoriales-2023-rapport-en',
+        registered: 11134,
+        voters: 10924,
+        validVotes: 10763,
+        invalidVotes: 161,
+        turnout: 98.11,
+        seats: 70,
+        leader: 'CPDM',
+        leaderShare: 100,
+        note: 'Inclut une lecture régionale des circonscriptions sénatoriales.',
+    },
+    {
+        id: 'presidential-2025',
+        year: '2025',
+        title: 'Présidentielle Cameroun 2025',
+        kind: 'Présidentielle',
+        source: 'conseil-constitutionnel-presidentielle-2025-resultats',
+        registered: 8082692,
+        voters: 4668446,
+        validVotes: 4610826,
+        invalidVotes: 57620,
+        turnout: 57.76,
+        leader: 'RDPC / BIYA PAUL',
+        leaderShare: 53.66,
+        note: 'Proclamation officielle du Conseil constitutionnel du 27 octobre 2025.',
+    },
+];
+
+const electionKindLabel = (contestType: string, electionType: string): string => {
+    const normalized = `${contestType || electionType}`.toLowerCase();
+    if (normalized.includes('president')) return 'Présidentielle';
+    if (normalized.includes('legisl')) return 'Législatives';
+    if (normalized.includes('senat')) return 'Sénatoriales';
+    if (normalized.includes('municip')) return 'Municipales';
+    return electionType || contestType || 'Scrutin';
+};
+
+const buildLeaderLabel = (result: HistoricalElectionResult): string => {
+    const values = [result.party, result.actor_name].filter(Boolean);
+    return [...new Set(values)].join(' / ') || 'n.a.';
+};
+
+const buildLandingHistoricalElections = (
+    results: HistoricalElectionResult[],
+): LandingHistoricalElection[] => {
+    const nationalSummaries = results
+        .filter((result) => (
+            result.result_level === 'national'
+            && result.actor_type === 'election'
+            && result.metric_type === 'summary'
+        ))
+        .sort((a, b) => a.election_year - b.election_year);
+
+    return nationalSummaries.map((summary) => {
+        const leader = results
+            .filter((result) => (
+                result.election_id === summary.election_id
+                && result.result_level === 'national'
+                && result.actor_type !== 'election'
+            ))
+            .sort((a, b) => (
+                (b.percentage || 0) - (a.percentage || 0)
+                || (b.votes || 0) - (a.votes || 0)
+                || (b.seats || 0) - (a.seats || 0)
+            ))[0];
+
+        return {
+            id: summary.election_id || summary.id,
+            year: String(summary.election_year),
+            title: summary.election_name,
+            kind: electionKindLabel(summary.contest_type, summary.election_type),
+            source: summary.source_document_slug,
+            registered: summary.registered_voters,
+            voters: summary.actual_voters,
+            validVotes: summary.valid_votes,
+            invalidVotes: summary.blank_or_invalid_votes,
+            turnout: summary.percentage,
+            seats: summary.seats || leader?.seats,
+            leader: leader ? buildLeaderLabel(leader) : 'n.a.',
+            leaderShare: leader?.percentage,
+            note: summary.notes || 'Résumé national issu des données historiques ELECAM.',
+        };
+    });
+};
+
 export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScreenProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -64,6 +201,12 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
     const [isRegistering, setIsRegistering] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [selectedHistoricalIndex, setSelectedHistoricalIndex] = useState(0);
+    const [historicalElections, setHistoricalElections] = useState<LandingHistoricalElection[]>(
+        FALLBACK_HISTORICAL_ELECTIONS,
+    );
+    const [historicalSource, setHistoricalSource] = useState<'api' | 'fallback'>('fallback');
+    const [historicalLoading, setHistoricalLoading] = useState(false);
+    const [historicalError, setHistoricalError] = useState('');
     const [selectedRegion, setSelectedRegion] = useState('Centre');
     const [publicSearch, setPublicSearch] = useState('');
 
@@ -152,6 +295,47 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
         setError('');
     };
 
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadHistoricalResults = async () => {
+            setHistoricalLoading(true);
+            setHistoricalError('');
+
+            try {
+                const response = await axios.get(`${API_URL}/public/historical-election-results`);
+                const parsed = buildLandingHistoricalElections(response.data?.results || []);
+
+                if (cancelled) return;
+
+                if (parsed.length > 0) {
+                    setHistoricalElections(parsed);
+                    setHistoricalSource('api');
+                    setSelectedHistoricalIndex(0);
+                } else {
+                    setHistoricalElections(FALLBACK_HISTORICAL_ELECTIONS);
+                    setHistoricalSource('fallback');
+                }
+            } catch {
+                if (!cancelled) {
+                    setHistoricalElections(FALLBACK_HISTORICAL_ELECTIONS);
+                    setHistoricalSource('fallback');
+                    setHistoricalError('API publique indisponible, fallback local affiché.');
+                }
+            } finally {
+                if (!cancelled) {
+                    setHistoricalLoading(false);
+                }
+            }
+        };
+
+        loadHistoricalResults();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const PROOF_STEPS = [
         { label: 'PV terrain', detail: 'Photo et chiffres du bureau collectés même hors ligne.' },
         { label: 'Hash local', detail: 'Le contenu PV et la photo sont scellés avant envoi.' },
@@ -166,71 +350,6 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
         'hash photo et statut d’intégrité',
         'anomalies PV et score régional',
         'bureau, région et source de la preuve',
-    ];
-
-    const HISTORICAL_ELECTIONS: LandingHistoricalElection[] = [
-        {
-            id: 'presidential-2011',
-            year: '2011',
-            title: 'Présidentielle Cameroun 2011',
-            kind: 'Présidentielle',
-            source: 'elecam-presidentielle-2011-rapport-en',
-            registered: 7521651,
-            voters: 4951434,
-            validVotes: 4837249,
-            invalidVotes: 114185,
-            turnout: 65.82,
-            leader: 'CPDM / Paul Biya',
-            leaderShare: 77.989,
-            note: 'Base nationale officielle extraite du rapport ELECAM 2011.',
-        },
-        {
-            id: 'legislative-2013',
-            year: '2013',
-            title: 'Législatives Cameroun 2013',
-            kind: 'Législatives',
-            source: 'elecam-legislatives-municipales-2013-rapport-en',
-            registered: 5481226,
-            voters: 4208796,
-            validVotes: 4023293,
-            invalidVotes: 185503,
-            turnout: 76.79,
-            seats: 180,
-            leader: 'CPDM',
-            leaderShare: 63.52,
-            note: 'Résumé national et acteurs politiques structurés pour comparaison.',
-        },
-        {
-            id: 'presidential-2018',
-            year: '2018',
-            title: 'Présidentielle Cameroun 2018',
-            kind: 'Présidentielle',
-            source: 'elecam-presidentielle-2018-rapport-fr',
-            registered: 6619548,
-            voters: 3590427,
-            validVotes: 3537940,
-            invalidVotes: 52487,
-            turnout: 53.85,
-            leader: 'RDPC / Paul Biya',
-            leaderShare: 71.25,
-            note: 'Référence nationale pour lire les écarts territoriaux 2025.',
-        },
-        {
-            id: 'senatorial-2023',
-            year: '2023',
-            title: 'Sénatoriales Cameroun 2023',
-            kind: 'Sénatoriales',
-            source: 'elecam-senatoriales-2023-rapport-en',
-            registered: 11134,
-            voters: 10924,
-            validVotes: 10763,
-            invalidVotes: 161,
-            turnout: 98.11,
-            seats: 70,
-            leader: 'CPDM',
-            leaderShare: 100,
-            note: 'Inclut une lecture régionale des circonscriptions sénatoriales.',
-        },
     ];
 
     const LEGAL_ITEMS = [
@@ -257,10 +376,10 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
     const TRUST_METRICS = [
         { value: '7.7M', label: 'inscrits officiels' },
         { value: '360', label: 'arrondissements suivis' },
-        { value: '4', label: 'scrutins historiques' },
+        { value: String(historicalElections.length), label: 'scrutins historiques' },
         { value: '5', label: 'preuves par PV' },
     ];
-    const selectedHistoricalElection = HISTORICAL_ELECTIONS[selectedHistoricalIndex];
+    const selectedHistoricalElection = historicalElections[selectedHistoricalIndex] || FALLBACK_HISTORICAL_ELECTIONS[0];
     const selectedRegionSignal = REGION_SIGNALS.find((region) => region.name === selectedRegion) || REGION_SIGNALS[0];
     const abstention = typeof selectedHistoricalElection.turnout === 'number'
         ? Math.max(0, 100 - selectedHistoricalElection.turnout)
@@ -418,10 +537,17 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
                                 abstention, bulletins invalides, acteur en tête et source officielle.
                             </p>
                         </div>
-                        <span>{HISTORICAL_ELECTIONS.length} scrutins indexés</span>
+                        <span>{historicalElections.length} scrutins indexés</span>
+                    </div>
+                    <div className="landing-memory-status" data-source={historicalSource}>
+                        {historicalLoading
+                            ? 'Chargement des données publiques...'
+                            : historicalSource === 'api'
+                                ? 'Données chargées depuis l’API publique'
+                                : historicalError || 'Fallback local disponible hors connexion'}
                     </div>
                     <div className="landing-turnout-trend" aria-label="Participation historique nationale">
-                        {HISTORICAL_ELECTIONS.map((election) => (
+                        {historicalElections.map((election) => (
                             <div key={`trend-${election.id}`} className={selectedHistoricalElection.id === election.id ? 'active' : ''}>
                                 <span>{election.year}</span>
                                 <i style={{ height: `${election.turnout || 0}%` }} />
@@ -430,7 +556,7 @@ export default function LoginScreen({ onLogin, onOpenPublicVerifier }: LoginScre
                         ))}
                     </div>
                     <div className="landing-election-tabs" role="tablist" aria-label="Scrutins historiques">
-                        {HISTORICAL_ELECTIONS.map((election, index) => (
+                        {historicalElections.map((election, index) => (
                             <button
                                 key={election.id}
                                 type="button"

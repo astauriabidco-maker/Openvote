@@ -317,6 +317,7 @@ func main() {
 
 		// Régions & Départements (lecture pour tous les utilisateurs authentifiés)
 		api.GET("/public/pv-proofs", pvHandler.ListPublicPVProofs)
+		api.GET("/public/historical-election-results", electionHandler.ListHistoricalResults)
 		api.GET("/regions", authMiddleware, regionHandler.ListRegions)
 		api.GET("/departments", authMiddleware, regionHandler.ListDepartments)
 		api.GET("/incident-types", authMiddleware, incidentTypeHandler.List)
