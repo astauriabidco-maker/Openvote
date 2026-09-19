@@ -234,6 +234,38 @@ func (HistoricalElectionResult) TableName() string {
 	return "historical_election_results"
 }
 
+// TerritorialElectionIndicator représente une couche consolidée pour la carte
+// électorale: territoire, indicateur, valeur, source et confiance.
+type TerritorialElectionIndicator struct {
+	ID                 string    `json:"id" db:"id"`
+	ElectionID         string    `json:"election_id" db:"election_id"`
+	ElectionName       string    `json:"election_name" db:"election_name"`
+	ElectionType       string    `json:"election_type" db:"election_type"`
+	ElectionDate       time.Time `json:"election_date" db:"election_date"`
+	SourceDocumentID   string    `json:"source_document_id" db:"source_document_id"`
+	SourceDocumentSlug string    `json:"source_document_slug" db:"source_document_slug"`
+	ElectionYear       int       `json:"election_year" db:"election_year"`
+	ContestType        string    `json:"contest_type" db:"contest_type"`
+	TerritoryLevel     string    `json:"territory_level" db:"territory_level"`
+	RegionName         string    `json:"region_name" db:"region_name"`
+	DepartmentName     string    `json:"department_name" db:"department_name"`
+	CommuneName        string    `json:"commune_name" db:"commune_name"`
+	IndicatorCode      string    `json:"indicator_code" db:"indicator_code"`
+	IndicatorLabel     string    `json:"indicator_label" db:"indicator_label"`
+	ValueNumeric       *float64  `json:"value_numeric,omitempty" db:"value_numeric"`
+	ValueText          string    `json:"value_text" db:"value_text"`
+	Unit               string    `json:"unit" db:"unit"`
+	Confidence         string    `json:"confidence" db:"confidence"`
+	Status             string    `json:"status" db:"status"`
+	Notes              string    `json:"notes" db:"notes"`
+	CreatedAt          time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at" db:"updated_at"`
+}
+
+func (TerritorialElectionIndicator) TableName() string {
+	return "territorial_election_indicators"
+}
+
 // PVStatus définit l'état d'un procès-verbal terrain.
 type PVStatus string
 

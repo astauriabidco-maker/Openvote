@@ -1,0 +1,59 @@
+region,department,registered_voters,actual_voters,turnout_pct,abstention_pct,blank_or_invalid_votes,valid_votes,source_page,confidence,review_status,notes
+ADAMAWA,DJEREM,63683,27426,43.07,56.93,342,27084,4,official,verified,Verified visually from Conseil constitutionnel page 4.
+ADAMAWA,FARO ET DEO,45265,22460,49.62,50.38,285,22175,4,official,verified,Verified visually from Conseil constitutionnel page 4.
+ADAMAWA,MAYO BANYO,82424,36690,44.51,55.49,631,36059,4,official,verified,Verified visually from Conseil constitutionnel page 4.
+ADAMAWA,MBERE,81656,38866,47.60,52.40,541,38325,4,official,verified,Verified visually from Conseil constitutionnel page 4.
+ADAMAWA,VINA,238904,106654,44.64,55.36,1297,105357,4,official,verified,Verified visually from Conseil constitutionnel page 4.
+CENTRE,HAUTE SANAGA,60701,57560,94.83,5.17,272,57288,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,LEKIE,160527,148985,92.81,7.19,1014,147971,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,MBAM ET INOUBOU,94177,85872,91.18,8.82,785,85087,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,MBAM ET KIM,65022,60333,92.79,7.21,473,59860,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,MEFOU ET AFAMBA,112313,105425,93.87,6.13,663,104762,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,MEFOU ET AKONO,46103,31173,67.62,32.38,294,30879,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,MFOUNDI,771503,393708,51.03,48.97,3068,390640,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,NYONG ET KELLE,62917,57255,91.00,9.00,231,57024,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,NYONG ET MFOUMOU,50190,39955,79.61,20.39,134,39821,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+CENTRE,NYONG ET SO'O,60894,56621,92.98,7.02,324,56297,6,official,verified,Verified visually from Conseil constitutionnel page 6.
+EAST,BOUMBA ET NGOKO,44931,27423,61.03,38.97,319,27104,9,official,verified,Verified visually from Conseil constitutionnel page 9.
+EAST,HAUT NYONG,93665,73840,78.83,21.17,454,73386,9,official,verified,Verified visually from Conseil constitutionnel page 9.
+EAST,KADEY,76540,74647,97.53,2.47,658,73989,9,official,verified,Verified visually from Conseil constitutionnel page 9.
+EAST,LOM ET DJEREM,179223,87415,48.77,51.23,1293,86122,9,official,verified,Verified visually from Conseil constitutionnel page 9.
+FAR NORTH,DIAMARE,305771,169046,55.29,44.71,3479,165567,11,official,verified,Verified visually from Conseil constitutionnel page 11.
+FAR NORTH,LOGONE ET CHARI,215294,122890,57.08,42.92,2983,119907,11,official,verified,Verified visually from Conseil constitutionnel page 11.
+FAR NORTH,MAYO-DANAY,218740,142416,65.11,34.89,3058,139358,11,official,verified,Verified visually from Conseil constitutionnel page 11.
+FAR NORTH,MAYO-KANI,158265,98313,62.12,37.88,2348,95965,11,official,verified,Verified visually from Conseil constitutionnel page 11.
+FAR NORTH,MAYO-SAVA,146095,88373,60.49,39.51,2169,86204,11,official,verified,Verified visually from Conseil constitutionnel page 11.
+FAR NORTH,MAYO-TSANAGA,217430,113624,52.26,47.74,3332,110292,11,official,verified,Verified visually from Conseil constitutionnel page 11.
+LITTORAL,MOUNGO,234020,121101,51.75,48.25,1240,119861,13,official,verified,Verified visually from Conseil constitutionnel page 13.
+LITTORAL,NKAM,27339,14846,54.30,45.70,220,14626,13,official,verified,Verified visually from Conseil constitutionnel page 13.
+LITTORAL,SANAGA-MARITIME,100710,50734,50.38,49.62,546,50188,13,official,verified,Verified visually from Conseil constitutionnel page 13.
+LITTORAL,WOURI,977955,474701,48.54,51.46,3582,471119,13,official,verified,Verified visually from Conseil constitutionnel page 13.
+NORTH,BENOUE,423222,198943,46.98,53.02,4685,194258,15,official,verified,Verified visually from Conseil constitutionnel page 15.
+NORTH,FARO,39057,25026,64.08,35.92,476,24550,15,official,verified,Verified visually from Conseil constitutionnel page 15.
+NORTH,MAYO-LOUTI,173359,90404,52.15,47.85,1982,88422,15,official,verified,Verified visually from Conseil constitutionnel page 15.
+NORTH,MAYO-REY,157667,94544,59.96,40.04,2255,92289,15,official,verified,Verified visually from Conseil constitutionnel page 15.
+NORTH-WEST,BOYO,56828,9775,17.20,82.80,60,9715,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+NORTH-WEST,BUI,104230,16364,15.70,84.30,71,16293,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+NORTH-WEST,DONGA-MANTUNG,96778,40630,41.98,58.02,508,40122,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+NORTH-WEST,MENCHUM,52568,10520,20.01,79.99,158,10362,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+NORTH-WEST,MEZAM,208476,169952,81.52,18.48,731,169221,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+NORTH-WEST,MOMO,57183,26317,46.02,53.98,154,26163,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+NORTH-WEST,NGO KETUNJIA,52033,24317,46.73,53.27,528,23789,16,official,verified,Verified visually from Conseil constitutionnel page 16.
+WEST,BAMBOUTOS,118275,71802,60.71,39.29,826,70976,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,HAUT-NKAM,57244,37858,66.13,33.87,369,37489,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,HAUTS-PLATEAUX,44765,41023,91.64,8.36,704,40319,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,KOUNG-KHI,41549,30050,72.32,27.68,392,29658,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,MENOUA,145128,90951,62.67,37.33,826,90125,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,MIFI,178163,92697,52.03,47.97,929,91768,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,NDE,71160,50388,70.81,29.19,560,49828,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+WEST,NOUN,221296,114200,51.61,48.39,1832,112368,18,official,verified,Verified visually from Conseil constitutionnel page 18.
+SOUTH,DJA-ET-LOBO,98288,87939,89.47,10.53,172,87767,20,official,verified,Verified visually from Conseil constitutionnel page 20.
+SOUTH,MVILA,93788,89117,95.02,4.98,326,88791,20,official,verified,Verified visually from Conseil constitutionnel page 20.
+SOUTH,OCEAN,93177,80641,86.55,13.45,785,79856,20,official,verified,Verified visually from Conseil constitutionnel page 20.
+SOUTH,VALLEE DU NTEM,41076,30401,74.01,25.99,168,30233,20,official,verified,Verified visually from Conseil constitutionnel page 20.
+SOUTH-WEST,FAKO,182746,61489,33.65,66.35,1006,60483,22,official,verified,Verified visually from Conseil constitutionnel page 22.
+SOUTH-WEST,KOUPE-MANENGOUBA,38420,23036,59.96,40.04,95,22941,22,official,verified,Verified visually from Conseil constitutionnel page 22.
+SOUTH-WEST,LEBIALEM,22499,8976,39.90,60.10,154,8822,22,official,verified,Verified visually from Conseil constitutionnel page 22.
+SOUTH-WEST,MANYU,55228,37444,67.80,32.20,166,37278,22,official,verified,Verified visually from Conseil constitutionnel page 22.
+SOUTH-WEST,MEME,95082,34658,36.45,63.55,238,34420,22,official,verified,Verified visually from Conseil constitutionnel page 22.
+SOUTH-WEST,NDIAN,36731,33856,92.17,7.83,133,33723,22,official,verified,Verified visually from Conseil constitutionnel page 22.

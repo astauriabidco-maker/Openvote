@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS historical_election_results (
     election_year INT NOT NULL CHECK (election_year BETWEEN 1900 AND 2100),
     contest_type VARCHAR(40) NOT NULL,
     result_level VARCHAR(40) NOT NULL DEFAULT 'national',
+    region_name TEXT NOT NULL DEFAULT '',
+    department_name TEXT NOT NULL DEFAULT '',
+    commune_name TEXT NOT NULL DEFAULT '',
     actor_type VARCHAR(40) NOT NULL DEFAULT 'election',
     actor_name TEXT NOT NULL DEFAULT '',
     party VARCHAR(80) NOT NULL DEFAULT '',
@@ -37,8 +40,33 @@ CREATE TABLE IF NOT EXISTS historical_election_results (
     notes TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (election_id, contest_type, result_level, actor_type, actor_name, party, metric_type)
+    CONSTRAINT historical_election_results_unique_scope UNIQUE (
+        election_id, contest_type, result_level, region_name, department_name, commune_name,
+        actor_type, actor_name, party, metric_type
+    )
 );
+
+ALTER TABLE historical_election_results
+    ADD COLUMN IF NOT EXISTS region_name TEXT NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS department_name TEXT NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS commune_name TEXT NOT NULL DEFAULT '';
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'historical_election_results'::regclass
+          AND conname = 'historical_election_results_unique_scope'
+    ) THEN
+        ALTER TABLE historical_election_results
+            ADD CONSTRAINT historical_election_results_unique_scope
+            UNIQUE (
+                election_id, contest_type, result_level, region_name, department_name, commune_name,
+                actor_type, actor_name, party, metric_type
+            );
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_historical_election_results_election
     ON historical_election_results (election_id);
@@ -101,7 +129,10 @@ SELECT r.election_id, sd.id, r.source_document_slug, r.election_year, r.contest_
        r.source_line_start, r.source_line_end, r.confidence, r.status, r.notes
 FROM rows r
 LEFT JOIN source_documents sd ON sd.slug = r.source_document_slug
-ON CONFLICT (election_id, contest_type, result_level, actor_type, actor_name, party, metric_type) DO UPDATE SET
+ON CONFLICT (
+    election_id, contest_type, result_level, region_name, department_name, commune_name,
+    actor_type, actor_name, party, metric_type
+) DO UPDATE SET
     source_document_id = EXCLUDED.source_document_id,
     source_document_slug = EXCLUDED.source_document_slug,
     election_year = EXCLUDED.election_year,
@@ -172,7 +203,10 @@ SELECT r.election_id, sd.id, r.source_document_slug, r.election_year, r.contest_
        'official_report', 'verified', 'Candidate vote total from ELECAM report.'
 FROM rows r
 LEFT JOIN source_documents sd ON sd.slug = r.source_document_slug
-ON CONFLICT (election_id, contest_type, result_level, actor_type, actor_name, party, metric_type) DO UPDATE SET
+ON CONFLICT (
+    election_id, contest_type, result_level, region_name, department_name, commune_name,
+    actor_type, actor_name, party, metric_type
+) DO UPDATE SET
     source_document_id = EXCLUDED.source_document_id,
     votes = EXCLUDED.votes,
     percentage = EXCLUDED.percentage,
@@ -275,7 +309,10 @@ SELECT r.election_id, sd.id, r.source_document_slug, r.election_year, r.contest_
        r.source_line_end, 'official_report', 'verified', 'Party-level national result from ELECAM report.'
 FROM rows r
 LEFT JOIN source_documents sd ON sd.slug = r.source_document_slug
-ON CONFLICT (election_id, contest_type, result_level, actor_type, actor_name, party, metric_type) DO UPDATE SET
+ON CONFLICT (
+    election_id, contest_type, result_level, region_name, department_name, commune_name,
+    actor_type, actor_name, party, metric_type
+) DO UPDATE SET
     source_document_id = EXCLUDED.source_document_id,
     lists_presented = EXCLUDED.lists_presented,
     votes = EXCLUDED.votes,

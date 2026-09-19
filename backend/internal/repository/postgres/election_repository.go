@@ -119,6 +119,51 @@ func (r *electionRepo) GetHistoricalResults(ctx context.Context) ([]entity.Histo
 	return results, rows.Err()
 }
 
+func (r *electionRepo) GetTerritorialIndicators(ctx context.Context, electionID string) ([]entity.TerritorialElectionIndicator, error) {
+	queryCtx, cancel := database.WithQueryTimeout(ctx)
+	defer cancel()
+
+	query := `
+		SELECT t.id, t.election_id, e.name, e.type, e.date,
+		       COALESCE(t.source_document_id::text, ''), t.source_document_slug,
+		       t.election_year, t.contest_type, t.territory_level,
+		       t.region_name, t.department_name, t.commune_name,
+		       t.indicator_code, t.indicator_label, t.value_numeric, t.value_text,
+		       t.unit, t.confidence, t.status, t.notes, t.created_at, t.updated_at
+		FROM territorial_election_indicators t
+		JOIN elections e ON e.id = t.election_id
+		WHERE ($1 = '' OR t.election_id = $1::uuid)
+		ORDER BY t.election_year DESC, t.territory_level, t.region_name, t.department_name, t.indicator_code`
+
+	rows, err := r.db.QueryContext(queryCtx, query, electionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []entity.TerritorialElectionIndicator
+	for rows.Next() {
+		var item entity.TerritorialElectionIndicator
+		var valueNumeric sql.NullFloat64
+
+		if err := rows.Scan(
+			&item.ID, &item.ElectionID, &item.ElectionName, &item.ElectionType,
+			&item.ElectionDate, &item.SourceDocumentID, &item.SourceDocumentSlug,
+			&item.ElectionYear, &item.ContestType, &item.TerritoryLevel,
+			&item.RegionName, &item.DepartmentName, &item.CommuneName,
+			&item.IndicatorCode, &item.IndicatorLabel, &valueNumeric, &item.ValueText,
+			&item.Unit, &item.Confidence, &item.Status, &item.Notes, &item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		item.ValueNumeric = nullableFloat(valueNumeric)
+		results = append(results, item)
+	}
+	return results, rows.Err()
+}
+
 func nullableInt(v sql.NullInt64) *int {
 	if !v.Valid {
 		return nil

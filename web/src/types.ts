@@ -205,6 +205,29 @@ export interface HistoricalElectionResult {
     notes: string;
 }
 
+export interface TerritorialElectionIndicator {
+    id: string;
+    election_id: string;
+    election_name: string;
+    election_type: string;
+    election_date: string;
+    source_document_slug: string;
+    election_year: number;
+    contest_type: string;
+    territory_level: string;
+    region_name: string;
+    department_name: string;
+    commune_name: string;
+    indicator_code: string;
+    indicator_label: string;
+    value_numeric?: number;
+    value_text: string;
+    unit: string;
+    confidence: string;
+    status: string;
+    notes: string;
+}
+
 export interface IncidentTypeData {
     id: string;
     name: string;

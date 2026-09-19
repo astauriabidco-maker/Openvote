@@ -9,6 +9,7 @@ type ElectionRepository interface {
 	GetAll(ctx context.Context) ([]entity.Election, error)
 	GetByID(ctx context.Context, id string) (*entity.Election, error)
 	GetHistoricalResults(ctx context.Context) ([]entity.HistoricalElectionResult, error)
+	GetTerritorialIndicators(ctx context.Context, electionID string) ([]entity.TerritorialElectionIndicator, error)
 	Create(ctx context.Context, e *entity.Election) error
 	Update(ctx context.Context, e *entity.Election) error
 	Delete(ctx context.Context, id string) error

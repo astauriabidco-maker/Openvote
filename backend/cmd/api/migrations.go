@@ -67,6 +67,11 @@ var allMigrations = []migration{
 	{"migration/030_historical_election_results.sql", "Résultats électoraux historiques ELECAM"},
 	{"migration/031_historical_territorial_results.sql", "Résultats historiques territoriaux ELECAM"},
 	{"migration/032_regional_risk_snapshots.sql", "Audit trail des scores régionaux"},
+	{"migration/033_presidential_2025_official_results.sql", "Résultats officiels Présidentielle 2025"},
+	{"migration/034_territorial_election_indicators.sql", "Consolidation de la carte électorale"},
+	{"migration/035_territorial_candidate_indicators_2025.sql", "Indicateurs candidats régionaux 2025"},
+	{"migration/036_cc_2025_department_indicators.sql", "Indicateurs départementaux officiels 2025"},
+	{"migration/037_cc_2025_department_indicators_complete.sql", "Compléments départementaux officiels 2025"},
 }
 
 // schemaMigrationsDDL est dupliqué ici (vs lu depuis 017.sql) pour

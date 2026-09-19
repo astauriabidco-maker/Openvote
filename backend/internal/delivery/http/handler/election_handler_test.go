@@ -13,8 +13,10 @@ import (
 )
 
 type electionRepoStub struct {
-	historical      []entity.HistoricalElectionResult
-	historicalCalls int
+	historical       []entity.HistoricalElectionResult
+	territorial     []entity.TerritorialElectionIndicator
+	historicalCalls  int
+	territorialCalls int
 }
 
 func (s *electionRepoStub) GetAll(context.Context) ([]entity.Election, error) {
@@ -28,6 +30,11 @@ func (s *electionRepoStub) GetByID(context.Context, string) (*entity.Election, e
 func (s *electionRepoStub) GetHistoricalResults(context.Context) ([]entity.HistoricalElectionResult, error) {
 	s.historicalCalls++
 	return s.historical, nil
+}
+
+func (s *electionRepoStub) GetTerritorialIndicators(context.Context, string) ([]entity.TerritorialElectionIndicator, error) {
+	s.territorialCalls++
+	return s.territorial, nil
 }
 
 func (s *electionRepoStub) Create(context.Context, *entity.Election) error {
@@ -88,5 +95,50 @@ func TestListHistoricalResultsCanServePublicRoute(t *testing.T) {
 	}
 	if !strings.Contains(recorder.Body.String(), "Présidentielle Cameroun 2018") {
 		t.Fatalf("expected historical result payload, got %s", recorder.Body.String())
+	}
+}
+
+func TestListTerritorialIndicatorsCanServePublicRoute(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	value := 88.28
+	repo := &electionRepoStub{
+		territorial: []entity.TerritorialElectionIndicator{
+			{
+				ID:                 "indicator-south-turnout",
+				ElectionID:         "election-2025",
+				ElectionName:       "Présidentielle Cameroun 2025",
+				ElectionType:       "presidential",
+				ElectionDate:       time.Date(2025, 10, 12, 0, 0, 0, 0, time.UTC),
+				SourceDocumentSlug: "conseil-constitutionnel-presidentielle-2025-resultats",
+				ElectionYear:       2025,
+				ContestType:        "presidential",
+				TerritoryLevel:     "region",
+				RegionName:         "SOUTH",
+				IndicatorCode:      "turnout_pct",
+				IndicatorLabel:     "Participation",
+				ValueNumeric:       &value,
+				Unit:               "percent",
+				Confidence:         "official",
+				Status:             "verified",
+			},
+		},
+	}
+	handler := NewElectionHandler(repo)
+	router := gin.New()
+	router.GET("/public/electoral-map", handler.ListTerritorialIndicators)
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/public/electoral-map?election_id=election-2025", nil)
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if repo.territorialCalls != 1 {
+		t.Fatalf("expected GetTerritorialIndicators to be called once, got %d", repo.territorialCalls)
+	}
+	if !strings.Contains(recorder.Body.String(), "turnout_pct") {
+		t.Fatalf("expected territorial indicator payload, got %s", recorder.Body.String())
 	}
 }

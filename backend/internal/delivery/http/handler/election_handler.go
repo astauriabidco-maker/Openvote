@@ -35,6 +35,15 @@ func (h *ElectionHandler) ListHistoricalResults(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"results": results, "total": len(results)})
 }
 
+func (h *ElectionHandler) ListTerritorialIndicators(c *gin.Context) {
+	results, err := h.electionRepo.GetTerritorialIndicators(c.Request.Context(), c.Query("election_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"indicators": results, "total": len(results)})
+}
+
 func (h *ElectionHandler) Create(c *gin.Context) {
 	var input struct {
 		Name        string `json:"name" binding:"required"`

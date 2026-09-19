@@ -12,7 +12,7 @@
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import axios from 'axios';
-import type { AuthState, ElectionData, HistoricalElectionResult, RegionalRiskSnapshot, RegionPVSummary, Report, ReportLegalMatch } from '../types';
+import type { AuthState, ElectionData, HistoricalElectionResult, RegionalRiskSnapshot, RegionPVSummary, Report, ReportLegalMatch, TerritorialElectionIndicator } from '../types';
 import { API_URL } from '../constants';
 import { formatDate, getRoleBadge } from '../utils/format';
 import StableAdminPanel from './admin/AdminPanel';
@@ -54,11 +54,13 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const [searchQuery, setSearchQuery] = useState('');
   const [reportLegalMatches, setReportLegalMatches] = useState<ReportLegalMatch[]>([]);
   const [historicalResults, setHistoricalResults] = useState<HistoricalElectionResult[]>([]);
+  const [territorialIndicators, setTerritorialIndicators] = useState<TerritorialElectionIndicator[]>([]);
   const [pvRegionSummaries, setPVRegionSummaries] = useState<RegionPVSummary[]>([]);
   const [regionalRiskSnapshots, setRegionalRiskSnapshots] = useState<RegionalRiskSnapshot[]>([]);
   const [elections, setElections] = useState<ElectionData[]>([]);
   const [selectedComparisonElectionId, setSelectedComparisonElectionId] = useState('');
   const [historicalLoading, setHistoricalLoading] = useState(false);
+  const [territorialIndicatorsLoading, setTerritorialIndicatorsLoading] = useState(false);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [riskSnapshotLoading, setRiskSnapshotLoading] = useState(false);
   const [historicalYearFilter, setHistoricalYearFilter] = useState('all');
@@ -217,6 +219,18 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
     }
   }, [apiClient]);
 
+  const fetchTerritorialIndicators = useCallback(async () => {
+    setTerritorialIndicatorsLoading(true);
+    try {
+      const response = await apiClient.get('/electoral-map');
+      setTerritorialIndicators(response.data.indicators || []);
+    } catch (error) {
+      console.error("Erreur lors du chargement de la carte électorale consolidée:", error);
+    } finally {
+      setTerritorialIndicatorsLoading(false);
+    }
+  }, [apiClient]);
+
   const fetchElections = useCallback(async () => {
     try {
       const response = await apiClient.get('/elections');
@@ -276,6 +290,12 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
       fetchHistoricalResults();
     }
   }, [activeView, fetchHistoricalResults, historicalResults.length]);
+
+  useEffect(() => {
+    if (activeView === 'analytics' && territorialIndicators.length === 0) {
+      fetchTerritorialIndicators();
+    }
+  }, [activeView, fetchTerritorialIndicators, territorialIndicators.length]);
 
   useEffect(() => {
     if (activeView === 'analytics' && elections.length === 0) {
@@ -363,6 +383,53 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
   const formatNumber = (value?: number) => (
     typeof value === 'number' ? value.toLocaleString('fr-FR') : 'n.a.'
   );
+
+  const formatIndicatorValue = (indicator?: TerritorialElectionIndicator) => {
+    if (!indicator) return 'n.a.';
+    if (typeof indicator.value_numeric === 'number') {
+      if (indicator.unit === 'percent') return `${indicator.value_numeric.toFixed(2)}%`;
+      return indicator.value_numeric.toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+    }
+    return indicator.value_text || 'n.a.';
+  };
+
+  const consolidatedTerritoryRows = Array.from(
+    territorialIndicators.reduce((acc, indicator) => {
+      const key = [
+        indicator.election_id,
+        indicator.territory_level,
+        indicator.region_name,
+        indicator.department_name,
+        indicator.commune_name,
+      ].join('|');
+      const existing = acc.get(key) || {
+        electionName: indicator.election_name,
+        territoryLevel: indicator.territory_level,
+        territoryName: indicator.department_name || indicator.region_name || indicator.commune_name || 'National',
+        sourceSlugs: new Set<string>(),
+        confidences: new Set<string>(),
+        indicators: new Map<string, TerritorialElectionIndicator>(),
+      };
+      existing.sourceSlugs.add(indicator.source_document_slug);
+      existing.confidences.add(indicator.confidence);
+      existing.indicators.set(indicator.indicator_code, indicator);
+      acc.set(key, existing);
+      return acc;
+    }, new Map<string, {
+      electionName: string;
+      territoryLevel: string;
+      territoryName: string;
+      sourceSlugs: Set<string>;
+      confidences: Set<string>;
+      indicators: Map<string, TerritorialElectionIndicator>;
+    }>())
+      .values(),
+  )
+    .filter((row) => row.territoryLevel !== 'diaspora')
+    .sort((a, b) => {
+      if (a.territoryLevel !== b.territoryLevel) return a.territoryLevel.localeCompare(b.territoryLevel);
+      return a.territoryName.localeCompare(b.territoryName);
+    });
 
   const getHistoricalSignals = (summary: HistoricalElectionResult) => {
     const invalidRate = summary.actual_voters && summary.blank_or_invalid_votes
@@ -1089,6 +1156,107 @@ function Dashboard({ auth, onLogout }: { auth: AuthState, onLogout: () => void }
                       </select>
                     </label>
                   </div>
+                </div>
+
+                <div className="analytics-card analytics-card-wide">
+                  <h3>Carte électorale consolidée</h3>
+                  {territorialIndicatorsLoading ? (
+                    <p className="analytics-empty">Chargement des indicateurs territoriaux...</p>
+                  ) : consolidatedTerritoryRows.length === 0 ? (
+                    <p className="analytics-empty">Aucun indicateur territorial consolidé disponible.</p>
+                  ) : (
+                    <>
+                      <div className="electoral-map-summary">
+                        <div>
+                          <strong>{territorialIndicators.length}</strong>
+                          <span>indicateurs sourcés</span>
+                        </div>
+                        <div>
+                          <strong>{consolidatedTerritoryRows.filter((row) => row.territoryLevel === 'region').length}</strong>
+                          <span>régions consolidées</span>
+                        </div>
+                        <div>
+                          <strong>{consolidatedTerritoryRows.filter((row) => row.territoryLevel === 'department').length}</strong>
+                          <span>départements vérifiés</span>
+                        </div>
+                        <div>
+                          <strong>{consolidatedTerritoryRows.filter((row) => row.confidences.has('secondary_check')).length}</strong>
+                          <span>contrôles secondaires</span>
+                        </div>
+                      </div>
+                      <div className="historical-table-wrap">
+                        <table className="historical-table electoral-map-table">
+                          <thead>
+                            <tr>
+                              <th>Territoire</th>
+                              <th>Inscrits</th>
+                              <th>Votants</th>
+                              <th>Participation</th>
+                              <th>Biya officiel</th>
+                              <th>Tchiroma officiel</th>
+                              <th>Invalides</th>
+                              <th>Lecture LAM</th>
+                              <th>Confiance</th>
+                              <th>Sources</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {consolidatedTerritoryRows.map((row) => {
+                              const lamSignals = [
+                                row.indicators.get('registered_share_biya_pct'),
+                                row.indicators.get('registered_share_tchiroma_pct'),
+                                row.indicators.get('registered_share_other_pct'),
+                                row.indicators.get('abstention_pct'),
+                              ].filter(Boolean) as TerritorialElectionIndicator[];
+                              return (
+                                <tr key={`${row.territoryLevel}-${row.territoryName}`}>
+                                  <td>
+                                    <strong>{row.territoryName}</strong>
+                                    <span>{row.territoryLevel} · {row.electionName}</span>
+                                  </td>
+                                  <td>{formatIndicatorValue(row.indicators.get('registered_voters'))}</td>
+                                  <td>{formatIndicatorValue(row.indicators.get('actual_voters'))}</td>
+                                  <td>{formatIndicatorValue(row.indicators.get('turnout_pct'))}</td>
+                                  <td>
+                                    <strong>{formatIndicatorValue(row.indicators.get('candidate_biya_pct_valid'))}</strong>
+                                    <span>{formatIndicatorValue(row.indicators.get('candidate_biya_votes'))} voix</span>
+                                  </td>
+                                  <td>
+                                    <strong>{formatIndicatorValue(row.indicators.get('candidate_tchiroma_pct_valid'))}</strong>
+                                    <span>{formatIndicatorValue(row.indicators.get('candidate_tchiroma_votes'))} voix</span>
+                                  </td>
+                                  <td>{formatIndicatorValue(row.indicators.get('invalid_votes'))}</td>
+                                  <td>
+                                    {lamSignals.length === 0 ? (
+                                      <span>n.a.</span>
+                                    ) : (
+                                      <div className="historical-signal-list">
+                                        {lamSignals.map((indicator) => (
+                                          <span key={indicator.indicator_code} className="historical-signal signal-medium">
+                                            {indicator.indicator_label}: {formatIndicatorValue(indicator)}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td>
+                                    {Array.from(row.confidences).map((confidence) => (
+                                      <span key={confidence} className={`source-pill ${confidence}`}>{confidence}</span>
+                                    ))}
+                                  </td>
+                                  <td>
+                                    {Array.from(row.sourceSlugs).map((source) => (
+                                      <small key={source}>{source}</small>
+                                    ))}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="analytics-card analytics-card-wide">

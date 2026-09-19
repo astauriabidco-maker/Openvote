@@ -825,6 +825,56 @@
   text-transform: uppercase;
 }
 
+.source-pill.official {
+  background: rgba(46, 160, 67, 0.18);
+  color: #7ee787;
+  border-color: rgba(46, 160, 67, 0.35);
+}
+
+.source-pill.secondary_check {
+  background: rgba(210, 153, 34, 0.16);
+  color: #e3b341;
+  border-color: rgba(210, 153, 34, 0.35);
+}
+
+.electoral-map-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.electoral-map-summary div {
+  background: rgba(13, 17, 23, 0.42);
+  border: 1px solid rgba(139, 148, 158, 0.14);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.electoral-map-summary strong,
+.electoral-map-summary span {
+  display: block;
+}
+
+.electoral-map-summary strong {
+  font-size: 1.35rem;
+  color: var(--text-primary);
+}
+
+.electoral-map-summary span {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.electoral-map-table td:nth-child(8) {
+  min-width: 220px;
+}
+
+.electoral-map-table td:nth-child(10) small {
+  max-width: 260px;
+}
+
 .historical-signal-list {
   display: flex;
   flex-wrap: wrap;
